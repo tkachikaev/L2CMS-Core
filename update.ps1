@@ -29,6 +29,12 @@ foreach ($directory in $directories) {
     New-Item -Path $directory -ItemType Directory -Force | Out-Null
 }
 
+# Remove stale framework caches before Composer boots the updated application.
+if (Test-Path 'vendor\autoload.php') {
+    php artisan optimize:clear
+    if ($LASTEXITCODE -ne 0) { throw "artisan optimize:clear failed with exit code $LASTEXITCODE." }
+}
+
 composer install --no-interaction --prefer-dist
 if ($LASTEXITCODE -ne 0) { throw "composer install failed with exit code $LASTEXITCODE." }
 

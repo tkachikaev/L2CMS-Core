@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.1 - 2026-07-12
+
+### Changed
+
+- `/admin` is now the single entry point for the administration panel.
+- `/admin/dashboard` redirects to `/admin` for compatibility.
+- The administration interface now uses a simpler, neutral and minimal built-in design.
+- All implemented and planned sections remain visible in the left navigation.
+- The administration home page now presents available and planned sections without optional database statistics.
+- The theme management page was simplified to a compact list.
+
+### Fixed
+
+- Removed unnecessary dashboard queries so the main `/admin` page is less likely to fail when optional data is unavailable.
+- Added feature tests for the main administration route and compatibility redirect.
+
+## 0.3.0 - 2026-07-12
+
+### Added
+
+- Unified administrator layout independent from public themes.
+- Persistent administrator navigation with responsive behavior.
+- Theme management page at `/admin/themes`.
+- Database-backed CMS settings storage for the active theme.
+- Theme manifest, required-file, slug, preview-path and CMS-version validation.
+- Safe activation of preinstalled themes with CSRF and administrator authentication.
+- Theme activation logging through the application log.
+- Automated feature tests for theme management.
+
+### Security
+
+- Public themes cannot replace administrator templates or administrator assets.
+- Theme activation accepts only validated slugs inside the configured themes directory.
+- Invalid, damaged, missing, or incompatible themes cannot be activated.
+- Theme ZIP upload remains disabled until secure archive extraction is implemented.
+
 ## 0.2.0 - 2026-07-12
 
 ### Added

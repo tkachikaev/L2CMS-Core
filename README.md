@@ -1,4 +1,4 @@
-# L2CMS Core 0.2.0
+# L2CMS Core 0.3.1
 
 Первый рабочий каркас открытой CMS для серверов Lineage II. Это основа для последовательной разработки, а не готовый публичный релиз.
 
@@ -13,17 +13,15 @@
 - Адаптивная тёмная тема в стиле Lineage II.
 - Статический предпросмотр в `preview/index.html`.
 
-## Что исправлено в 0.2.0
+## Что изменено в 0.3.1
 
-- Исправлена совместимость Laravel 13 с `laravel/tinker` 3.x.
-- Исправлены значения `.env`, содержащие пробелы.
-- Добавлена обязательная папка `bootstrap/cache` и её `.gitignore`.
-- Установщик сам создаёт все рабочие каталоги Laravel до запуска Composer.
-- Повторный запуск установщика больше не меняет существующий `APP_KEY`.
-- PowerShell-скрипты не содержат кириллицы и работают в Windows PowerShell 5.1.
-- Добавлены `doctor.ps1` для диагностики и `update.ps1` для будущих обновлений.
-- Принудительный HTTPS включается только через `APP_FORCE_HTTPS=true`.
-- Адаптер Mobius не обрушает весь сайт, если игровая БД временно недоступна.
+- `/admin` закреплён как единая точка входа в административную панель.
+- Все реализованные и запланированные разделы видны в левом меню.
+- Административный интерфейс упрощён и больше не использует оформление в стиле публичной L2-темы.
+- Главная страница админки показывает доступные и будущие разделы.
+- Раздел `/admin/themes` переведён на компактный минималистичный список.
+- `/admin/dashboard` перенаправляется на `/admin`.
+- Убраны необязательные запросы статистики с главной страницы админки.
 
 ## Первый запуск в Windows
 
@@ -88,3 +86,14 @@ http://127.0.0.1:8000/admin/login
 ```
 
 Administrator accounts are separate from game accounts. See `docs/ADMIN_AUTH.md`.
+
+
+## Theme management
+
+Open:
+
+```text
+http://127.0.0.1:8000/admin/themes
+```
+
+The panel can inspect and activate themes already installed in `themes/<slug>`. Theme archive upload is intentionally postponed until secure archive validation is implemented. See `docs/THEMES.md` and `docs/ADMIN_PANEL.md`.

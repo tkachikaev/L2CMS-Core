@@ -1,23 +1,53 @@
-# Создание темы
+# Themes
 
-1. Скопируйте `themes/default` в `themes/my-theme`.
-2. Скопируйте `public/themes/default` в `public/themes/my-theme`.
-3. Измените `theme.json`.
-4. Укажите в `.env`:
+Public themes are stored separately from the CMS core.
 
-```env
-CMS_THEME=my-theme
+```text
+themes/<slug>/
+├─ theme.json
+└─ views/
+   ├─ layouts/app.blade.php
+   └─ home.blade.php
+
+public/themes/<slug>/
+└─ assets/
 ```
 
-5. Выполните:
+The administrator interface does not use public themes.
 
-```powershell
-php artisan optimize:clear
+## Manifest
+
+```json
+{
+  "name": "Theme name",
+  "slug": "theme-slug",
+  "version": "1.0.0",
+  "author": "Author",
+  "cms_min": "0.3.0",
+  "cms_max": "1.5.0",
+  "description": "Theme description",
+  "preview": "assets/images/preview.webp"
+}
 ```
 
-## Правила
+Required fields:
 
-- Тема отвечает только за HTML, CSS, JavaScript и изображения.
-- SQL-запросы и бизнес-логика внутри темы запрещены.
-- Общие данные передаются контроллерами ядра.
-- Обновление ядра не должно изменять каталог пользовательской темы.
+- `name`
+- `slug`
+- `version`
+- `author`
+
+Optional fields:
+
+- `cms_min`
+- `cms_max`
+- `description`
+- `preview`
+
+The `slug` must match the directory name and may contain lowercase Latin letters, digits, hyphens, and underscores.
+
+## Activation
+
+Themes are activated in `/admin/themes`. The selected slug is written to the `cms_settings` table. `CMS_THEME` in `.env` is only a fallback.
+
+The CMS refuses to activate a theme that is invalid or incompatible.

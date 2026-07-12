@@ -1,9 +1,9 @@
 {
   "name": "L2 Dark Classic",
   "slug": "default",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": "L2CMS Community",
-  "cms": "^0.1",
-  "description": "Default dark Lineage II inspired theme.",
-  "assets": "public/themes/default/assets"
+  "cms_min": "0.1.1",
+  "description": "Стандартная тёмная тема в стилистике классических сайтов Lineage II.",
+  "preview": "assets/images/hero.webp"
 }

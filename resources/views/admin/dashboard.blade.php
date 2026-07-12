@@ -1,88 +1,57 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.panel')
 
-@section('title', 'Обзор')
+@section('title', 'Панель управления')
+@section('description', 'Единая точка входа во все разделы CMS.')
 
-@section('body')
-<div class="dashboard-shell">
-    <aside class="sidebar">
-        <a class="brand brand-sidebar" href="{{ route('admin.dashboard') }}">
-            <span class="brand-mark">L2</span>
-            <span><strong>{{ config('app.name') }}</strong><small>ADMINISTRATION</small></span>
-        </a>
+@section('content')
+<div class="admin-home-grid">
+    <a class="admin-section-card available" href="{{ route('admin.themes.index') }}">
+        <div>
+            <span class="section-status">Доступно</span>
+            <h2>Темы</h2>
+            <p>Просмотр установленных тем и выбор оформления публичного сайта.</p>
+        </div>
+        <span class="section-arrow" aria-hidden="true">→</span>
+    </a>
 
-        <nav class="admin-nav" aria-label="Панель управления">
-            <a class="active" href="{{ route('admin.dashboard') }}">Обзор</a>
-            <span>Настройки <small>скоро</small></span>
-            <span>Новости <small>скоро</small></span>
-            <span>Темы <small>скоро</small></span>
-            <span>Модули <small>скоро</small></span>
-            <span>Администраторы <small>скоро</small></span>
-        </nav>
+    <article class="admin-section-card planned">
+        <div>
+            <span class="section-status">В разработке</span>
+            <h2>Новости</h2>
+            <p>Создание, редактирование и публикация новостей.</p>
+        </div>
+    </article>
 
-        <a class="back-link" href="{{ route('home') }}">← Перейти на сайт</a>
-    </aside>
+    <article class="admin-section-card planned">
+        <div>
+            <span class="section-status">В разработке</span>
+            <h2>Настройки</h2>
+            <p>Основные параметры сайта, сервера и подключений.</p>
+        </div>
+    </article>
 
-    <main class="dashboard-main">
-        <header class="topbar">
-            <div>
-                <p class="eyebrow">ПАНЕЛЬ УПРАВЛЕНИЯ</p>
-                <h1>Обзор</h1>
-            </div>
-            <div class="admin-profile">
-                <span><strong>{{ $admin->name }}</strong><small>{{ $admin->email }}</small></span>
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="secondary-button">Выйти</button>
-                </form>
-            </div>
-        </header>
+    <article class="admin-section-card planned">
+        <div>
+            <span class="section-status">В разработке</span>
+            <h2>Модули</h2>
+            <p>Управление функциональными модулями CMS.</p>
+        </div>
+    </article>
 
-        <section class="stats-grid" aria-label="Состояние CMS">
-            <article class="stat-card"><span>Версия CMS</span><strong>{{ config('cms.version') }}</strong><small>Текущее ядро</small></article>
-            <article class="stat-card"><span>Администраторы</span><strong>{{ $adminCount }}</strong><small>Активные учётные записи</small></article>
-            <article class="stat-card"><span>Новости</span><strong>{{ $newsCount }}</strong><small>Записей в базе CMS</small></article>
-            <article class="stat-card"><span>Игровой адаптер</span><strong>{{ strtoupper(config('game.adapter')) }}</strong><small>Текущий режим подключения</small></article>
-        </section>
+    <article class="admin-section-card planned">
+        <div>
+            <span class="section-status">В разработке</span>
+            <h2>Администраторы</h2>
+            <p>Учётные записи, роли и права доступа.</p>
+        </div>
+    </article>
 
-        <section class="dashboard-grid">
-            <article class="content-card">
-                <div class="card-heading">
-                    <div><p class="eyebrow">БЕЗОПАСНОСТЬ</p><h2>Последние попытки входа</h2></div>
-                </div>
-
-                @if ($recentLogins->isEmpty())
-                    <p class="empty-state">Журнал пока пуст.</p>
-                @else
-                    <div class="table-wrap">
-                        <table>
-                            <thead><tr><th>Дата</th><th>Адрес</th><th>IP</th><th>Результат</th></tr></thead>
-                            <tbody>
-                            @foreach ($recentLogins as $login)
-                                <tr>
-                                    <td>{{ $login->created_at->format('d.m.Y H:i') }}</td>
-                                    <td>{{ $login->email }}</td>
-                                    <td>{{ $login->ip_address ?: '—' }}</td>
-                                    <td><span class="status {{ $login->successful ? 'success' : 'failed' }}">{{ $login->successful ? 'Успешно' : 'Отклонено' }}</span></td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </article>
-
-            <aside class="content-card next-card">
-                <p class="eyebrow">СЛЕДУЮЩИЙ ЭТАП</p>
-                <h2>Системные настройки</h2>
-                <p>Следом добавим управление названием сайта, сервером, режимом обслуживания и активной темой.</p>
-                <ul>
-                    <li>Отдельная учётная запись администратора</li>
-                    <li>Argon2id для хранения пароля</li>
-                    <li>Ограничение попыток входа</li>
-                    <li>Журнал успешных и неудачных входов</li>
-                </ul>
-            </aside>
-        </section>
-    </main>
+    <article class="admin-section-card planned">
+        <div>
+            <span class="section-status">В разработке</span>
+            <h2>Журнал действий</h2>
+            <p>История входов и изменений в административной панели.</p>
+        </div>
+    </article>
 </div>
 @endsection

@@ -1,29 +1,250 @@
 <?php
+
 namespace App\Support\Themes;
 
+use App\Services\CmsSettings;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Arr;
 use RuntimeException;
+use Throwable;
 
 final class ThemeManager
 {
+    private const ACTIVE_THEME_SETTING = 'theme.active';
+
+    /** @var array<string, mixed> */
     private array $manifest = [];
 
-    public function __construct(private readonly string $themesPath, private readonly string $activeTheme) {}
+    private string $activeTheme;
+
+    public function __construct(
+        private readonly string $themesPath,
+        private readonly string $fallbackTheme,
+        private readonly CmsSettings $settings,
+        private readonly Filesystem $files,
+    ) {
+        $this->activeTheme = $fallbackTheme;
+    }
 
     public function boot(): void
     {
-        $path = $this->themePath();
-        $manifest = $path.'/theme.json';
+        $requestedTheme = $this->settings->get(self::ACTIVE_THEME_SETTING, $this->fallbackTheme) ?? $this->fallbackTheme;
+        $theme = $this->inspect($requestedTheme);
 
-        if (!is_dir($path) || !is_file($manifest)) {
-            throw new RuntimeException("Theme [{$this->activeTheme}] is missing or invalid.");
+        if (! $theme['valid'] || ! $theme['compatible']) {
+            $theme = $this->inspect($this->fallbackTheme);
         }
 
-        $this->manifest = json_decode(file_get_contents($manifest), true, flags: JSON_THROW_ON_ERROR);
-        view()->addNamespace('theme', $path.'/views');
+        if (! $theme['valid'] || ! $theme['compatible']) {
+            throw new RuntimeException("Fallback theme [{$this->fallbackTheme}] is missing, invalid, or incompatible.");
+        }
+
+        $this->applyResolvedTheme($theme);
     }
 
-    public function manifest(): array { return $this->manifest; }
-    public function name(): string { return $this->activeTheme; }
-    public function themePath(): string { return rtrim($this->themesPath, '/').'/'.$this->activeTheme; }
-    public function asset(string $path): string { return asset('themes/'.$this->activeTheme.'/assets/'.ltrim($path, '/')); }
+    /** @return array<int, array<string, mixed>> */
+    public function installed(): array
+    {
+        if (! $this->files->isDirectory($this->themesPath)) {
+            return [];
+        }
+
+        $themes = [];
+
+        foreach ($this->files->directories($this->themesPath) as $directory) {
+            $themes[] = $this->inspect(basename($directory));
+        }
+
+        usort($themes, static function (array $left, array $right): int {
+            if ($left['active'] !== $right['active']) {
+                return $left['active'] ? -1 : 1;
+            }
+
+            return strcasecmp((string) $left['name'], (string) $right['name']);
+        });
+
+        return $themes;
+    }
+
+    /** @return array<string, mixed> */
+    public function inspect(string $slug): array
+    {
+        $result = [
+            'slug' => $slug,
+            'name' => $slug,
+            'version' => '—',
+            'author' => '—',
+            'description' => '',
+            'cms_min' => null,
+            'cms_max' => null,
+            'preview_url' => null,
+            'valid' => false,
+            'compatible' => false,
+            'active' => $slug === $this->activeTheme,
+            'errors' => [],
+            'manifest' => [],
+        ];
+
+        if (! preg_match('/\A[a-z0-9][a-z0-9_-]*\z/', $slug)) {
+            $result['errors'][] = 'Недопустимое имя каталога темы.';
+
+            return $result;
+        }
+
+        $root = realpath($this->themesPath);
+        $path = realpath($this->themesPath.DIRECTORY_SEPARATOR.$slug);
+
+        if ($root === false || $path === false || ! str_starts_with($path.DIRECTORY_SEPARATOR, $root.DIRECTORY_SEPARATOR)) {
+            $result['errors'][] = 'Каталог темы не найден.';
+
+            return $result;
+        }
+
+        $manifestPath = $path.DIRECTORY_SEPARATOR.'theme.json';
+
+        if (! $this->files->isFile($manifestPath)) {
+            $result['errors'][] = 'Не найден файл theme.json.';
+
+            return $result;
+        }
+
+        try {
+            $manifest = json_decode($this->files->get($manifestPath), true, flags: JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            $result['errors'][] = 'Файл theme.json содержит некорректный JSON.';
+
+            return $result;
+        }
+
+        if (! is_array($manifest)) {
+            $result['errors'][] = 'Файл theme.json должен содержать JSON-объект.';
+
+            return $result;
+        }
+
+        $result['manifest'] = $manifest;
+        $result['name'] = (string) Arr::get($manifest, 'name', $slug);
+        $result['version'] = (string) Arr::get($manifest, 'version', '—');
+        $result['author'] = (string) Arr::get($manifest, 'author', '—');
+        $result['description'] = (string) Arr::get($manifest, 'description', '');
+        $result['cms_min'] = $this->nullableString(Arr::get($manifest, 'cms_min'));
+        $result['cms_max'] = $this->nullableString(Arr::get($manifest, 'cms_max'));
+
+        foreach (['name', 'slug', 'version', 'author'] as $requiredField) {
+            if (! is_string(Arr::get($manifest, $requiredField)) || trim((string) Arr::get($manifest, $requiredField)) === '') {
+                $result['errors'][] = "В theme.json не заполнено поле {$requiredField}.";
+            }
+        }
+
+        if (Arr::get($manifest, 'slug') !== $slug) {
+            $result['errors'][] = 'Поле slug не совпадает с именем каталога темы.';
+        }
+
+        foreach (['views/layouts/app.blade.php', 'views/home.blade.php'] as $requiredFile) {
+            if (! $this->files->isFile($path.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $requiredFile))) {
+                $result['errors'][] = "Не найден обязательный файл {$requiredFile}.";
+            }
+        }
+
+        $result['valid'] = $result['errors'] === [];
+        $result['compatible'] = $result['valid'] && $this->isCompatible($result['cms_min'], $result['cms_max']);
+        $result['active'] = $slug === $this->activeTheme;
+        $result['preview_url'] = $this->previewUrl($slug, $manifest);
+
+        if ($result['valid'] && ! $result['compatible']) {
+            $result['errors'][] = 'Тема несовместима с текущей версией CMS.';
+        }
+
+        return $result;
+    }
+
+    public function activate(string $slug): void
+    {
+        $theme = $this->inspect($slug);
+
+        if (! $theme['valid']) {
+            throw new RuntimeException('Нельзя активировать повреждённую тему.');
+        }
+
+        if (! $theme['compatible']) {
+            throw new RuntimeException('Нельзя активировать тему, несовместимую с этой версией CMS.');
+        }
+
+        $this->settings->set(self::ACTIVE_THEME_SETTING, $slug);
+        $this->applyResolvedTheme($theme);
+    }
+
+    /** @return array<string, mixed> */
+    public function manifest(): array
+    {
+        return $this->manifest;
+    }
+
+    public function name(): string
+    {
+        return $this->activeTheme;
+    }
+
+    public function themePath(): string
+    {
+        return rtrim($this->themesPath, '/\\').DIRECTORY_SEPARATOR.$this->activeTheme;
+    }
+
+    public function asset(string $path): string
+    {
+        return asset('themes/'.$this->activeTheme.'/assets/'.ltrim($path, '/'));
+    }
+
+    /** @param array<string, mixed> $theme */
+    private function applyResolvedTheme(array $theme): void
+    {
+        $this->activeTheme = (string) $theme['slug'];
+        $this->manifest = (array) $theme['manifest'];
+        view()->replaceNamespace('theme', [$this->themePath().DIRECTORY_SEPARATOR.'views']);
+        view()->share('activeTheme', $this->manifest);
+    }
+
+    private function isCompatible(?string $minimum, ?string $maximum): bool
+    {
+        $cmsVersion = (string) config('cms.version');
+
+        if ($minimum !== null && version_compare($cmsVersion, $minimum, '<')) {
+            return false;
+        }
+
+        if ($maximum !== null && version_compare($cmsVersion, $maximum, '>')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $manifest */
+    private function previewUrl(string $slug, array $manifest): ?string
+    {
+        $preview = Arr::get($manifest, 'preview');
+
+        if (! is_string($preview) || ! preg_match('/\A[a-zA-Z0-9_\/.\-]+\z/', $preview)) {
+            return null;
+        }
+
+        $publicThemeRoot = public_path('themes/'.$slug);
+        $publicThemePath = realpath($publicThemeRoot);
+        $previewPath = realpath($publicThemeRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $preview));
+
+        if ($publicThemePath === false || $previewPath === false || ! str_starts_with($previewPath, $publicThemePath.DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+
+        if (! $this->files->isFile($previewPath)) {
+            return null;
+        }
+
+        return asset('themes/'.$slug.'/'.ltrim($preview, '/'));
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
 }

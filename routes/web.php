@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
 use Illuminate\Support\Facades\Route;
@@ -22,7 +23,15 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
     });
 
     Route::middleware('admin.auth')->group(function (): void {
-        Route::get('/', AdminDashboardController::class)->name('dashboard');
+        // Single entry point for the administrative interface.
+        Route::get('', AdminDashboardController::class)->name('dashboard');
+        Route::redirect('/dashboard', '/admin');
+
+        Route::get('/themes', [AdminThemeController::class, 'index'])->name('themes.index');
+        Route::post('/themes/{theme}/activate', [AdminThemeController::class, 'activate'])
+            ->where('theme', '[a-z0-9][a-z0-9_-]*')
+            ->name('themes.activate');
+
         Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
     });
 });
