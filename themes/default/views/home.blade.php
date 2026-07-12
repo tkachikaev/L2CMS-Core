@@ -24,7 +24,13 @@
             <p class="hero-copy">{{ site_description() }}</p>
         @endif
         <div class="hero-actions">
-            <a class="button button-gold button-large" href="{{ route('register') }}">Начать игру</a>
+            @auth
+                <a class="button button-gold button-large" href="{{ route('account') }}">Личный кабинет</a>
+            @elseif (registration_available())
+                <a class="button button-gold button-large" href="{{ route('register') }}">Регистрация</a>
+            @else
+                <a class="button button-gold button-large" href="{{ route('login') }}">Войти</a>
+            @endauth
             <a class="button button-ghost button-large" href="{{ route('downloads') }}">Скачать клиент</a>
         </div>
     </div>
@@ -100,7 +106,29 @@
         </section>
 
         <aside class="side-column">
-            <section class="panel login-panel"><div class="panel-title"><h2>Авторизация</h2></div><form method="get" action="{{ route('login') }}"><label><span>Логин</span><input disabled placeholder="Игровой аккаунт"></label><label><span>Пароль</span><input disabled type="password" placeholder="••••••••"></label><button class="button button-gold" type="submit">Перейти ко входу</button><p>Нет аккаунта? <a href="{{ route('register') }}">Регистрация</a></p></form></section>
+            <section class="panel login-panel">
+                <div class="panel-title"><h2>{{ auth()->check() ? 'Личный кабинет' : 'Авторизация' }}</h2></div>
+                @auth
+                    <div class="login-panel-user">
+                        <span>Вы вошли как</span>
+                        <strong>{{ auth()->user()->name }}</strong>
+                        <a class="button button-gold" href="{{ route('account') }}">Открыть кабинет</a>
+                    </div>
+                @else
+                    <form method="POST" action="{{ route('login.store') }}">
+                        @csrf
+                        <label><span>Логин или email</span><input name="login" required autocomplete="username" placeholder="user@example.com"></label>
+                        <label><span>Пароль</span><input name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></label>
+                        <button class="button button-gold" type="submit">Войти</button>
+                        <p>
+                            <a href="{{ route('password.request') }}">Забыли пароль?</a>
+                            @if (registration_available())
+                                · <a href="{{ route('register') }}">Регистрация</a>
+                            @endif
+                        </p>
+                    </form>
+                @endauth
+            </section>
             <section id="rating" class="panel rating-panel"><div class="panel-title"><h2>Топ персонажей</h2></div><table><thead><tr><th>#</th><th>Персонаж</th><th>Класс</th><th>Уровень</th></tr></thead><tbody>@foreach($topCharacters as $character)<tr><td>{{ $loop->iteration }}</td><td>{{ $character['name'] }}</td><td>{{ $character['class'] }}</td><td>{{ $character['level'] }}</td></tr>@endforeach</tbody></table></section>
         </aside>
     </div>

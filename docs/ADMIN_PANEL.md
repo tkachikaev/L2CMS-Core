@@ -7,7 +7,7 @@ The administrative interface is part of L2Forge Core and is never rendered throu
 - `/admin` — the main administration page and the single panel entry point.
 - `/admin/news` — news management inside the same administration shell.
 - `/admin/themes` — theme management inside the same administration shell.
-- `/admin/settings` — general site settings and game-server display settings.
+- `/admin/settings` — site, game-server, registration and SMTP settings.
 - `/admin/login` — administrator authentication.
 - `/admin/dashboard` — compatibility redirect to `/admin`.
 
@@ -28,7 +28,7 @@ Current sections:
 - Main page — implemented.
 - News — implemented.
 - Themes — implemented.
-- Settings — general and game-server display settings implemented; login-server tab prepared.
+- Settings — general, game-server, registration and SMTP settings implemented; login-server tab prepared.
 - Modules — planned.
 - Administrators — planned.
 - Activity log — planned.

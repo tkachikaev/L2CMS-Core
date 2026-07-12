@@ -703,3 +703,103 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
     .settings-server-card-header .button-danger { flex: 0 0 auto; }
     .settings-inline-actions .button { width: 100%; }
 }
+
+/* Registration and mail settings 0.8.0 */
+.notice-warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+}
+.settings-narrow-card { max-width: 860px; }
+.settings-card-heading { margin-bottom: 8px; }
+.settings-card-heading h2 { margin-bottom: 5px; }
+.settings-card-heading p { margin: 0; color: var(--muted); }
+.settings-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+}
+.settings-toggle-row > span:first-child { min-width: 0; }
+.settings-toggle-row strong,
+.settings-toggle-row small { display: block; }
+.settings-toggle-row strong { color: #1f2937; font-size: 14px; }
+.settings-toggle-row small { max-width: 650px; margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.switch-control { position: relative; flex: 0 0 46px; width: 46px; height: 26px; }
+.switch-control input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.switch-control span {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #d1d5db;
+    transition: .2s ease;
+}
+.switch-control span::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, .28);
+    transition: .2s ease;
+}
+.switch-control input:checked + span { background: var(--accent); }
+.switch-control input:checked + span::after { transform: translateX(20px); }
+.switch-control input:focus-visible + span { outline: 3px solid rgba(37, 99, 235, .2); outline-offset: 2px; }
+.settings-inline-notice { max-width: 860px; margin: 16px 0 0; }
+.settings-inline-notice a { font-weight: 700; text-decoration: underline; }
+.settings-actions-narrow { max-width: 860px; }
+
+.mail-settings-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--muted);
+}
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.status-badge-success { background: #dcfce7; color: #166534; }
+.status-badge-warning { background: #fef3c7; color: #92400e; }
+.status-badge-danger { background: #fee2e2; color: #991b1b; }
+.status-badge-muted { background: #e5e7eb; color: #4b5563; }
+.mail-settings-grid { grid-template-columns: minmax(0, 1fr) 360px; }
+.mail-settings-grid > .settings-form { display: grid; gap: 16px; }
+.mail-settings-grid > aside { display: grid; gap: 16px; }
+.form-row { display: grid; gap: 16px; }
+.form-row .form-group + .form-group { margin-top: 0; }
+.form-row-2-1 { grid-template-columns: minmax(0, 2fr) minmax(130px, 1fr); }
+.settings-actions-inside { margin-top: 0; }
+.mail-test-card p,
+.mail-help-card p { color: var(--muted); font-size: 12px; }
+.settings-help-list { margin: 0; padding-left: 18px; color: #4b5563; }
+.settings-help-list li + li { margin-top: 7px; }
+.muted-admin { color: var(--muted); }
+
+@media (max-width: 840px) {
+    .mail-settings-grid { grid-template-columns: 1fr; }
+    .settings-toggle-row { align-items: flex-start; gap: 16px; }
+}
+
+@media (max-width: 520px) {
+    .form-row-2-1 { grid-template-columns: 1fr; }
+    .mail-settings-status { align-items: flex-start; flex-direction: column; }
+}

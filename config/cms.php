@@ -2,7 +2,7 @@
 
 return [
     'name' => 'L2Forge CMS',
-    'version' => '0.7.2',
+    'version' => '0.8.0',
     'theme' => env('CMS_THEME', 'default'),
     'themes_path' => base_path('themes'),
 
@@ -20,6 +20,12 @@ return [
         'timezone' => env('APP_TIMEZONE', 'Europe/Moscow'),
         'admin_email' => env('SITE_ADMIN_EMAIL', ''),
         'footer_text' => env('SITE_FOOTER_TEXT', '© 2026 L2Forge-CMS'),
+    ],
+
+
+    'registration' => [
+        'enabled' => (bool) env('REGISTRATION_ENABLED', false),
+        'email_verification_required' => (bool) env('REGISTRATION_EMAIL_VERIFICATION', true),
     ],
 
     'admin' => [

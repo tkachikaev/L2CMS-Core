@@ -2,6 +2,8 @@
 
 Public themes are stored separately from L2Forge Core.
 
+Если активная тема не содержит отдельный шаблон страницы авторизации, новостей или служебной страницы, CMS использует соответствующее представление стандартной темы как безопасный визуальный fallback. Макет `layouts/app.blade.php` и главная `home.blade.php` по-прежнему обязательны для самой темы.
+
 ```text
 themes/<slug>/
 ├─ theme.json
@@ -23,7 +25,7 @@ The administrator interface does not use public themes.
   "slug": "theme-slug",
   "version": "1.0.0",
   "author": "Author",
-  "cms_min": "0.6.0",
+  "cms_min": "0.8.0",
   "cms_max": "1.5.0",
   "description": "Theme description",
   "preview": "assets/images/preview.webp"
@@ -123,3 +125,29 @@ Do not render `$news->body` directly. Themes are responsible only for visual sty
 ```
 
 Ключи `show_chronicle`, `show_rates` и `show_mode` уже учитывают пустые значения. `show_mode` также скрывает специальное значение `None`. Функция `game_server_settings()` сохранена как сокращение для получения первого сервера и может вернуть `null`, если список пуст.
+
+
+## Пользователи сайта в теме
+
+Начиная с версии 0.8.0 стандартные именованные маршруты публичной авторизации доступны любой совместимой теме:
+
+```text
+login
+register
+account
+logout
+password.request
+verification.notice
+```
+
+Для отображения кнопки регистрации используйте:
+
+```blade
+@if (registration_available())
+    <a href="{{ route('register') }}">Регистрация</a>
+@endif
+```
+
+`registration_available()` учитывает и административный переключатель, и готовность проверенной почты при обязательном подтверждении email. `registration_enabled()` показывает только состояние переключателя, а `email_verification_required()` — требование подтверждения.
+
+Тема не должна создавать пользователей, отправлять почту или читать SMTP-настройки напрямую. Формы должны отправляться на именованные маршруты ядра и содержать `@csrf`.

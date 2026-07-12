@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.8.0 - 2026-07-13
+
+### Added
+
+- Separate public website user accounts, independent from CMS administrators and future Lineage II game accounts.
+- Administrator settings tabs for registration and SMTP mail.
+- Registration enable/disable switch and optional mandatory email verification.
+- SMTP host, port, encryption, username, encrypted password, sender identity and notification email settings.
+- Test-email action with a persisted successful verification state.
+- Public registration, login, logout and minimal account pages.
+- Signed email-verification links with resend support.
+- Password-reset request and reset flows using one-time database tokens.
+- Custom Russian verification and password-reset notifications.
+- Default-theme fallback views for authentication pages when a compatible custom theme does not provide the new templates.
+- Rate limits for login, registration, verification email resend and password recovery.
+- Automated coverage for registration settings, encrypted SMTP storage, user registration, login, verification and password recovery.
+
+### Security
+
+- SMTP passwords are encrypted with the application `APP_KEY`, never rendered back into forms and excluded from application logs.
+- Registration with mandatory email verification cannot be enabled until a test email succeeds.
+- Changing SMTP settings invalidates the previous successful mail test.
+- Public registration is unavailable while required email delivery is not ready.
+- User logins and emails are normalized to lowercase; login receives a database unique index.
+- Passwords use the configured Argon2id hashing driver.
+- Password recovery returns the same public response for known and unknown email addresses.
+
 ## 0.7.2 - 2026-07-12
 
 ### Added

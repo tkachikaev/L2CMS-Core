@@ -200,7 +200,17 @@ final class ThemeManager
     {
         $this->activeTheme = (string) $theme['slug'];
         $this->manifest = (array) $theme['manifest'];
-        view()->replaceNamespace('theme', [$this->themePath().DIRECTORY_SEPARATOR.'views']);
+
+        $viewPaths = [$this->themePath().DIRECTORY_SEPARATOR.'views'];
+        $fallbackViews = rtrim($this->themesPath, '/\\')
+            .DIRECTORY_SEPARATOR.$this->fallbackTheme
+            .DIRECTORY_SEPARATOR.'views';
+
+        if ($this->activeTheme !== $this->fallbackTheme && $this->files->isDirectory($fallbackViews)) {
+            $viewPaths[] = $fallbackViews;
+        }
+
+        view()->replaceNamespace('theme', $viewPaths);
         view()->share('activeTheme', $this->manifest);
     }
 

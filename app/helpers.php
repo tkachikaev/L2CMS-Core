@@ -1,6 +1,8 @@
 <?php
 
 use App\Services\GameServerSettings;
+use App\Services\MailSettings;
+use App\Services\RegistrationSettings;
 use App\Services\SiteSettings;
 use App\Support\Themes\ThemeManager;
 
@@ -43,6 +45,33 @@ if (! function_exists('site_footer_text')) {
     function site_footer_text(): string
     {
         return app(SiteSettings::class)->footerText();
+    }
+}
+
+if (! function_exists('registration_enabled')) {
+    function registration_enabled(): bool
+    {
+        return app(RegistrationSettings::class)->enabled();
+    }
+}
+
+if (! function_exists('email_verification_required')) {
+    function email_verification_required(): bool
+    {
+        return app(RegistrationSettings::class)->emailVerificationRequired();
+    }
+}
+
+if (! function_exists('registration_available')) {
+    function registration_available(): bool
+    {
+        $registration = app(RegistrationSettings::class);
+
+        if (! $registration->enabled()) {
+            return false;
+        }
+
+        return ! $registration->emailVerificationRequired() || app(MailSettings::class)->isReady();
     }
 }
 
