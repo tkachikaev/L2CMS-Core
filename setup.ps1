@@ -61,6 +61,7 @@ if ($phpVersion -lt [Version]'8.3.0') {
 
 $requiredExtensions = @(
     'ctype',
+    'dom',
     'fileinfo',
     'mbstring',
     'openssl',
@@ -89,7 +90,9 @@ $directories = @(
     'storage\framework\sessions',
     'storage\framework\views',
     'storage\logs',
-    'database'
+    'database',
+    'public\uploads\news\covers',
+    'public\uploads\news\content'
 )
 
 foreach ($directory in $directories) {

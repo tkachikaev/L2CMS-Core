@@ -1,7 +1,7 @@
 @extends('admin.layouts.panel')
 
 @section('title', 'Новости')
-@section('description', 'Создание, редактирование и публикация новостей публичного сайта.')
+@section('description', 'Создание, оформление, редактирование и публикация новостей публичного сайта.')
 
 @section('content')
 <div class="content-toolbar">
@@ -28,13 +28,21 @@
     <div class="empty-state">
         <div class="empty-state-mark" aria-hidden="true">N</div>
         <h2>Новостей пока нет</h2>
-        <p>Создайте первую новость. Она появится на сайте после публикации.</p>
+        <p>Создайте первую новость, добавьте оформление и опубликуйте её на сайте.</p>
         <a class="button button-primary" href="{{ route('admin.news.create') }}">Создать первую новость</a>
     </div>
 @else
     <div class="content-list">
         @foreach ($news as $item)
             <article class="content-row">
+                <a class="content-row-preview" href="{{ route('admin.news.edit', $item) }}" aria-label="Редактировать: {{ $item->title }}">
+                    @if ($item->coverUrl())
+                        <img src="{{ $item->coverUrl() }}" alt="">
+                    @else
+                        <span>Без изображения</span>
+                    @endif
+                </a>
+
                 <div class="content-row-main">
                     <a class="content-row-title" href="{{ route('admin.news.edit', $item) }}">{{ $item->title }}</a>
                     <p>{{ $item->excerpt ?: 'Краткое описание не задано.' }}</p>

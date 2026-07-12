@@ -3,7 +3,7 @@
   "slug": "default",
   "version": "0.4.0",
   "author": "L2Forge Community",
-  "cms_min": "0.5.0",
-  "description": "Стандартная тёмная тема L2Forge CMS в стилистике классических сайтов Lineage II.",
+  "cms_min": "0.6.0",
+  "description": "Стандартная тёмная тема L2Forge CMS с поддержкой оформленных новостей и изображений.",
   "preview": "assets/images/hero.webp"
 }

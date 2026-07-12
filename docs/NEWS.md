@@ -1,16 +1,17 @@
 # News management
 
-L2Forge CMS 0.5.0 includes the first content-management section.
+L2Forge CMS 0.6.0 includes formatted news, cover images and inline images.
 
 ## Administrator routes
 
 - `GET /admin/news` — list all news items;
 - `GET /admin/news/create` — create form;
 - `POST /admin/news` — save a new item;
+- `POST /admin/news/images` — upload an image into the visual editor;
 - `GET /admin/news/{news}/edit` — edit form;
 - `PUT /admin/news/{news}` — save changes.
 
-All routes require an authenticated administrator and use Laravel CSRF protection.
+All routes require an authenticated administrator and Laravel CSRF protection. Inline image uploads are additionally rate-limited.
 
 ## Publication states
 
@@ -20,9 +21,54 @@ All routes require an authenticated administrator and use Laravel CSRF protectio
 
 The public site only returns published items.
 
-## Text format
+## Visual editor
 
-The editor stores ordinary text. Public templates escape the content and preserve line breaks. Arbitrary HTML and JavaScript entered into the editor are not executed.
+The editor supports:
+
+- headings;
+- bold, italic, underline and strike-through;
+- ordered and unordered lists;
+- quotes and code blocks;
+- safe links;
+- left, center and right alignment;
+- a limited text-color palette;
+- horizontal separators;
+- uploaded images inside the article.
+
+The browser editor is only an interface. The server always parses and sanitizes the submitted HTML again before saving it.
+
+## Images
+
+Cover images are stored under:
+
+```text
+public/uploads/news/covers/YYYY/MM/
+```
+
+Images inserted into article content are stored under:
+
+```text
+public/uploads/news/content/YYYY/MM/
+```
+
+Only JPEG, PNG and WebP are accepted. Maximum file size is 5 MB and maximum dimensions are 6000×6000 pixels. Original filenames are not used.
+
+The database stores relative paths, not image binary data.
+
+## Cleaning unused inline images
+
+Images removed from an article or uploaded before an abandoned edit can remain on disk. Files older than 24 hours and not referenced by any active or soft-deleted news item can be inspected and removed with:
+
+```powershell
+php artisan l2forge:news-media-clean --dry-run
+php artisan l2forge:news-media-clean
+```
+
+Use `--hours=48` to keep recent unreferenced files for a longer period.
+
+## HTML allow list
+
+The sanitizer permits only the elements needed by the editor, including paragraphs, headings, text emphasis, lists, quotes, links, figures and images. Scripts, styles, iframes, forms, SVG and event attributes are removed.
 
 ## Slugs
 

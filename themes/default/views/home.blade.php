@@ -23,7 +23,14 @@
             <div class="panel-title"><h2>Последние новости</h2><a href="{{ route('news.index') }}">Все новости →</a></div>
             <div class="news-list">
                 @forelse($news as $item)
-                    <article class="news-item"><div class="news-thumb"></div><div><time>{{ $item->published_at?->format('d.m.Y') }}</time><h3><a href="{{ route('news.show', $item) }}">{{ $item->title }}</a></h3><p>{{ $item->excerpt }}</p></div></article>
+                    <article class="news-item">
+                        <a class="news-thumb" href="{{ route('news.show', $item) }}" aria-label="{{ $item->title }}">
+                            @if ($item->coverUrl())
+                                <img src="{{ $item->coverUrl() }}" alt="">
+                            @endif
+                        </a>
+                        <div><time>{{ $item->published_at?->format('d.m.Y') }}</time><h3><a href="{{ route('news.show', $item) }}">{{ $item->title }}</a></h3><p>{{ $item->excerpt }}</p></div>
+                    </article>
                 @empty
                     <p class="empty">Новостей пока нет.</p>
                 @endforelse

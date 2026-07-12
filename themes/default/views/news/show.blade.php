@@ -7,7 +7,13 @@
         <h1>{{ $news->title }}</h1>
     </div>
 </section>
-<section class="container page-content">
-    <article class="panel prose">{!! nl2br(e($news->bodyAsPlainText())) !!}</article>
+<section class="container page-content news-page">
+    @if ($news->coverUrl())
+        <figure class="news-page-cover panel">
+            <img src="{{ $news->coverUrl() }}" alt="{{ $news->title }}">
+        </figure>
+    @endif
+
+    <article class="panel prose news-prose">{!! $news->safeBodyHtml() !!}</article>
 </section>
 @endsection

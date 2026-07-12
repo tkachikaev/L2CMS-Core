@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.6.0 - 2026-07-12
+
+### Added
+
+- Visual news editor with headings, bold, italic, underline, strike-through, lists, quotes, links, alignment, text colors and separators.
+- Cover image upload with preview, replacement and removal.
+- Authenticated inline image upload for news content.
+- Cover images on the home page, public news list and full news page.
+- Responsive rich-content styling in the default theme.
+- Migration converting existing 0.5.0 plain-text news bodies to safe HTML paragraphs.
+- `l2forge:news-media-clean` command for safely removing old unreferenced inline images.
+
+### Security
+
+- Server-side allow-list HTML sanitizer based on DOM parsing.
+- Scripts, styles, iframes, forms, SVG, event handlers and unknown attributes are removed.
+- Inline image sources are restricted to files uploaded through L2Forge CMS.
+- Uploads accept only validated JPEG, PNG and WebP images up to 5 MB and 6000×6000 pixels.
+- Random UUID filenames prevent trusting original client filenames.
+- Inline image uploads are authenticated, CSRF-protected and rate-limited.
+
 ## 0.5.0 - 2026-07-12
 
 ### Added

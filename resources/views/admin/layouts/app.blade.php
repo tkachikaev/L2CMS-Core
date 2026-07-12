@@ -8,8 +8,10 @@
     <meta name="theme-color" content="#090c10">
     <title>@yield('title', 'Панель управления') — {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('assets/admin/css/app.css') }}">
+    @stack('head')
 </head>
 <body class="admin-body">
     @yield('body')
+    @stack('scripts')
 </body>
 </html>

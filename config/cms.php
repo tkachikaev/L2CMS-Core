@@ -2,9 +2,13 @@
 
 return [
     'name' => 'L2Forge CMS',
-    'version' => '0.5.0',
+    'version' => '0.6.0',
     'theme' => env('CMS_THEME', 'default'),
     'themes_path' => base_path('themes'),
+
+    'news' => [
+        'uploads_path' => env('NEWS_UPLOADS_PATH', public_path('uploads')),
+    ],
 
     'admin' => [
         'login_max_attempts' => (int) env('ADMIN_LOGIN_MAX_ATTEMPTS', 5),

@@ -13,6 +13,9 @@
   "license": "MIT",
   "require": {
     "php": "^8.3",
+    "ext-dom": "*",
+    "ext-fileinfo": "*",
+    "ext-mbstring": "*",
     "laravel/framework": "^13.0",
     "laravel/tinker": "^3.0"
   },

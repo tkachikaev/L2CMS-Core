@@ -8,15 +8,25 @@
     </div>
 </section>
 <section class="container page-content">
-    <div class="panel article-list">
+    <div class="public-news-list">
         @forelse ($news as $item)
-            <article>
-                <time>{{ $item->published_at?->format('d.m.Y') }}</time>
-                <h2><a href="{{ route('news.show', $item) }}">{{ $item->title }}</a></h2>
-                <p>{{ $item->excerpt }}</p>
+            <article class="panel public-news-card">
+                <a class="public-news-cover" href="{{ route('news.show', $item) }}" aria-label="{{ $item->title }}">
+                    @if ($item->coverUrl())
+                        <img src="{{ $item->coverUrl() }}" alt="">
+                    @else
+                        <span>LINEAGE II</span>
+                    @endif
+                </a>
+                <div class="public-news-copy">
+                    <time>{{ $item->published_at?->format('d.m.Y') }}</time>
+                    <h2><a href="{{ route('news.show', $item) }}">{{ $item->title }}</a></h2>
+                    <p>{{ $item->excerpt }}</p>
+                    <a class="public-news-more" href="{{ route('news.show', $item) }}">Читать новость →</a>
+                </div>
             </article>
         @empty
-            <p>Новостей пока нет.</p>
+            <div class="panel prose"><p>Новостей пока нет.</p></div>
         @endforelse
     </div>
 

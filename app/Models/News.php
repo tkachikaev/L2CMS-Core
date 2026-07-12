@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\News\NewsHtmlSanitizer;
+use App\Services\News\NewsImageStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -65,16 +67,18 @@ class News extends Model
         };
     }
 
+    public function safeBodyHtml(): string
+    {
+        return app(NewsHtmlSanitizer::class)->sanitize((string) $this->body);
+    }
+
     public function bodyAsPlainText(): string
     {
-        $source = (string) ($this->body ?? '');
-        $body = preg_replace('/<br\s*\/?>/i', "\n", $source) ?? $source;
-        $body = preg_replace('/<\/p\s*>/i', "\n\n", $body) ?? $body;
+        return app(NewsHtmlSanitizer::class)->plainText((string) $this->body);
+    }
 
-        return trim(html_entity_decode(
-            strip_tags($body),
-            ENT_QUOTES | ENT_HTML5,
-            'UTF-8'
-        ));
+    public function coverUrl(): ?string
+    {
+        return app(NewsImageStorage::class)->publicUrl($this->image);
     }
 }

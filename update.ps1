@@ -32,7 +32,9 @@ $directories = @(
     'storage\framework\cache\data',
     'storage\framework\sessions',
     'storage\framework\views',
-    'storage\logs'
+    'storage\logs',
+    'public\uploads\news\covers',
+    'public\uploads\news\content'
 )
 
 foreach ($directory in $directories) {

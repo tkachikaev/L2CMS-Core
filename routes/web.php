@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
+use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
 use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
@@ -30,6 +31,9 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
         Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
         Route::post('/news', [AdminNewsController::class, 'store'])->name('news.store');
+        Route::post('/news/images', [AdminNewsImageController::class, 'store'])
+            ->middleware('throttle:30,1')
+            ->name('news.images.store');
         Route::get('/news/{news}/edit', [AdminNewsController::class, 'edit'])->name('news.edit');
         Route::put('/news/{news}', [AdminNewsController::class, 'update'])->name('news.update');
 
