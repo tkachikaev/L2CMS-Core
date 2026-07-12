@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0 - 2026-07-12
+
+### Added
+
+- News management section at `/admin/news`.
+- Empty state with a direct action for creating the first news item.
+- News creation and editing forms.
+- Draft, scheduled and published states.
+- Automatic unique slug generation with stable URLs after title edits.
+- Publication counters and links to live news pages.
+- Feature tests for administrator news management and public visibility.
+- Clean installations now start without demo news, so the administrator sees the first-news empty state.
+
+### Security
+
+- News body is rendered as escaped plain text with preserved line breaks.
+- Draft and scheduled news cannot be opened through public routes.
+- All administrator write operations remain protected by authentication and CSRF.
+
 ## 0.4.0 - 2026-07-12
 
 ### Changed

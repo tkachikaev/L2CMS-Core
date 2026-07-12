@@ -4,10 +4,9 @@
     </a>
 
     <p class="admin-menu-title">Контент</p>
-    <span class="admin-menu-item disabled" aria-disabled="true">
+    <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.news.*')]) href="{{ route('admin.news.index') }}">
         <span>Новости</span>
-        <small>Скоро</small>
-    </span>
+    </a>
 
     <p class="admin-menu-title">Оформление</p>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.themes.*')]) href="{{ route('admin.themes.index') }}">

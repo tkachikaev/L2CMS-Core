@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
@@ -23,9 +24,14 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
     });
 
     Route::middleware('admin.auth')->group(function (): void {
-        // Single entry point for the administrative interface.
         Route::get('', AdminDashboardController::class)->name('dashboard');
         Route::redirect('/dashboard', '/admin');
+
+        Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
+        Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
+        Route::post('/news', [AdminNewsController::class, 'store'])->name('news.store');
+        Route::get('/news/{news}/edit', [AdminNewsController::class, 'edit'])->name('news.edit');
+        Route::put('/news/{news}', [AdminNewsController::class, 'update'])->name('news.update');
 
         Route::get('/themes', [AdminThemeController::class, 'index'])->name('themes.index');
         Route::post('/themes/{theme}/activate', [AdminThemeController::class, 'activate'])

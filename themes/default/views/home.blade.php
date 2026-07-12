@@ -25,7 +25,7 @@
                 @forelse($news as $item)
                     <article class="news-item"><div class="news-thumb"></div><div><time>{{ $item->published_at?->format('d.m.Y') }}</time><h3><a href="{{ route('news.show', $item) }}">{{ $item->title }}</a></h3><p>{{ $item->excerpt }}</p></div></article>
                 @empty
-                    <p class="empty">Новостей пока нет. Запустите миграции и сидер.</p>
+                    <p class="empty">Новостей пока нет.</p>
                 @endforelse
             </div>
         </section>

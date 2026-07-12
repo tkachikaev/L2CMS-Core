@@ -5,6 +5,15 @@
 
 @section('content')
 <div class="admin-home-grid">
+    <a class="admin-section-card available" href="{{ route('admin.news.index') }}">
+        <div>
+            <span class="section-status">Доступно</span>
+            <h2>Новости</h2>
+            <p>Создание, редактирование и публикация новостей сайта.</p>
+        </div>
+        <span class="section-arrow" aria-hidden="true">→</span>
+    </a>
+
     <a class="admin-section-card available" href="{{ route('admin.themes.index') }}">
         <div>
             <span class="section-status">Доступно</span>
@@ -13,14 +22,6 @@
         </div>
         <span class="section-arrow" aria-hidden="true">→</span>
     </a>
-
-    <article class="admin-section-card planned">
-        <div>
-            <span class="section-status">В разработке</span>
-            <h2>Новости</h2>
-            <p>Создание, редактирование и публикация новостей.</p>
-        </div>
-    </article>
 
     <article class="admin-section-card planned">
         <div>

@@ -5,6 +5,7 @@ The administrative interface is part of L2Forge Core and is never rendered throu
 ## Single entry point
 
 - `/admin` — the main administration page and the single panel entry point.
+- `/admin/news` — news management inside the same administration shell.
 - `/admin/themes` — theme management inside the same administration shell.
 - `/admin/login` — administrator authentication.
 - `/admin/dashboard` — compatibility redirect to `/admin`.
@@ -24,8 +25,8 @@ The left menu always shows both implemented and planned sections. Planned entrie
 Current sections:
 
 - Main page — implemented.
+- News — implemented.
 - Themes — implemented.
-- News — planned.
 - Settings — planned.
 - Modules — planned.
 - Administrators — planned.
