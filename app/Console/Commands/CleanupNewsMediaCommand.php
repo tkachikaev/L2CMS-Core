@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\News;
+use App\Services\News\NewsImageStorage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
@@ -12,63 +12,46 @@ class CleanupNewsMediaCommand extends Command
         {--hours=24 : Keep unreferenced files newer than this many hours}
         {--dry-run : Show what would be removed without deleting files}';
 
-    protected $description = 'Remove old unreferenced images uploaded into news content';
+    protected $description = 'Remove old unreferenced cover and content images from news uploads';
 
-    public function handle(): int
+    public function handle(NewsImageStorage $storage): int
     {
         $hours = max(1, (int) $this->option('hours'));
         $dryRun = (bool) $this->option('dry-run');
-        $configuredRoot = trim((string) config('cms.news.uploads_path', ''));
-        $uploadsRoot = rtrim($configuredRoot !== '' ? $configuredRoot : public_path('uploads'), '\\/');
-        $contentRoot = $uploadsRoot.DIRECTORY_SEPARATOR.'news'.DIRECTORY_SEPARATOR.'content';
+        $newsRoot = $storage->rootPath().DIRECTORY_SEPARATOR.'news';
 
-        if (! File::isDirectory($contentRoot)) {
-            $this->info('News content upload directory does not exist. Nothing to clean.');
+        if (! File::isDirectory($newsRoot)) {
+            $this->info('News upload directory does not exist. Nothing to clean.');
 
             return self::SUCCESS;
         }
-
-        $referenced = [];
-
-        News::withTrashed()
-            ->select(['id', 'body'])
-            ->orderBy('id')
-            ->chunkById(200, function ($items) use (&$referenced): void {
-                foreach ($items as $item) {
-                    preg_match_all(
-                        '~(?:^|["\'])/uploads/(news/content/\d{4}/\d{2}/[a-f0-9-]+\.(?:jpe?g|png|webp))(?:["\']|$)~i',
-                        (string) $item->body,
-                        $matches
-                    );
-
-                    foreach ($matches[1] ?? [] as $path) {
-                        $referenced[strtolower($path)] = true;
-                    }
-                }
-            });
 
         $cutoff = now()->subHours($hours)->getTimestamp();
         $removed = 0;
         $kept = 0;
 
-        foreach (File::allFiles($contentRoot) as $file) {
-            $relative = 'news/content/'.str_replace('\\', '/', $file->getRelativePathname());
-            $isSupportedImage = preg_match('~\.(?:jpe?g|png|webp)$~i', $relative) === 1;
-            $isReferenced = isset($referenced[strtolower($relative)]);
+        foreach (File::allFiles($newsRoot) as $file) {
+            $relative = 'news/'.str_replace('\\', '/', $file->getRelativePathname());
+            $normalized = $storage->normalizeNewsPath($relative);
             $isOldEnough = $file->getMTime() <= $cutoff;
 
-            if (! $isSupportedImage || $isReferenced || ! $isOldEnough) {
+            if ($normalized === null || ! $isOldEnough || $storage->isReferenced($normalized)) {
                 $kept++;
                 continue;
             }
 
-            $this->line(($dryRun ? '[dry-run] ' : '').'remove '.$relative);
+            $this->line(($dryRun ? '[dry-run] ' : '').'remove '.$normalized);
 
-            if (! $dryRun) {
-                File::delete($file->getPathname());
+            if ($dryRun) {
+                $removed++;
+                continue;
             }
 
-            $removed++;
+            if ($storage->deleteIfUnreferenced($normalized)) {
+                $removed++;
+            } else {
+                $kept++;
+            }
         }
 
         $this->newLine();

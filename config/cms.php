@@ -2,7 +2,7 @@
 
 return [
     'name' => 'L2Forge CMS',
-    'version' => '0.6.0',
+    'version' => '0.6.2',
     'theme' => env('CMS_THEME', 'default'),
     'themes_path' => base_path('themes'),
 

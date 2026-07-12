@@ -30,12 +30,16 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
 
         Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
         Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
+        Route::post('/news/preview', [AdminNewsController::class, 'preview'])
+            ->middleware('throttle:20,1')
+            ->name('news.preview');
         Route::post('/news', [AdminNewsController::class, 'store'])->name('news.store');
         Route::post('/news/images', [AdminNewsImageController::class, 'store'])
             ->middleware('throttle:30,1')
             ->name('news.images.store');
         Route::get('/news/{news}/edit', [AdminNewsController::class, 'edit'])->name('news.edit');
         Route::put('/news/{news}', [AdminNewsController::class, 'update'])->name('news.update');
+        Route::delete('/news/{news}', [AdminNewsController::class, 'destroy'])->name('news.destroy');
 
         Route::get('/themes', [AdminThemeController::class, 'index'])->name('themes.index');
         Route::post('/themes/{theme}/activate', [AdminThemeController::class, 'activate'])

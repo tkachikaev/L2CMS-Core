@@ -79,6 +79,12 @@ class News extends Model
 
     public function coverUrl(): ?string
     {
+        $previewUrl = $this->getAttribute('preview_cover_url');
+
+        if (is_string($previewUrl) && str_starts_with($previewUrl, 'data:image/')) {
+            return $previewUrl;
+        }
+
         return app(NewsImageStorage::class)->publicUrl($this->image);
     }
 }

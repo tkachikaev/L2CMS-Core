@@ -265,6 +265,15 @@
 
         form.addEventListener('submit', (event) => {
             syncSource();
+
+            const isPreview = event.submitter?.matches('[data-news-preview]') ?? false;
+            const methodOverride = form.querySelector('input[name="_method"]');
+
+            if (isPreview && methodOverride) {
+                methodOverride.disabled = true;
+                window.setTimeout(() => { methodOverride.disabled = false; }, 0);
+            }
+
             const plainText = canvas.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
             if (plainText === '') {
                 event.preventDefault();

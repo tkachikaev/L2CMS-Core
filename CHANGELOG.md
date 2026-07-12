@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.6.2 - 2026-07-12
+
+### Changed
+
+- Moved the red news deletion action from the editor to each item in the administrator news list.
+- Replaced the `На сайте` action with `Удалить` so the primary list actions are grouped together.
+- Kept the existing confirmation dialog and safe media cleanup behavior.
+
+## 0.6.1 - 2026-07-12
+
+### Added
+
+- Permanent news deletion with a red confirmation action in the editor.
+- Administrator news pagination with 10 items per page.
+- Unsaved news preview rendered through the active public theme in a separate tab.
+- Automatic removal of inline images removed while editing when no other news item references them.
+- Cleanup of abandoned cover images in addition to inline images.
+- Automated coverage for deletion, shared-image protection, preview, pagination, media cleanup and 0.5.0 plain-text migration.
+
+### Security
+
+- Preview routes require administrator authentication, CSRF validation and rate limiting.
+- Preview responses are private, non-cacheable and excluded from indexing.
+- Newly selected preview covers are embedded only in the one-time response and are not saved to disk.
+- Media deletion accepts only validated paths inside `public/uploads/news` and rechecks database references before deleting files.
+
 ## 0.6.0 - 2026-07-12
 
 ### Added

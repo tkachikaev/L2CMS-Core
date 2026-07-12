@@ -1,17 +1,23 @@
 # News management
 
-L2Forge CMS 0.6.0 includes formatted news, cover images and inline images.
+L2Forge CMS 0.6.2 includes formatted news, preview before saving, deletion from the news list, pagination, cover images and inline images.
 
 ## Administrator routes
 
 - `GET /admin/news` — list all news items;
 - `GET /admin/news/create` — create form;
+- `POST /admin/news/preview` — render unsaved form data through the active theme;
 - `POST /admin/news` — save a new item;
 - `POST /admin/news/images` — upload an image into the visual editor;
 - `GET /admin/news/{news}/edit` — edit form;
-- `PUT /admin/news/{news}` — save changes.
+- `PUT /admin/news/{news}` — save changes;
+- `DELETE /admin/news/{news}` — permanently delete an item after administrator confirmation.
 
 All routes require an authenticated administrator and Laravel CSRF protection. Inline image uploads are additionally rate-limited.
+
+## Pagination
+
+The administrator list displays 10 news items per page, ordered from newest to oldest. The public list remains paginated separately by the active theme and public controller.
 
 ## Publication states
 
@@ -55,9 +61,17 @@ Only JPEG, PNG and WebP are accepted. Maximum file size is 5 MB and maximum dime
 
 The database stores relative paths, not image binary data.
 
-## Cleaning unused inline images
+## Preview before saving
 
-Images removed from an article or uploaded before an abandoned edit can remain on disk. Files older than 24 hours and not referenced by any active or soft-deleted news item can be inspected and removed with:
+The editor can submit the current form to `/admin/news/preview` in a new tab. The preview is rendered through the active public theme, is available only to an authenticated administrator, is never written to the database and is returned with `noindex`, `nofollow` and `no-store` headers. A newly selected cover is embedded as a temporary data URL and is not saved to disk.
+
+## Deletion and media cleanup
+
+The red delete action is located next to the edit action in the administrator news list. After confirmation, deleting a news item permanently removes its database row. Its cover and inline images are deleted only after the CMS verifies that no other active or soft-deleted news item references the same path. Removing an inline image while editing uses the same reference check.
+
+## Cleaning unused images
+
+Cover and inline images uploaded before an abandoned edit can remain on disk. Files older than 24 hours and not referenced by any active or soft-deleted news item can be inspected and removed with:
 
 ```powershell
 php artisan l2forge:news-media-clean --dry-run

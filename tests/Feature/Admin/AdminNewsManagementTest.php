@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\News;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -49,6 +50,35 @@ class AdminNewsManagementTest extends TestCase
             ->assertSee('Создать первую новость');
     }
 
+    public function test_admin_news_index_is_paginated_by_ten_items(): void
+    {
+        $admin = $this->createAdmin();
+
+        foreach (range(1, 11) as $number) {
+            News::query()->forceCreate([
+                'title' => sprintf('Новость %02d', $number),
+                'slug' => sprintf('news-%02d', $number),
+                'excerpt' => 'Описание',
+                'body' => '<p>Текст</p>',
+                'is_published' => false,
+                'created_at' => now()->addSeconds($number),
+                'updated_at' => now()->addSeconds($number),
+            ]);
+        }
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/news')
+            ->assertOk()
+            ->assertSee('Новость 11')
+            ->assertDontSee('Новость 01')
+            ->assertSee('page=2', false);
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/news?page=2')
+            ->assertOk()
+            ->assertSee('Новость 01');
+    }
+
     public function test_admin_can_create_formatted_news_and_unsafe_html_is_removed(): void
     {
         $admin = $this->createAdmin();
@@ -76,6 +106,31 @@ class AdminNewsManagementTest extends TestCase
         $this->assertStringContainsString('Заголовок', $createdNews->excerpt);
     }
 
+    public function test_admin_can_preview_unsaved_news_in_active_theme(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin, 'admin')
+            ->post('/admin/news/preview', [
+                'title' => 'Новость без сохранения',
+                'excerpt' => 'Описание',
+                'body' => '<p>Безопасный <strong>текст</strong></p><script>alert(1)</script>',
+                'cover_image' => $this->pngUpload('preview.png'),
+                'published_at' => now()->format('Y-m-d H:i:s'),
+                'is_published' => '0',
+                'remove_cover_image' => '0',
+            ])
+            ->assertOk()
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
+            ->assertSee('Предпросмотр новости')
+            ->assertSee('Новость без сохранения')
+            ->assertSee('<strong>текст</strong>', false)
+            ->assertSee('data:image/png;base64,', false)
+            ->assertDontSee('alert(1)', false);
+
+        $this->assertDatabaseCount('news', 0);
+    }
+
     public function test_admin_can_upload_cover_image(): void
     {
         $admin = $this->createAdmin();
@@ -96,7 +151,7 @@ class AdminNewsManagementTest extends TestCase
 
         $this->assertNotNull($news->image);
         $this->assertMatchesRegularExpression('~^news/covers/\d{4}/\d{2}/[a-f0-9-]+\.png$~', $news->image);
-        $this->assertFileExists($this->uploadRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $news->image));
+        $this->assertFileExists($this->absoluteUploadPath($news->image));
 
         $this->get('/news/'.$news->slug)
             ->assertOk()
@@ -118,7 +173,7 @@ class AdminNewsManagementTest extends TestCase
         $path = $response->json('path');
         $this->assertMatchesRegularExpression('~^news/content/\d{4}/\d{2}/[a-f0-9-]+\.png$~', $path);
         $this->assertSame('/uploads/'.$path, $response->json('url'));
-        $this->assertFileExists($this->uploadRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path));
+        $this->assertFileExists($this->absoluteUploadPath($path));
     }
 
     public function test_svg_upload_is_rejected(): void
@@ -172,34 +227,166 @@ class AdminNewsManagementTest extends TestCase
             ->assertSee('<strong>текст</strong>', false);
     }
 
-    public function test_cleanup_command_removes_only_old_unreferenced_inline_images(): void
+    public function test_removing_inline_image_from_news_deletes_unreferenced_file(): void
     {
-        $directory = $this->uploadRoot.DIRECTORY_SEPARATOR.'news'.DIRECTORY_SEPARATOR.'content'.DIRECTORY_SEPARATOR.'2026'.DIRECTORY_SEPARATOR.'07';
-        File::ensureDirectoryExists($directory);
+        $admin = $this->createAdmin();
+        $path = 'news/content/2026/07/123e4567-e89b-12d3-a456-426614174000.png';
+        $absolutePath = $this->absoluteUploadPath($path);
+        File::ensureDirectoryExists(dirname($absolutePath));
+        File::put($absolutePath, 'inline image');
 
-        $referencedName = '123e4567-e89b-12d3-a456-426614174000.png';
-        $orphanName = '223e4567-e89b-12d3-a456-426614174000.png';
-        $referencedFile = $directory.DIRECTORY_SEPARATOR.$referencedName;
-        $orphanFile = $directory.DIRECTORY_SEPARATOR.$orphanName;
+        $news = News::query()->create([
+            'title' => 'Новость с картинкой',
+            'slug' => 'news-with-old-image',
+            'excerpt' => 'Описание',
+            'body' => '<p>Текст</p><figure><img src="/uploads/'.$path.'" alt=""></figure>',
+            'is_published' => false,
+        ]);
 
-        File::put($referencedFile, 'referenced');
-        File::put($orphanFile, 'orphan');
-        touch($referencedFile, now()->subDays(2)->getTimestamp());
-        touch($orphanFile, now()->subDays(2)->getTimestamp());
+        $this->actingAs($admin, 'admin')
+            ->put('/admin/news/'.$news->id, [
+                'title' => $news->title,
+                'excerpt' => $news->excerpt,
+                'body' => '<p>Текст без картинки</p>',
+                'published_at' => '',
+                'is_published' => '0',
+                'remove_cover_image' => '0',
+            ])
+            ->assertRedirect(route('admin.news.index'));
+
+        $this->assertFileDoesNotExist($absolutePath);
+    }
+
+    public function test_admin_can_delete_news_and_its_unreferenced_media(): void
+    {
+        $admin = $this->createAdmin();
+        $coverPath = 'news/covers/2026/07/323e4567-e89b-12d3-a456-426614174000.png';
+        $contentPath = 'news/content/2026/07/423e4567-e89b-12d3-a456-426614174000.png';
+
+        foreach ([$coverPath, $contentPath] as $path) {
+            File::ensureDirectoryExists(dirname($this->absoluteUploadPath($path)));
+            File::put($this->absoluteUploadPath($path), 'image');
+        }
+
+        $news = News::query()->create([
+            'title' => 'Новость для удаления',
+            'slug' => 'delete-this-news',
+            'excerpt' => 'Описание',
+            'body' => '<p>Текст</p><figure><img src="/uploads/'.$contentPath.'" alt=""></figure>',
+            'image' => $coverPath,
+            'is_published' => true,
+            'published_at' => now()->subMinute(),
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/news')
+            ->assertOk()
+            ->assertSee('Редактировать')
+            ->assertSee('Удалить')
+            ->assertSee('Да, удалить')
+            ->assertSee(route('admin.news.destroy', $news), false)
+            ->assertDontSee('На сайте ↗');
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/news/'.$news->id.'/edit')
+            ->assertOk()
+            ->assertDontSee('Удалить новость');
+
+        $this->actingAs($admin, 'admin')
+            ->delete('/admin/news/'.$news->id)
+            ->assertRedirect(route('admin.news.index'))
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseMissing('news', ['id' => $news->id]);
+        $this->assertFileDoesNotExist($this->absoluteUploadPath($coverPath));
+        $this->assertFileDoesNotExist($this->absoluteUploadPath($contentPath));
+        $this->get('/news/delete-this-news')->assertNotFound();
+    }
+
+    public function test_deleting_news_keeps_an_image_referenced_by_another_news_item(): void
+    {
+        $admin = $this->createAdmin();
+        $contentPath = 'news/content/2026/07/523e4567-e89b-12d3-a456-426614174000.png';
+        $absolutePath = $this->absoluteUploadPath($contentPath);
+        File::ensureDirectoryExists(dirname($absolutePath));
+        File::put($absolutePath, 'shared image');
+
+        $first = News::query()->create([
+            'title' => 'Первая',
+            'slug' => 'first-shared',
+            'excerpt' => 'Описание',
+            'body' => '<p>Текст</p><img src="/uploads/'.$contentPath.'" alt="">',
+            'is_published' => false,
+        ]);
 
         News::query()->create([
-            'title' => 'Новость с картинкой',
-            'slug' => 'news-with-image',
+            'title' => 'Вторая',
+            'slug' => 'second-shared',
             'excerpt' => 'Описание',
-            'body' => '<p>Текст</p><figure><img src="/uploads/news/content/2026/07/'.$referencedName.'" alt=""></figure>',
+            'body' => '<p>Текст</p><img src="/uploads/'.$contentPath.'" alt="">',
+            'is_published' => false,
+        ]);
+
+        $this->actingAs($admin, 'admin')->delete('/admin/news/'.$first->id);
+
+        $this->assertFileExists($absolutePath);
+    }
+
+    public function test_cleanup_command_removes_old_unreferenced_cover_and_content_images(): void
+    {
+        $paths = [
+            'referenced_content' => 'news/content/2026/07/123e4567-e89b-12d3-a456-426614174000.png',
+            'orphan_content' => 'news/content/2026/07/223e4567-e89b-12d3-a456-426614174000.png',
+            'referenced_cover' => 'news/covers/2026/07/623e4567-e89b-12d3-a456-426614174000.png',
+            'orphan_cover' => 'news/covers/2026/07/723e4567-e89b-12d3-a456-426614174000.png',
+        ];
+
+        foreach ($paths as $path) {
+            $absolutePath = $this->absoluteUploadPath($path);
+            File::ensureDirectoryExists(dirname($absolutePath));
+            File::put($absolutePath, 'image');
+            touch($absolutePath, now()->subDays(2)->getTimestamp());
+        }
+
+        News::query()->create([
+            'title' => 'Новость с картинками',
+            'slug' => 'news-with-images',
+            'excerpt' => 'Описание',
+            'body' => '<p>Текст</p><figure><img src="/uploads/'.$paths['referenced_content'].'" alt=""></figure>',
+            'image' => $paths['referenced_cover'],
             'is_published' => false,
         ]);
 
         $this->artisan('l2forge:news-media-clean', ['--hours' => 1])
             ->assertSuccessful();
 
-        $this->assertFileExists($referencedFile);
-        $this->assertFileDoesNotExist($orphanFile);
+        $this->assertFileExists($this->absoluteUploadPath($paths['referenced_content']));
+        $this->assertFileExists($this->absoluteUploadPath($paths['referenced_cover']));
+        $this->assertFileDoesNotExist($this->absoluteUploadPath($paths['orphan_content']));
+        $this->assertFileDoesNotExist($this->absoluteUploadPath($paths['orphan_cover']));
+    }
+
+    public function test_upgrade_migration_converts_legacy_plain_text_news_from_0_5_0(): void
+    {
+        DB::table('news')->insert([
+            'title' => 'Старая новость',
+            'slug' => 'legacy-news',
+            'excerpt' => 'Описание',
+            'body' => "Первый абзац\n\nВторой абзац\nс новой строки",
+            'is_published' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $migration = require database_path('migrations/2026_07_12_000400_convert_news_body_to_safe_html.php');
+        $migration->up();
+
+        $body = (string) DB::table('news')->where('slug', 'legacy-news')->value('body');
+
+        $this->assertSame(
+            "<p>Первый абзац</p>\n<p>Второй абзац<br>с новой строки</p>",
+            $body
+        );
     }
 
     public function test_public_render_sanitizes_body_again_as_defence_in_depth(): void
@@ -251,5 +438,10 @@ class AdminNewsManagementTest extends TestCase
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2V1sAAAAASUVORK5CYII=', true);
 
         return UploadedFile::fake()->createWithContent($name, $png ?: '');
+    }
+
+    private function absoluteUploadPath(string $path): string
+    {
+        return $this->uploadRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
 }

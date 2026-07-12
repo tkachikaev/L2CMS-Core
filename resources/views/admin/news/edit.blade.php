@@ -7,6 +7,7 @@
 <form method="POST" action="{{ route('admin.news.update', $newsItem) }}" class="content-editor" enctype="multipart/form-data">
     @include('admin.news._form')
 </form>
+
 @endsection
 
 @push('scripts')

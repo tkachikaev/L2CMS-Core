@@ -8,6 +8,7 @@ use App\Models\News;
 use App\Services\News\NewsHtmlSanitizer;
 use App\Services\News\NewsImageStorage;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +28,7 @@ class NewsController extends Controller
     public function index(): View
     {
         return view('admin.news.index', [
-            'news' => News::query()->latest('created_at')->paginate(20),
+            'news' => News::query()->latest('created_at')->paginate(10),
             'totalCount' => News::query()->count(),
             'publishedCount' => News::query()
                 ->where('is_published', true)
@@ -84,6 +85,43 @@ class NewsController extends Controller
             ->with('status', "Новость «{$newsItem->title}» создана.");
     }
 
+    public function preview(SaveNewsRequest $request): Response
+    {
+        $sourceNews = null;
+        $newsId = $request->integer('news_id');
+
+        if ($newsId > 0) {
+            $sourceNews = News::query()->findOrFail($newsId);
+        }
+
+        $data = $this->prepareData($request);
+        $preview = new News($data);
+        $preview->slug = $sourceNews?->slug ?? 'preview';
+        $preview->image = null;
+
+        if ($request->hasFile('cover_image')) {
+            $preview->setAttribute(
+                'preview_cover_url',
+                $this->images->previewDataUrl($request->file('cover_image'))
+            );
+        } elseif (! $request->boolean('remove_cover_image') && $sourceNews !== null) {
+            $preview->image = $sourceNews->image;
+        }
+
+        Log::info('CMS news preview rendered.', [
+            'admin_id' => Auth::guard('admin')->id(),
+            'news_id' => $sourceNews?->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()
+            ->view('theme::news.show', [
+                'news' => $preview,
+                'isPreview' => true,
+            ])
+            ->header('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+
     public function edit(News $news): View
     {
         return view('admin.news.edit', [
@@ -95,6 +133,7 @@ class NewsController extends Controller
     {
         $data = $this->prepareData($request);
         $oldCover = $news->image;
+        $oldContentImages = $this->images->extractContentPaths((string) $news->body);
         $newCover = null;
         $coverChanged = false;
 
@@ -117,7 +156,12 @@ class NewsController extends Controller
         }
 
         if ($coverChanged && $oldCover !== $news->image) {
-            $this->images->deleteCover($oldCover);
+            $this->images->deleteIfUnreferenced($oldCover);
+        }
+
+        $newContentImages = $this->images->extractContentPaths((string) $news->body);
+        foreach (array_diff($oldContentImages, $newContentImages) as $removedImage) {
+            $this->images->deleteIfUnreferenced($removedImage);
         }
 
         Log::notice('CMS news updated.', [
@@ -132,6 +176,35 @@ class NewsController extends Controller
         return redirect()
             ->route('admin.news.index')
             ->with('status', "Новость «{$news->title}» сохранена.");
+    }
+
+    public function destroy(News $news): RedirectResponse
+    {
+        $title = $news->title;
+        $newsId = $news->id;
+        $slug = $news->slug;
+        $cover = $news->image;
+        $contentImages = $this->images->extractContentPaths((string) $news->body);
+
+        DB::transaction(function () use ($news): void {
+            $news->forceDelete();
+        });
+
+        $this->images->deleteIfUnreferenced($cover);
+        foreach ($contentImages as $contentImage) {
+            $this->images->deleteIfUnreferenced($contentImage);
+        }
+
+        Log::warning('CMS news deleted.', [
+            'admin_id' => Auth::guard('admin')->id(),
+            'news_id' => $newsId,
+            'slug' => $slug,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return redirect()
+            ->route('admin.news.index')
+            ->with('status', "Новость «{$title}» удалена.");
     }
 
     private function prepareData(SaveNewsRequest $request): array

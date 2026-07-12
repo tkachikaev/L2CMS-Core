@@ -58,31 +58,75 @@
                 </div>
 
                 <div class="content-row-actions">
-                    @if ($item->isLive())
-                        <a class="button button-secondary" href="{{ route('news.show', $item) }}" target="_blank" rel="noopener">На сайте ↗</a>
-                    @endif
                     <a class="button button-primary" href="{{ route('admin.news.edit', $item) }}">Редактировать</a>
+                    <button
+                        class="button button-danger"
+                        type="button"
+                        data-news-delete-open
+                        data-news-delete-title="{{ $item->title }}"
+                        data-news-delete-url="{{ route('admin.news.destroy', $item) }}"
+                    >Удалить</button>
                 </div>
             </article>
         @endforeach
     </div>
 
     @if ($news->hasPages())
+        @php
+            $firstPage = max(1, $news->currentPage() - 2);
+            $lastPage = min($news->lastPage(), $news->currentPage() + 2);
+        @endphp
+
         <nav class="simple-pagination" aria-label="Навигация по страницам">
             @if ($news->onFirstPage())
                 <span class="button button-secondary disabled">← Назад</span>
             @else
-                <a class="button button-secondary" href="{{ $news->previousPageUrl() }}">← Назад</a>
+                <a class="button button-secondary" href="{{ $news->previousPageUrl() }}" rel="prev">← Назад</a>
             @endif
 
-            <span>Страница {{ $news->currentPage() }} из {{ $news->lastPage() }}</span>
+            <div class="pagination-pages" aria-label="Страницы">
+                @foreach ($news->getUrlRange($firstPage, $lastPage) as $page => $url)
+                    @if ($page === $news->currentPage())
+                        <span class="pagination-page active" aria-current="page">{{ $page }}</span>
+                    @else
+                        <a class="pagination-page" href="{{ $url }}">{{ $page }}</a>
+                    @endif
+                @endforeach
+            </div>
 
             @if ($news->hasMorePages())
-                <a class="button button-secondary" href="{{ $news->nextPageUrl() }}">Вперёд →</a>
+                <a class="button button-secondary" href="{{ $news->nextPageUrl() }}" rel="next">Вперёд →</a>
             @else
                 <span class="button button-secondary disabled">Вперёд →</span>
             @endif
         </nav>
     @endif
+
+
+    <dialog class="confirm-dialog" data-news-delete-dialog aria-labelledby="delete-news-title">
+        <div class="confirm-dialog-card">
+            <div class="confirm-dialog-copy">
+                <span class="confirm-dialog-mark" aria-hidden="true">!</span>
+                <div>
+                    <h2 id="delete-news-title">Удалить новость?</h2>
+                    <p>Новость «<strong data-news-delete-title></strong>» будет удалена с сайта вместе с неиспользуемыми изображениями. Отменить это действие нельзя.</p>
+                </div>
+            </div>
+
+            <div class="confirm-dialog-actions">
+                <button class="button button-secondary" type="button" data-news-delete-cancel>Отмена</button>
+
+                <form method="POST" action="" data-news-delete-form>
+                    @csrf
+                    @method('DELETE')
+                    <button class="button button-danger" type="submit">Да, удалить</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
 @endif
 @endsection
+
+@push('scripts')
+<script src="{{ asset('assets/admin/js/news-actions.js') }}" defer></script>
+@endpush

@@ -1,6 +1,7 @@
 @csrf
 @if ($newsItem->exists)
     @method('PUT')
+    <input type="hidden" name="news_id" value="{{ $newsItem->id }}">
 @endif
 
 @php
@@ -183,5 +184,13 @@
 
 <div class="editor-actions">
     <a class="button button-secondary" href="{{ route('admin.news.index') }}">Отмена</a>
+    <button
+        class="button button-secondary"
+        type="submit"
+        formaction="{{ route('admin.news.preview') }}"
+        formmethod="POST"
+        formtarget="_blank"
+        data-news-preview
+    >Предпросмотр</button>
     <button class="button button-primary" type="submit">{{ $newsItem->exists ? 'Сохранить изменения' : 'Создать новость' }}</button>
 </div>
