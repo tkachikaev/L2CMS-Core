@@ -67,7 +67,7 @@
     <aside class="login-art" aria-hidden="true">
         <div class="ornament"></div>
         <div class="art-content">
-            <span>LINEAGE II CMS</span>
+            <span>L2FORGE CMS</span>
             <strong>Управление проектом</strong>
             <p>Новости, настройки, темы и модули будут собраны в единой панели.</p>
         </div>

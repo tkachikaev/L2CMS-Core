@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateRange(1, 65535)][int]$Port = 8000,
     [string]$HostAddress = '127.0.0.1'
 )
@@ -30,7 +30,7 @@ foreach ($directory in $requiredDirectories) {
     New-Item -Path $directory -ItemType Directory -Force | Out-Null
 }
 
-Write-Host "Starting L2CMS at http://${HostAddress}:$Port"
+Write-Host "Starting L2Forge CMS at http://${HostAddress}:$Port"
 Write-Host 'Keep this window open. Press Ctrl+C to stop the site.'
 php artisan serve --host=$HostAddress --port=$Port
 

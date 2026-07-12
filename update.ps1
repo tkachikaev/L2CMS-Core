@@ -1,9 +1,19 @@
-param(
+﻿param(
     [switch]$SkipTests
 )
 
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
+
+function Write-Utf8NoBom {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Content
+    )
+
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Resolve-Path $Path), $Content, $utf8)
+}
 
 if (-not (Test-Path '.env')) {
     throw '.env is missing. Run .\setup.ps1 first.'
@@ -29,7 +39,18 @@ foreach ($directory in $directories) {
     New-Item -Path $directory -ItemType Directory -Force | Out-Null
 }
 
-# Remove stale framework caches before Composer boots the updated application.
+$envContent = [System.IO.File]::ReadAllText((Resolve-Path '.env'))
+$updatedEnvContent = [regex]::Replace(
+    $envContent,
+    '(?m)^APP_NAME="?L2CMS"?$',
+    'APP_NAME="L2Forge CMS"'
+)
+
+if ($updatedEnvContent -ne $envContent) {
+    Write-Utf8NoBom -Path '.env' -Content $updatedEnvContent
+    Write-Host 'Updated APP_NAME to L2Forge CMS.'
+}
+
 if (Test-Path 'vendor\autoload.php') {
     php artisan optimize:clear
     if ($LASTEXITCODE -ne 0) { throw "artisan optimize:clear failed with exit code $LASTEXITCODE." }
@@ -49,4 +70,4 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw "artisan test failed with exit code $LASTEXITCODE." }
 }
 
-Write-Host 'Update completed successfully.' -ForegroundColor Green
+Write-Host 'L2Forge CMS update completed successfully.' -ForegroundColor Green

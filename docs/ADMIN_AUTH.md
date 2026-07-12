@@ -1,13 +1,13 @@
 # Administrator authentication
 
-L2CMS uses a separate `admins` table and a separate Laravel session guard named `admin`. Gaming accounts and future website user accounts are not administrators.
+L2Forge CMS uses a separate `admins` table and a separate Laravel session guard named `admin`. Gaming accounts and future website user accounts are not administrators.
 
 ## First administrator
 
 After migrations have completed, create the first administrator interactively:
 
 ```powershell
-php artisan l2cms:admin-create
+php artisan l2forge:admin-create
 ```
 
 The command does not accept a password argument, so the password is not written to PowerShell history or the process command line.
@@ -18,7 +18,7 @@ Password requirements:
 - uppercase and lowercase letters;
 - at least one number.
 
-The password is stored using the configured Laravel hasher. L2CMS defaults to Argon2id.
+The password is stored using the configured Laravel hasher. L2Forge CMS defaults to Argon2id.
 
 ## Routes
 

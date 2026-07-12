@@ -1,13 +1,14 @@
 {
-  "name": "l2cms/core",
+  "name": "l2forge/cms",
   "type": "project",
-  "description": "Open-source CMS core for Lineage II servers.",
+  "description": "L2Forge CMS — open-source CMS for Lineage II servers.",
   "keywords": [
     "lineage2",
     "l2j",
     "mobius",
     "cms",
-    "laravel"
+    "laravel",
+    "l2forge"
   ],
   "license": "MIT",
   "require": {

@@ -11,9 +11,11 @@ use Illuminate\Validation\Rules\Password;
 
 class CreateAdminCommand extends Command
 {
-    protected $signature = 'l2cms:admin-create {--name=} {--email=}';
+    protected $signature = 'l2forge:admin-create {--name=} {--email=}';
 
-    protected $description = 'Create an administrator for the L2CMS control panel';
+    protected $aliases = ['l2cms:admin-create'];
+
+    protected $description = 'Create an administrator for the L2Forge CMS control panel';
 
     public function handle(): int
     {

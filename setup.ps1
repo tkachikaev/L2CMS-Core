@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$SkipTests
 )
 
@@ -33,7 +33,7 @@ function Ensure-Directory {
     New-Item -Path $Path -ItemType Directory -Force | Out-Null
 }
 
-Write-Host 'L2CMS setup'
+Write-Host 'L2Forge CMS setup'
 Write-Host "Project: $PSScriptRoot"
 
 if (-not (Get-Command php -ErrorAction SilentlyContinue)) {
@@ -105,17 +105,21 @@ if (-not (Test-Path '.env')) {
     Write-Host 'Created .env from .env.example.'
 }
 
-# Repair the invalid value from L2CMS Core 0.1 when upgrading an old copy.
 $envContent = [System.IO.File]::ReadAllText((Resolve-Path '.env'))
 $fixedEnvContent = [regex]::Replace(
     $envContent,
     '(?m)^GAME_SERVER_NAME=([^"\r\n]*\s+[^\r\n]*)$',
     'GAME_SERVER_NAME="$1"'
 )
+$fixedEnvContent = [regex]::Replace(
+    $fixedEnvContent,
+    '(?m)^APP_NAME="?L2CMS"?$',
+    'APP_NAME="L2Forge CMS"'
+)
 
 if ($fixedEnvContent -ne $envContent) {
     Write-Utf8NoBom -Path '.env' -Content $fixedEnvContent
-    Write-Host 'Repaired GAME_SERVER_NAME in .env.'
+    Write-Host 'Updated legacy values in .env.'
 }
 
 $sqlitePath = 'database\database.sqlite'
@@ -145,6 +149,6 @@ if (-not $SkipTests) {
 
 Write-Host ''
 Write-Host 'Setup completed successfully.' -ForegroundColor Green
-Write-Host 'Create the first administrator with: php artisan l2cms:admin-create'
+Write-Host 'Create the first administrator with: php artisan l2forge:admin-create'
 Write-Host 'Start the local site with: .\serve.ps1'
-Write-Host 'Admin login: http://127.0.0.1:8000/admin/login'
+Write-Host 'Admin panel: http://127.0.0.1:8000/admin'

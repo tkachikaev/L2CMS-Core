@@ -18,7 +18,7 @@ function Test-ItemStatus {
     }
 }
 
-Write-Host 'L2CMS environment check'
+Write-Host 'L2Forge CMS environment check'
 Write-Host "Project: $PSScriptRoot"
 Write-Host ''
 

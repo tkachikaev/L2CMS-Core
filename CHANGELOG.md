@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 - 2026-07-12
+
+### Changed
+
+- Project renamed from L2CMS Core to **L2Forge CMS**.
+- Default application name changed to `L2Forge CMS`.
+- Composer package renamed to `l2forge/cms`.
+- Administrator creation command renamed to `php artisan l2forge:admin-create`.
+- Installer, diagnostics, documentation, default theme metadata and control panel branding updated.
+- Existing `.env` files using the old default `APP_NAME` are migrated automatically by `setup.ps1` and `update.ps1`.
+
 ## 0.3.2 - 2026-07-12
 
 ### Fixed

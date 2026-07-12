@@ -1,6 +1,6 @@
 # Administrative panel
 
-The administrative interface is part of the CMS core and is never rendered through a public theme.
+The administrative interface is part of L2Forge Core and is never rendered through a public theme.
 
 ## Single entry point
 
@@ -13,7 +13,7 @@ All panel pages use:
 
 - `resources/views/admin/layouts/panel.blade.php`
 - `resources/views/admin/partials/navigation.blade.php`
-- `public/admin/css/app.css`
+- `public/assets/admin/css/app.css`
 
 Public theme files cannot replace these resources.
 

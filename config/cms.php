@@ -1,7 +1,8 @@
 <?php
 
 return [
-    'version' => '0.3.2',
+    'name' => 'L2Forge CMS',
+    'version' => '0.4.0',
     'theme' => env('CMS_THEME', 'default'),
     'themes_path' => base_path('themes'),
 
