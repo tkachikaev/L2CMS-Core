@@ -5,6 +5,19 @@
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
+if (-not (Test-Path 'VERSION')) {
+    throw 'VERSION is missing. Re-extract the complete L2Forge CMS release or patch.'
+}
+
+$cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
+if ($cmsVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') {
+    throw "VERSION contains an invalid release number: $cmsVersion"
+}
+
+Write-Host "L2Forge CMS $cmsVersion update"
+Write-Host "Project: $PSScriptRoot"
+Write-Host ''
+
 function Write-Utf8NoBom {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -78,4 +91,4 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw "artisan test failed with exit code $LASTEXITCODE." }
 }
 
-Write-Host 'L2Forge CMS update completed successfully.' -ForegroundColor Green
+Write-Host "L2Forge CMS $cmsVersion update completed successfully." -ForegroundColor Green

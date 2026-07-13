@@ -33,8 +33,18 @@ function Ensure-Directory {
     New-Item -Path $Path -ItemType Directory -Force | Out-Null
 }
 
-Write-Host 'L2Forge CMS setup'
+if (-not (Test-Path 'VERSION')) {
+    throw 'VERSION is missing. Re-extract the complete L2Forge CMS release.'
+}
+
+$cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
+if ($cmsVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') {
+    throw "VERSION contains an invalid release number: $cmsVersion"
+}
+
+Write-Host "L2Forge CMS $cmsVersion setup"
 Write-Host "Project: $PSScriptRoot"
+Write-Host ''
 
 if (-not (Get-Command php -ErrorAction SilentlyContinue)) {
     throw 'PHP was not found in PATH.'

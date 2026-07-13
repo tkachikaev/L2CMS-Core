@@ -38,9 +38,15 @@ function Test-DirectoriesWritable {
     return $true
 }
 
-Write-Host 'L2Forge CMS environment check'
+$versionFilePresent = Test-Path 'VERSION'
+$cmsVersion = if ($versionFilePresent) { (Get-Content 'VERSION' -Raw).Trim() } else { 'missing' }
+$versionFormatOk = $versionFilePresent -and $cmsVersion -match '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$'
+
+Write-Host "L2Forge CMS $cmsVersion environment check"
 Write-Host "Project: $PSScriptRoot"
 Write-Host ''
+
+Test-ItemStatus 'VERSION file' $versionFormatOk $(if (-not $versionFilePresent) { 'missing' } elseif (-not $versionFormatOk) { "invalid value: $cmsVersion" } else { $cmsVersion })
 
 $phpCommand = Get-Command php -ErrorAction SilentlyContinue
 Test-ItemStatus 'PHP command' ($null -ne $phpCommand) $(if ($phpCommand) { $phpCommand.Source } else { 'not found in PATH' })

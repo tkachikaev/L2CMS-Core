@@ -15,6 +15,7 @@ use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
 use App\Services\Settings\SettingsImageStorage;
 use App\Services\SiteSettings;
+use App\Services\SystemInformation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Log;
@@ -189,6 +190,13 @@ class SettingsController extends Controller
             title: 'Логин сервер',
             description: 'Здесь появятся параметры подключения и состояния логин-сервера.',
         );
+    }
+
+    public function system(SystemInformation $systemInformation): View
+    {
+        return view('admin.settings.system', [
+            'system' => $systemInformation->collect(),
+        ]);
     }
 
     public function registration(RegistrationSettings $registrationSettings, MailSettings $mailSettings): View

@@ -4,7 +4,16 @@ use App\Services\GameServerSettings;
 use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
 use App\Services\SiteSettings;
+use App\Support\L2Forge;
 use App\Support\Themes\ThemeManager;
+
+
+if (! function_exists('cms_version')) {
+    function cms_version(): string
+    {
+        return L2Forge::version();
+    }
+}
 
 if (! function_exists('theme_asset')) {
     function theme_asset(string $path): string

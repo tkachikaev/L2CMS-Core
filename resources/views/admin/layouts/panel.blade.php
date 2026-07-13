@@ -15,7 +15,7 @@
 
         <div class="admin-sidebar-footer">
             <a href="{{ route('home') }}" target="_blank" rel="noopener">Открыть сайт <span aria-hidden="true">↗</span></a>
-            <span>Версия {{ config('cms.version') }}</span>
+            <span>Версия {{ cms_version() }}</span>
         </div>
     </aside>
 

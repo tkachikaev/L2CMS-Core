@@ -103,6 +103,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::get('/settings/registration', [AdminSettingsController::class, 'registration'])->name('settings.registration');
         Route::put('/settings/registration', [AdminSettingsController::class, 'updateRegistration'])->name('settings.registration.update');
         Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
+        Route::get('/settings/system', [AdminSettingsController::class, 'system'])->name('settings.system');
         Route::put('/settings/mail', [AdminSettingsController::class, 'updateMail'])->name('settings.mail.update');
         Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])
             ->middleware('throttle:5,1')

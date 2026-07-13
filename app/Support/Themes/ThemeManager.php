@@ -2,6 +2,7 @@
 
 namespace App\Support\Themes;
 
+use App\Support\L2Forge;
 use App\Services\CmsSettings;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
@@ -216,7 +217,7 @@ final class ThemeManager
 
     private function isCompatible(?string $minimum, ?string $maximum): bool
     {
-        $cmsVersion = (string) config('cms.version');
+        $cmsVersion = L2Forge::version();
 
         if ($minimum !== null && version_compare($cmsVersion, $minimum, '<')) {
             return false;

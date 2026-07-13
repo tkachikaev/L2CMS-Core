@@ -14,4 +14,7 @@
     <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.mail')]) href="{{ route('admin.settings.mail') }}">
         Почта
     </a>
+    <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.system')]) href="{{ route('admin.settings.system') }}">
+        Система
+    </a>
 </nav>
