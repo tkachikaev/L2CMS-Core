@@ -14,20 +14,20 @@ if (-not (Test-Path '.env')) {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete 0.9.5 patch with file replacement enabled.'
+    throw 'VERSION is missing. Re-extract the complete 0.9.6 patch with file replacement enabled.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
 
-if ($cmsVersion -ne '0.9.5') {
+if ($cmsVersion -ne '0.9.6') {
     throw "Unexpected patch version: $cmsVersion"
 }
 
 Write-Host "L2Forge CMS $cmsVersion update"
-Write-Host 'Fixing the mail template editor Blade view.'
+Write-Host 'Fixing project-root resolution in doctor.ps1.'
 Write-Host ''
 
-$previousPatchScript = Join-Path $PSScriptRoot 'apply-0.9.4.ps1'
+$previousPatchScript = Join-Path $PSScriptRoot 'apply-0.9.5.ps1'
 if (Test-Path $previousPatchScript) {
     Remove-Item $previousPatchScript -Force -ErrorAction SilentlyContinue
 }
@@ -36,4 +36,4 @@ if (Test-Path $previousPatchScript) {
 
 Write-Host ''
 Write-Host "L2Forge CMS $cmsVersion is ready." -ForegroundColor Green
-Write-Host 'Mail templates: /admin/settings/mail'
+Write-Host 'Run .\doctor.ps1 from any PowerShell working directory.'

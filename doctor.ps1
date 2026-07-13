@@ -1,8 +1,26 @@
 $ErrorActionPreference = 'Continue'
-Set-Location $PSScriptRoot
+
+$scriptFile = $PSCommandPath
+if ([string]::IsNullOrWhiteSpace($scriptFile)) {
+    $scriptFile = $MyInvocation.MyCommand.Path
+}
+
+if ([string]::IsNullOrWhiteSpace($scriptFile)) {
+    Write-Host '[FAIL] Unable to determine the location of doctor.ps1.' -ForegroundColor Red
+    exit 1
+}
+
+$script:projectRoot = Split-Path -Parent ([System.IO.Path]::GetFullPath($scriptFile))
+Set-Location -LiteralPath $script:projectRoot
 
 $failed = $false
 $script:directoryWriteFailures = @()
+
+function Get-ProjectPath {
+    param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+    return [System.IO.Path]::GetFullPath((Join-Path $script:projectRoot $RelativePath))
+}
 
 function Test-ItemStatus {
     param(
@@ -45,13 +63,15 @@ function Test-DirectoriesWritable {
 
     $script:directoryWriteFailures = @()
 
-    foreach ($path in $Paths) {
-        if (-not (Test-Path -LiteralPath $path -PathType Container)) {
-            $script:directoryWriteFailures += "$path (directory is missing)"
+    foreach ($relativePath in $Paths) {
+        $absolutePath = Get-ProjectPath -RelativePath $relativePath
+
+        if (-not (Test-Path -LiteralPath $absolutePath -PathType Container)) {
+            $script:directoryWriteFailures += "$relativePath (directory is missing: $absolutePath)"
             continue
         }
 
-        $writeTestPath = Join-Path $path ('.l2forge-write-test-' + [Guid]::NewGuid().ToString('N') + '.tmp')
+        $writeTestPath = Join-Path $absolutePath ('.l2forge-write-test-' + [Guid]::NewGuid().ToString('N') + '.tmp')
 
         try {
             $utf8 = New-Object System.Text.UTF8Encoding($false)
@@ -61,7 +81,7 @@ function Test-DirectoriesWritable {
                 throw 'The diagnostic file was not created.'
             }
         } catch {
-            $script:directoryWriteFailures += "$path ($($_.Exception.Message))"
+            $script:directoryWriteFailures += "$relativePath ($($_.Exception.Message))"
         } finally {
             Remove-WriteTestFile -Path $writeTestPath
         }
@@ -70,12 +90,13 @@ function Test-DirectoriesWritable {
     return $script:directoryWriteFailures.Count -eq 0
 }
 
-$versionFilePresent = Test-Path 'VERSION'
-$cmsVersion = if ($versionFilePresent) { (Get-Content 'VERSION' -Raw).Trim() } else { 'missing' }
+$versionPath = Get-ProjectPath -RelativePath 'VERSION'
+$versionFilePresent = Test-Path -LiteralPath $versionPath -PathType Leaf
+$cmsVersion = if ($versionFilePresent) { (Get-Content -LiteralPath $versionPath -Raw).Trim() } else { 'missing' }
 $versionFormatOk = $versionFilePresent -and $cmsVersion -match '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$'
 
 Write-Host "L2Forge CMS $cmsVersion environment check"
-Write-Host "Project: $PSScriptRoot"
+Write-Host "Project: $script:projectRoot"
 Write-Host ''
 
 Test-ItemStatus 'VERSION file' $versionFormatOk $(if (-not $versionFilePresent) { 'missing' } elseif (-not $versionFormatOk) { "invalid value: $cmsVersion" } else { $cmsVersion })
@@ -99,12 +120,19 @@ if ($phpCommand) {
 $composerCommand = Get-Command composer -ErrorAction SilentlyContinue
 Test-ItemStatus 'Composer command' ($null -ne $composerCommand) $(if ($composerCommand) { $composerCommand.Source } else { 'not found in PATH' })
 
-Test-ItemStatus '.env file' (Test-Path '.env') $(if (Test-Path '.env') { 'present' } else { 'missing' })
-Test-ItemStatus 'Composer dependencies' (Test-Path 'vendor\autoload.php') $(if (Test-Path 'vendor\autoload.php') { 'installed' } else { 'run .\setup.ps1' })
-Test-ItemStatus 'SQLite database' (Test-Path 'database\database.sqlite') $(if (Test-Path 'database\database.sqlite') { 'present' } else { 'missing' })
-Test-ItemStatus 'Bootstrap cache directory' (Test-Path 'bootstrap\cache') $(if (Test-Path 'bootstrap\cache') { 'present' } else { 'missing' })
-Test-ItemStatus 'Storage views directory' (Test-Path 'storage\framework\views') $(if (Test-Path 'storage\framework\views') { 'present' } else { 'missing' })
-Test-ItemStatus 'Reserved public/admin path' (-not (Test-Path 'public\admin')) $(if (Test-Path 'public\admin') { 'conflicts with the /admin Laravel route; move assets to public\assets\admin' } else { 'not present' })
+$envPath = Get-ProjectPath -RelativePath '.env'
+$autoloadPath = Get-ProjectPath -RelativePath 'vendor\autoload.php'
+$databasePath = Get-ProjectPath -RelativePath 'database\database.sqlite'
+$bootstrapCachePath = Get-ProjectPath -RelativePath 'bootstrap\cache'
+$storageViewsPath = Get-ProjectPath -RelativePath 'storage\framework\views'
+$reservedAdminPath = Get-ProjectPath -RelativePath 'public\admin'
+
+Test-ItemStatus '.env file' (Test-Path -LiteralPath $envPath -PathType Leaf) $(if (Test-Path -LiteralPath $envPath -PathType Leaf) { 'present' } else { 'missing' })
+Test-ItemStatus 'Composer dependencies' (Test-Path -LiteralPath $autoloadPath -PathType Leaf) $(if (Test-Path -LiteralPath $autoloadPath -PathType Leaf) { 'installed' } else { 'run .\setup.ps1' })
+Test-ItemStatus 'SQLite database' (Test-Path -LiteralPath $databasePath -PathType Leaf) $(if (Test-Path -LiteralPath $databasePath -PathType Leaf) { 'present' } else { 'missing' })
+Test-ItemStatus 'Bootstrap cache directory' (Test-Path -LiteralPath $bootstrapCachePath -PathType Container) $(if (Test-Path -LiteralPath $bootstrapCachePath -PathType Container) { 'present' } else { 'missing' })
+Test-ItemStatus 'Storage views directory' (Test-Path -LiteralPath $storageViewsPath -PathType Container) $(if (Test-Path -LiteralPath $storageViewsPath -PathType Container) { 'present' } else { 'missing' })
+Test-ItemStatus 'Reserved public/admin path' (-not (Test-Path -LiteralPath $reservedAdminPath)) $(if (Test-Path -LiteralPath $reservedAdminPath) { 'conflicts with the /admin Laravel route; move assets to public\assets\admin' } else { 'not present' })
 
 $newsUploadPaths = @(
     'public\uploads\news\covers',
@@ -112,7 +140,7 @@ $newsUploadPaths = @(
 )
 $newsUploadWritable = Test-DirectoriesWritable -Paths $newsUploadPaths
 $newsUploadFailures = @($script:directoryWriteFailures)
-$missingNewsUploadPaths = @($newsUploadPaths | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Container) })
+$missingNewsUploadPaths = @($newsUploadPaths | Where-Object { -not (Test-Path -LiteralPath (Get-ProjectPath -RelativePath $_) -PathType Container) })
 $newsUploadDetails = if ($missingNewsUploadPaths.Count -gt 0) {
     'missing: ' + ($missingNewsUploadPaths -join ', ') + '; run .\setup.ps1 or .\update.ps1'
 } elseif ($newsUploadWritable) {
@@ -128,7 +156,7 @@ $settingsUploadPaths = @(
 )
 $settingsUploadWritable = Test-DirectoriesWritable -Paths $settingsUploadPaths
 $settingsUploadFailures = @($script:directoryWriteFailures)
-$missingSettingsUploadPaths = @($settingsUploadPaths | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Container) })
+$missingSettingsUploadPaths = @($settingsUploadPaths | Where-Object { -not (Test-Path -LiteralPath (Get-ProjectPath -RelativePath $_) -PathType Container) })
 $settingsUploadDetails = if ($missingSettingsUploadPaths.Count -gt 0) {
     'missing: ' + ($missingSettingsUploadPaths -join ', ') + '; run .\setup.ps1 or .\update.ps1'
 } elseif ($settingsUploadWritable) {
@@ -138,7 +166,7 @@ $settingsUploadDetails = if ($missingSettingsUploadPaths.Count -gt 0) {
 }
 Test-ItemStatus 'Settings upload directories' $settingsUploadWritable $settingsUploadDetails
 
-if ((Test-Path 'vendor\autoload.php') -and (Test-Path '.env')) {
+if ((Test-Path -LiteralPath $autoloadPath -PathType Leaf) -and (Test-Path -LiteralPath $envPath -PathType Leaf)) {
     Write-Host ''
     Write-Host 'Laravel check:'
     php artisan about --only=environment,cache,drivers
