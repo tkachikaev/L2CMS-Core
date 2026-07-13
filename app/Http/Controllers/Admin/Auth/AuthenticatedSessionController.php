@@ -41,13 +41,13 @@ class AuthenticatedSessionController extends Controller
                 category: 'admin',
                 action: 'auth.login_failed',
                 actor: $email,
-                target: 'Панель управления',
+                target: __('Control panel'),
                 details: ['reason' => 'throttled'],
                 actorType: 'admin',
             );
 
             throw ValidationException::withMessages([
-                'email' => "Слишком много попыток входа. Повторите через {$seconds} сек.",
+                'email' => __('Too many sign-in attempts. Try again in :seconds seconds.', ['seconds' => $seconds]),
             ]);
         }
 
@@ -67,13 +67,13 @@ class AuthenticatedSessionController extends Controller
                 category: 'admin',
                 action: 'auth.login_failed',
                 actor: $admin ?? $email,
-                target: 'Панель управления',
+                target: __('Control panel'),
                 details: ['reason' => $reason],
                 actorType: $admin === null ? 'admin' : null,
             );
 
             throw ValidationException::withMessages([
-                'email' => 'Неверный адрес электронной почты или пароль.',
+                'email' => __('Invalid email address or password.'),
             ]);
         }
 
@@ -85,6 +85,7 @@ class AuthenticatedSessionController extends Controller
         $admin->forceFill([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip(),
+            'locale' => app()->getLocale(),
         ])->save();
 
         $this->writeLoginLog($request, $email, true, null, $admin);
@@ -92,7 +93,7 @@ class AuthenticatedSessionController extends Controller
             category: 'admin',
             action: 'auth.login',
             actor: $admin,
-            target: 'Панель управления',
+            target: __('Control panel'),
         );
 
         return redirect()->intended(route('admin.dashboard'));
@@ -107,15 +108,17 @@ class AuthenticatedSessionController extends Controller
                 category: 'admin',
                 action: 'auth.logout',
                 actor: $admin,
-                target: 'Панель управления',
+                target: __('Control panel'),
             );
         }
 
+        $locale = app()->getLocale();
         Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        $request->session()->put('admin_locale', $locale);
 
-        return redirect()->route('admin.login')->with('status', 'Вы вышли из панели управления.');
+        return redirect()->route('admin.login')->with('status', __('You signed out of the control panel.'));
     }
 
     private function throttleKey(string $email, ?string $ip): string

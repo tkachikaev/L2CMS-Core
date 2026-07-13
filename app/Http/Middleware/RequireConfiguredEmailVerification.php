@@ -18,7 +18,7 @@ class RequireConfiguredEmailVerification
         $user = $request->user();
 
         if ($this->settings->emailVerificationRequired() && $user !== null && ! $user->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice');
+            return redirect()->to(public_route('verification.notice'));
         }
 
         return $next($request);

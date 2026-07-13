@@ -28,11 +28,11 @@ class UploadNewsImageRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'image.required' => 'Выберите изображение.',
-            'image.image' => 'Файл должен быть изображением.',
-            'image.mimes' => 'Разрешены только JPG, PNG и WebP.',
-            'image.max' => 'Размер изображения не должен превышать 5 МБ.',
-            'image.dimensions' => 'Размер изображения не должен превышать 6000×6000 пикселей.',
+            'image.required' => __('Select an image.'),
+            'image.image' => __('The file must be an image.'),
+            'image.mimes' => __('Only JPG, PNG and WebP files are allowed.'),
+            'image.max' => __('The image must not exceed 5 MB.'),
+            'image.dimensions' => __('The image dimensions must not exceed 6000×6000 pixels.'),
         ];
     }
 }

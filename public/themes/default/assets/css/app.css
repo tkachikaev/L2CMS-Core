@@ -169,3 +169,35 @@
     .account-details div:nth-child(odd),
     .account-details div:nth-child(even) { padding: 16px 0; border-left: 0; }
 }
+
+/* Language switcher */
+.language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 7px;
+    background: rgba(0, 0, 0, .16);
+}
+.language-switcher a {
+    min-width: 31px;
+    padding: 6px 7px;
+    border-radius: 5px;
+    color: rgba(255, 255, 255, .72);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+}
+.language-switcher a:hover,
+.language-switcher a.active { background: var(--gold, #c9a45b); color: #15110b; }
+[dir="rtl"] body { direction: rtl; }
+[dir="rtl"] .main-nav,
+[dir="rtl"] .header-actions,
+[dir="rtl"] .header-inner { flex-direction: row-reverse; }
+
+@media (max-width: 980px) {
+    .language-switcher { margin-inline-start: auto; }
+}

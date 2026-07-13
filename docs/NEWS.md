@@ -87,3 +87,16 @@ The sanitizer permits only the elements needed by the editor, including paragrap
 ## Slugs
 
 A unique URL slug is generated when the item is created. It remains unchanged when the title is edited, preventing existing links from breaking.
+
+## Переводы новостей
+
+В 0.10.0 редактор показывает отдельную вкладку для каждого включённого языка. Язык сайта по умолчанию требует заголовок и текст; дополнительный перевод можно оставить полностью пустым.
+
+Обложка, статус и дата публикации общие. Текстовые поля и slug хранятся в `news_translations` с уникальной парой языка и slug. Публичные ссылки имеют вид:
+
+```text
+/ru/news/russkaya-novost
+/en/news/english-news
+```
+
+При отсутствии перевода CMS показывает резервный вариант. Тема должна использовать `titleFor()`, `excerptFor()`, `safeBodyHtml()` и `news_url()`, а не читать старые поля модели напрямую.

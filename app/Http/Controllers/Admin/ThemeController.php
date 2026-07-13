@@ -62,6 +62,6 @@ class ThemeController extends Controller
 
         return redirect()
             ->route('admin.themes.index')
-            ->with('status', "Тема «{$theme}» активирована.");
+            ->with('status', __('Theme :theme activated.', ['theme' => $theme]));
     }
 }

@@ -1,33 +1,33 @@
-<nav class="admin-menu" aria-label="Меню администратора">
+<nav class="admin-menu" aria-label="{{ __('Administrator menu') }}">
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.dashboard')]) href="{{ route('admin.dashboard') }}">
-        <span>Главная</span>
+        <span>{{ __('Dashboard') }}</span>
     </a>
 
-    <p class="admin-menu-title">Контент</p>
+    <p class="admin-menu-title">{{ __('Content') }}</p>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.news.*')]) href="{{ route('admin.news.index') }}">
-        <span>Новости</span>
+        <span>{{ __('News') }}</span>
     </a>
 
-    <p class="admin-menu-title">Оформление</p>
+    <p class="admin-menu-title">{{ __('Appearance') }}</p>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.themes.*')]) href="{{ route('admin.themes.index') }}">
-        <span>Темы</span>
+        <span>{{ __('Themes') }}</span>
     </a>
 
-    <p class="admin-menu-title">Система</p>
+    <p class="admin-menu-title">{{ __('System') }}</p>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.settings.*')]) href="{{ route('admin.settings.general') }}">
-        <span>Настройки</span>
+        <span>{{ __('Settings') }}</span>
     </a>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.users.*')]) href="{{ route('admin.users.index') }}">
-        <span>Пользователи</span>
+        <span>{{ __('Users') }}</span>
     </a>
     <span class="admin-menu-item disabled" aria-disabled="true">
-        <span>Модули</span>
-        <small>Скоро</small>
+        <span>{{ __('Modules') }}</span>
+        <small>{{ __('Coming soon') }}</small>
     </span>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.administrators.*')]) href="{{ route('admin.administrators.index') }}">
-        <span>Администраторы</span>
+        <span>{{ __('Administrators') }}</span>
     </a>
     <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.logs.*')]) href="{{ route('admin.logs.index') }}">
-        <span>Журнал действий</span>
+        <span>{{ __('Audit log') }}</span>
     </a>
 </nav>

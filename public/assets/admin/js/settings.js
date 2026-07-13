@@ -37,7 +37,7 @@
             }
 
             image.src = objectUrl;
-            image.alt = 'Предпросмотр выбранного изображения';
+            image.alt = container.dataset.previewAlt || 'Selected image preview';
             preview.classList.add('has-image');
             preview.classList.remove('marked-for-removal');
 

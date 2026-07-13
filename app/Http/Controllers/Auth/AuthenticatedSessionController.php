@@ -34,28 +34,31 @@ class AuthenticatedSessionController extends Controller
                 category: 'user',
                 action: 'auth.login_failed',
                 actor: $login,
-                target: 'Личный кабинет',
+                target: __('Account area'),
                 actorType: 'user',
             );
 
             throw ValidationException::withMessages([
-                'login' => 'Неверный логин, email или пароль.',
+                'login' => __('Invalid username, email or password.'),
             ]);
         }
 
         $request->session()->regenerate();
 
         $user = $guard->user();
-        $user?->forceFill(['last_login_at' => now()])->save();
+        $user?->forceFill([
+            'last_login_at' => now(),
+            'locale' => app()->getLocale(),
+        ])->save();
 
         $auditLogger->success(
             category: 'user',
             action: 'auth.login',
             actor: $user,
-            target: 'Личный кабинет',
+            target: __('Account area'),
         );
 
-        return redirect()->intended(route('account'));
+        return redirect()->intended(public_route('account'));
     }
 
     public function destroy(AuditLogger $auditLogger): RedirectResponse
@@ -68,7 +71,7 @@ class AuthenticatedSessionController extends Controller
                 category: 'user',
                 action: 'auth.logout',
                 actor: $user,
-                target: 'Личный кабинет',
+                target: __('Account area'),
             );
         }
 
@@ -76,6 +79,6 @@ class AuthenticatedSessionController extends Controller
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        return redirect()->route('home');
+        return redirect()->to(public_route('home'));
     }
 }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="{{ app()->getLocale() }}" dir="{{ locale_direction() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,8 +20,8 @@
 <body>
     @if (! empty($isPreview))
         <aside class="news-preview-banner" role="status">
-            <strong>Предпросмотр новости</strong>
-            <span>Изменения не сохранены и не опубликованы. После проверки закройте эту вкладку.</span>
+            <strong>{{ __('Preview news') }}</strong>
+            <span>{{ __('Changes are not saved or published. Close this tab after checking the page.') }}</span>
         </aside>
     @endif
 

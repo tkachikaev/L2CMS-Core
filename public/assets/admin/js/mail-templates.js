@@ -15,7 +15,7 @@
         user_email: 'player@example.com',
         verification_url: `${window.location.origin}/email/verify/example`,
         reset_url: `${window.location.origin}/reset-password/example`,
-        expires_in: '60 минут',
+        expires_in: editor.dataset.demoExpires || '60 minutes',
         support_email: 'support@example.com',
     };
 
@@ -61,7 +61,7 @@
 
     document.querySelectorAll('[data-mail-template-reset]').forEach((form) => {
         form.addEventListener('submit', (event) => {
-            if (!window.confirm('Восстановить стандартный шаблон? Текущие изменения будут удалены.')) {
+            if (!window.confirm(form.dataset.resetConfirm || 'Restore the default template? Current changes will be removed.')) {
                 event.preventDefault();
             }
         });

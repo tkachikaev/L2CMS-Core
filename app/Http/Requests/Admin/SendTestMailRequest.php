@@ -23,8 +23,8 @@ class SendTestMailRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'test_email.required' => 'Укажите адрес для тестового письма.',
-            'test_email.email' => 'Адрес для тестового письма указан неверно.',
+            'test_email.required' => __('Enter an address for the test email.'),
+            'test_email.email' => __('The test email address is invalid.'),
         ];
     }
 }

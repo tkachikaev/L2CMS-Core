@@ -66,8 +66,8 @@ themes/<slug>/views/news/show.blade.php
 
 Available news data includes:
 
-- `$news->title` — title;
-- `$news->excerpt` — short description;
+- `$news->titleFor()` — локализованный заголовок;
+- `$news->excerptFor()` — локализованное краткое описание;
 - `$news->published_at` — publication date;
 - `$news->coverUrl()` — public cover URL or `null`;
 - `$news->safeBodyHtml()` — server-sanitized rich HTML.
@@ -151,3 +151,20 @@ verification.notice
 `registration_available()` учитывает и административный переключатель, и готовность проверенной почты при обязательном подтверждении email. `registration_enabled()` показывает только состояние переключателя, а `email_verification_required()` — требование подтверждения.
 
 Тема не должна создавать пользователей, отправлять почту или читать SMTP-настройки напрямую. Формы должны отправляться на именованные маршруты ядра и содержать `@csrf`.
+
+## Локализация темы
+
+Макет темы должен использовать текущий язык и направление письма:
+
+```blade
+<html lang="{{ app()->getLocale() }}" dir="{{ locale_direction() }}">
+```
+
+Видимые системные строки выводятся через `__()`. Для внутренних ссылок публичной темы используйте `public_route()`, а для новости — `news_url()`, чтобы сохранить языковой префикс и локализованный slug.
+
+```blade
+<a href="{{ public_route('login') }}">{{ __('Sign in') }}</a>
+<a href="{{ news_url($newsItem) }}">{{ $newsItem->titleFor() }}</a>
+```
+
+Тема не должна самостоятельно выбирать fallback или читать таблицы переводов.

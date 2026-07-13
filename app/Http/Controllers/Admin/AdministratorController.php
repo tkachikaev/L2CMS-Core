@@ -48,6 +48,7 @@ class AdministratorController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'is_active' => true,
+            'locale' => app()->getLocale(),
         ]);
 
         $auditLogger->success(
@@ -63,7 +64,7 @@ class AdministratorController extends Controller
 
         return redirect()
             ->route('admin.administrators.index')
-            ->with('status', 'Администратор создан.');
+            ->with('status', __('Administrator created.'));
     }
 
     public function edit(Admin $administrator): View
@@ -92,7 +93,7 @@ class AdministratorController extends Controller
         if (! $administrator->isDirty()) {
             return redirect()
                 ->route('admin.administrators.edit', $administrator)
-                ->with('status', 'Изменений нет.');
+                ->with('status', __('No changes.'));
         }
 
         $administrator->save();
@@ -107,7 +108,7 @@ class AdministratorController extends Controller
 
         return redirect()
             ->route('admin.administrators.edit', $administrator)
-            ->with('status', 'Данные администратора сохранены.');
+            ->with('status', __('Administrator details saved.'));
     }
 
     public function updatePassword(Request $request, Admin $administrator, AuditLogger $auditLogger): RedirectResponse
@@ -136,9 +137,9 @@ class AdministratorController extends Controller
             ],
             [],
             [
-                'current_password' => 'текущий пароль',
-                'password' => 'новый пароль',
-                'password_confirmation' => 'подтверждение нового пароля',
+                'current_password' => __('current password'),
+                'password' => __('new password'),
+                'password_confirmation' => __('new password confirmation'),
             ],
         );
 
@@ -146,7 +147,7 @@ class AdministratorController extends Controller
 
         if ($isCurrentAdmin && ! Hash::check($validated['current_password'], $currentAdmin->password)) {
             throw ValidationException::withMessages([
-                'current_password' => 'Текущий пароль указан неверно.',
+                'current_password' => __('The current password is incorrect.'),
             ]);
         }
 
@@ -164,7 +165,7 @@ class AdministratorController extends Controller
 
         return redirect()
             ->route('admin.administrators.edit', $administrator)
-            ->with('status', 'Пароль администратора изменён.');
+            ->with('status', __('The administrator password was changed.'));
     }
 
     public function updateStatus(Request $request, Admin $administrator, AuditLogger $auditLogger): RedirectResponse
@@ -180,12 +181,12 @@ class AdministratorController extends Controller
 
         if (! $newStatus && $currentAdmin->is($administrator)) {
             throw ValidationException::withMessages([
-                'is_active' => 'Нельзя отключить собственную учётную запись.',
+                'is_active' => __('You cannot disable your own account.'),
             ]);
         }
 
         if ($administrator->is_active === $newStatus) {
-            return back()->with('status', 'Статус администратора не изменился.');
+            return back()->with('status', __('The administrator status did not change.'));
         }
 
         DB::transaction(function () use ($administrator, $newStatus): void {
@@ -203,7 +204,7 @@ class AdministratorController extends Controller
 
                 if ($activeAdministrators->count() <= 1) {
                     throw ValidationException::withMessages([
-                        'is_active' => 'Нельзя отключить последнюю активную учётную запись администратора.',
+                        'is_active' => __('The last active administrator account cannot be disabled.'),
                     ]);
                 }
             }
@@ -225,7 +226,7 @@ class AdministratorController extends Controller
 
         return back()->with(
             'status',
-            $newStatus ? 'Учётная запись администратора включена.' : 'Учётная запись администратора отключена.',
+            $newStatus ? __('The administrator account was enabled.') : __('The administrator account was disabled.'),
         );
     }
 
@@ -267,10 +268,10 @@ class AdministratorController extends Controller
             $rules,
             [],
             [
-                'name' => 'имя администратора',
+                'name' => __('administrator name'),
                 'email' => 'email',
-                'password' => 'пароль',
-                'password_confirmation' => 'подтверждение пароля',
+                'password' => __('password'),
+                'password_confirmation' => __('password confirmation'),
             ],
         )->validate();
     }

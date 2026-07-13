@@ -1,37 +1,37 @@
 @extends('theme::layouts.app')
 
-@section('title', 'Вход — '.site_name())
+@section('title', __('Sign in').' — '.site_name())
 
 @section('content')
 <section class="auth-page">
     <div class="panel auth-card">
-        <p class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</p>
-        <h1>Вход</h1>
-        <p class="muted">Используйте логин или email учётной записи сайта.</p>
+        <p class="eyebrow">{{ __('PERSONAL ACCOUNT') }}</p>
+        <h1>{{ __('Sign in') }}</h1>
+        <p class="muted">{{ __('Use the login or email of your site account.') }}</p>
 
-        <form method="POST" action="{{ route('login.store') }}">
+        <form method="POST" action="{{ public_route('login.store') }}">
             @csrf
 
-            <label for="login">Логин или email
+            <label for="login">{{ __('Login or email') }}
                 <input id="login" name="login" type="text" maxlength="255" required autofocus autocomplete="username" value="{{ old('login') }}">
             </label>
 
-            <label for="password">Пароль
+            <label for="password">{{ __('Password') }}
                 <input id="password" name="password" type="password" required autocomplete="current-password">
             </label>
 
             <label class="auth-checkbox" for="remember">
                 <input id="remember" name="remember" type="checkbox" value="1" @checked(old('remember'))>
-                <span>Запомнить меня</span>
+                <span>{{ __('Remember me') }}</span>
             </label>
 
-            <button class="button button-gold" type="submit">Войти</button>
+            <button class="button button-gold" type="submit">{{ __('Log in') }}</button>
         </form>
 
         <div class="auth-links">
-            <a href="{{ route('password.request') }}">Забыли пароль?</a>
+            <a href="{{ public_route('password.request') }}">{{ __('Forgot your password?') }}</a>
             @if (registration_available())
-                <a href="{{ route('register') }}">Создать учётную запись</a>
+                <a href="{{ public_route('register') }}">{{ __('Create a site account') }}</a>
             @endif
         </div>
     </div>

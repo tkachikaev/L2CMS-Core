@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 fallbackCopy();
             }
 
-            setState('Отчёт скопирован.');
+            setState(button.dataset.copySuccess || 'Report copied.');
         } catch {
-            setState('Не удалось скопировать отчёт.', 'error');
+            setState(button.dataset.copyError || 'Could not copy the report.', 'error');
         }
     });
 });

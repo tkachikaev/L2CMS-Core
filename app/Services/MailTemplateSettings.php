@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Services\Localization\LanguageManager;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\App;
 use InvalidArgumentException;
 
 final class MailTemplateSettings
@@ -20,16 +22,19 @@ final class MailTemplateSettings
         'footer',
     ];
 
-    public function __construct(private readonly CmsSettings $settings)
-    {
+    public function __construct(
+        private readonly CmsSettings $settings,
+        private readonly LanguageManager $languages,
+    ) {
     }
 
     /** @return array<string, array<string, mixed>> */
-    public function navigation(): array
+    public function navigation(?string $locale = null): array
     {
         $items = [];
 
-        foreach ($this->definitions() as $key => $definition) {
+        foreach (array_keys($this->definitions()) as $key) {
+            $definition = $this->definition($key, $locale);
             $items[$key] = [
                 'title' => (string) ($definition['title'] ?? $key),
                 'description' => (string) ($definition['description'] ?? ''),
@@ -45,7 +50,7 @@ final class MailTemplateSettings
     }
 
     /** @return array<string, mixed> */
-    public function definition(string $key): array
+    public function definition(string $key, ?string $locale = null): array
     {
         $definitions = $this->definitions();
 
@@ -53,12 +58,17 @@ final class MailTemplateSettings
             throw new InvalidArgumentException('Unknown mail template: '.$key);
         }
 
-        return $definitions[$key];
+        $base = $definitions[$key];
+        $locale = $this->normalizeLocale($locale);
+        $localized = $this->localizedDefaults($base, $locale);
+
+        return array_merge($base, $localized, ['locale' => $locale]);
     }
 
     /**
      * @return array{
      *     key: string,
+     *     locale:string,
      *     title: string,
      *     description: string,
      *     requires_action: bool,
@@ -71,13 +81,14 @@ final class MailTemplateSettings
      *     customized: bool
      * }
      */
-    public function values(string $key): array
+    public function values(string $key, ?string $locale = null): array
     {
-        $definition = $this->definition($key);
+        $definition = $this->definition($key, $locale);
+        $locale = (string) $definition['locale'];
         $defaults = [];
 
         foreach (self::EDITABLE_FIELDS as $field) {
-            $defaults[$this->settingKey($key, $field)] = (string) ($definition[$field] ?? '');
+            $defaults[$this->settingKey($key, $locale, $field)] = (string) ($definition[$field] ?? '');
         }
 
         $stored = $this->settings->getMany($defaults);
@@ -85,9 +96,18 @@ final class MailTemplateSettings
         $customized = false;
 
         foreach (self::EDITABLE_FIELDS as $field) {
-            $settingKey = $this->settingKey($key, $field);
+            $settingKey = $this->settingKey($key, $locale, $field);
             $default = (string) ($definition[$field] ?? '');
             $value = $stored[$settingKey] ?? $default;
+
+            if ($locale === 'ru' && $this->settings->get($settingKey) === null) {
+                $legacy = $this->settings->get($this->legacySettingKey($key, $field));
+                if ($legacy !== null) {
+                    $value = $legacy;
+                    $customized = true;
+                }
+            }
+
             $values[$field] = is_string($value) ? $value : $default;
 
             if ($this->settings->get($settingKey) !== null) {
@@ -97,6 +117,7 @@ final class MailTemplateSettings
 
         return [
             'key' => $key,
+            'locale' => $locale,
             'title' => (string) ($definition['title'] ?? $key),
             'description' => (string) ($definition['description'] ?? ''),
             'requires_action' => (bool) ($definition['requires_action'] ?? false),
@@ -111,37 +132,45 @@ final class MailTemplateSettings
     }
 
     /** @param array{subject: string, heading: string, body: string, action_text: string, footer: string} $values */
-    public function update(string $key, array $values): void
+    public function update(string $key, array $values, ?string $locale = null): void
     {
-        $this->definition($key);
+        $definition = $this->definition($key, $locale);
+        $locale = (string) $definition['locale'];
         $settings = [];
 
         foreach (self::EDITABLE_FIELDS as $field) {
-            $settings[$this->settingKey($key, $field)] = (string) ($values[$field] ?? '');
+            $settings[$this->settingKey($key, $locale, $field)] = (string) ($values[$field] ?? '');
+        }
+
+        if ($locale === $this->languages->default()) {
+            foreach (self::EDITABLE_FIELDS as $field) {
+                $settings[$this->legacySettingKey($key, $field)] = (string) ($values[$field] ?? '');
+            }
         }
 
         $this->settings->setMany($settings);
     }
 
-    public function reset(string $key): void
+    public function reset(string $key, ?string $locale = null): void
     {
-        $this->definition($key);
+        $definition = $this->definition($key, $locale);
+        $locale = (string) $definition['locale'];
         $values = [];
 
         foreach (self::EDITABLE_FIELDS as $field) {
-            $values[$this->settingKey($key, $field)] = null;
+            $values[$this->settingKey($key, $locale, $field)] = null;
+            if ($locale === $this->languages->default()) {
+                $values[$this->legacySettingKey($key, $field)] = null;
+            }
         }
 
         $this->settings->setMany($values);
     }
 
-    /**
-     * @param array<string, string> $values
-     * @return array<string, array<int, string>>
-     */
-    public function unknownVariables(string $key, array $values): array
+    /** @param array<string, string> $values @return array<string, array<int, string>> */
+    public function unknownVariables(string $key, array $values, ?string $locale = null): array
     {
-        $allowed = array_fill_keys($this->values($key)['variables'], true);
+        $allowed = array_fill_keys($this->values($key, $locale)['variables'], true);
         $unknown = [];
 
         foreach (self::EDITABLE_FIELDS as $field) {
@@ -178,13 +207,10 @@ final class MailTemplateSettings
         return $fields;
     }
 
-    /**
-     * @param array<string, string> $variables
-     * @return array{subject: string, heading: string, body: string, action_text: string, footer: string}
-     */
-    public function render(string $key, array $variables): array
+    /** @param array<string, string> $variables @return array{subject: string, heading: string, body: string, action_text: string, footer: string} */
+    public function render(string $key, array $variables, ?string $locale = null): array
     {
-        $values = $this->values($key);
+        $values = $this->values($key, $locale);
         $rendered = [];
 
         foreach (self::EDITABLE_FIELDS as $field) {
@@ -194,39 +220,46 @@ final class MailTemplateSettings
         return $rendered;
     }
 
-    /**
-     * @param array<string, string> $variables
-     */
-    public function mailMessage(string $key, array $variables, ?string $actionUrl = null): MailMessage
+    /** @param array<string, string> $variables */
+    public function mailMessage(string $key, array $variables, ?string $actionUrl = null, ?string $locale = null): MailMessage
     {
-        $template = $this->values($key);
-        $rendered = $this->render($key, $variables);
-        $message = (new MailMessage)
-            ->subject($this->plainText($rendered['subject']))
-            ->greeting($this->plainText($rendered['heading']));
+        $locale = $this->normalizeLocale($locale);
+        $previousLocale = App::getLocale();
+        App::setLocale($locale);
 
-        foreach ($this->blocks($rendered['body']) as $block) {
-            $message->line(e($block));
+        try {
+            $template = $this->values($key, $locale);
+            $rendered = $this->render($key, $variables, $locale);
+            $message = (new MailMessage)
+                ->subject($this->plainText($rendered['subject']))
+                ->greeting($this->plainText($rendered['heading']));
+
+            foreach ($this->blocks($rendered['body']) as $block) {
+                $message->line(e($block));
+            }
+
+            if ($template['requires_action'] && $actionUrl !== null && trim($rendered['action_text']) !== '') {
+                $message->action($this->plainText($rendered['action_text']), $actionUrl);
+            }
+
+            foreach ($this->blocks($rendered['footer']) as $block) {
+                $message->line(e($block));
+            }
+
+            $siteName = $this->plainText($variables['site_name'] ?? site_name($locale));
+
+            return $message->salutation(__('Regards, the :site team', ['site' => $siteName]));
+        } finally {
+            App::setLocale($previousLocale);
         }
-
-        if ($template['requires_action'] && $actionUrl !== null && trim($rendered['action_text']) !== '') {
-            $message->action($this->plainText($rendered['action_text']), $actionUrl);
-        }
-
-        foreach ($this->blocks($rendered['footer']) as $block) {
-            $message->line(e($block));
-        }
-
-        $siteName = $this->plainText($variables['site_name'] ?? site_name());
-
-        return $message->salutation('С уважением, команда '.$siteName);
     }
 
     /** @return array<string, string> */
-    public function userVariables(object $user, array $additional = []): array
+    public function userVariables(object $user, array $additional = [], ?string $locale = null): array
     {
+        $locale = $this->normalizeLocale($locale ?? (string) ($user->locale ?? ''));
         $mail = app(MailSettings::class)->values();
-        $site = app(SiteSettings::class)->values();
+        $site = app(SiteSettings::class)->values($locale);
         $supportEmail = trim((string) ($mail['admin_email'] ?: ($site['admin_email'] ?? '')));
 
         if ($supportEmail === '') {
@@ -234,39 +267,48 @@ final class MailTemplateSettings
         }
 
         if ($supportEmail === '') {
-            $supportEmail = 'администрацию сайта';
+            $supportEmail = $this->translateForLocale('site support', $locale);
         }
 
         return array_merge([
-            'site_name' => site_name(),
-            'site_url' => rtrim((string) config('app.url', 'http://localhost'), '/'),
-            'username' => (string) ($user->name ?? 'пользователь'),
+            'site_name' => $site['name'],
+            'site_url' => rtrim((string) config('app.url', 'http://localhost'), '/').'/'.$locale,
+            'username' => (string) ($user->name ?? $this->translateForLocale('user', $locale)),
             'user_email' => (string) ($user->email ?? ''),
             'support_email' => $supportEmail,
         ], $additional);
     }
 
     /** @return array<string, string> */
-    public function demoVariables(string $key): array
+    public function demoVariables(string $key, ?string $locale = null): array
     {
-        $this->definition($key);
-        $siteUrl = rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/');
+        $locale = $this->normalizeLocale($locale);
+        $this->definition($key, $locale);
+        $siteUrl = rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/').'/'.$locale;
 
         return [
-            'site_name' => site_name(),
+            'site_name' => app(SiteSettings::class)->name($locale),
             'site_url' => $siteUrl,
             'username' => 'TestPlayer',
             'user_email' => 'player@example.com',
             'verification_url' => $siteUrl.'/email/verify/example',
             'reset_url' => $siteUrl.'/reset-password/example',
-            'expires_in' => '60 минут',
+            'expires_in' => $this->translateForLocale('60 minutes', $locale),
             'support_email' => 'support@example.com',
         ];
     }
 
+
+    public function translatedDuration(string $locale): string
+    {
+        $locale = $this->normalizeLocale($locale);
+
+        return $this->translateForLocale('60 minutes', $locale);
+    }
+
     public function requiresAction(string $key): bool
     {
-        return (bool) ($this->definition($key)['requires_action'] ?? false);
+        return (bool) ($this->definitions()[$key]['requires_action'] ?? false);
     }
 
     /** @return array<string, array<string, mixed>> */
@@ -277,9 +319,44 @@ final class MailTemplateSettings
         return is_array($templates) ? $templates : [];
     }
 
-    private function settingKey(string $template, string $field): string
+    /** @param array<string,mixed> $base @return array<string,mixed> */
+    private function localizedDefaults(array $base, string $locale): array
+    {
+        $locales = is_array($base['locales'] ?? null) ? $base['locales'] : [];
+        $candidates = array_values(array_unique([
+            $locale,
+            $this->languages->fallback(),
+            $this->languages->default(),
+            'en',
+            'ru',
+        ]));
+
+        foreach ($candidates as $candidate) {
+            if (isset($locales[$candidate]) && is_array($locales[$candidate])) {
+                return $locales[$candidate];
+            }
+        }
+
+        return [];
+    }
+
+    private function settingKey(string $template, string $locale, string $field): string
+    {
+        return 'mail.template.'.$template.'.'.$locale.'.'.$field;
+    }
+
+    private function legacySettingKey(string $template, string $field): string
     {
         return 'mail.template.'.$template.'.'.$field;
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = $this->languages->normalizeCode((string) ($locale ?? app()->getLocale()));
+
+        return $locale !== null && $this->languages->isEnabled($locale)
+            ? $locale
+            : $this->languages->default();
     }
 
     /** @param array<string, string> $variables */
@@ -310,6 +387,20 @@ final class MailTemplateSettings
         $blocks = preg_split('/\n{2,}/u', $value) ?: [];
 
         return array_values(array_filter(array_map('trim', $blocks), static fn (string $block): bool => $block !== ''));
+    }
+
+
+    /** @param array<string, scalar> $replace */
+    private function translateForLocale(string $key, string $locale, array $replace = []): string
+    {
+        $previousLocale = App::getLocale();
+        App::setLocale($locale);
+
+        try {
+            return __($key, $replace);
+        } finally {
+            App::setLocale($previousLocale);
+        }
     }
 
     private function plainText(string $value): string

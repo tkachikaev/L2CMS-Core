@@ -31,13 +31,13 @@ class SaveMailSettingsRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'smtp_host.required' => 'Укажите SMTP-сервер.',
-            'smtp_port.required' => 'Укажите порт SMTP-сервера.',
-            'smtp_port.between' => 'Порт должен быть в диапазоне от 1 до 65535.',
-            'from_address.required' => 'Укажите email отправителя.',
-            'from_address.email' => 'Email отправителя указан неверно.',
-            'from_name.required' => 'Укажите имя отправителя.',
-            'notification_email.email' => 'Email для системных уведомлений указан неверно.',
+            'smtp_host.required' => __('Enter the SMTP server.'),
+            'smtp_port.required' => __('Enter the SMTP server port.'),
+            'smtp_port.between' => __('The port must be between 1 and 65535.'),
+            'from_address.required' => __('Enter the sender email address.'),
+            'from_address.email' => __('The sender email address is invalid.'),
+            'from_name.required' => __('Enter the sender name.'),
+            'notification_email.email' => __('The system notification email is invalid.'),
         ];
     }
 }

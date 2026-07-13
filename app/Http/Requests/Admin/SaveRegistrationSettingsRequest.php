@@ -32,7 +32,7 @@ class SaveRegistrationSettingsRequest extends FormRequest
             if (! app(MailSettings::class)->isReady()) {
                 $validator->errors()->add(
                     'email_verification_required',
-                    'Сначала сохраните почтовые настройки и успешно отправьте тестовое письмо.'
+                    __('Save the mail settings and send a successful test email first.')
                 );
             }
         });

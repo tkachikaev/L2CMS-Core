@@ -1,6 +1,6 @@
 <header class="site-header">
     <div class="container header-inner">
-        <a class="brand" href="{{ route('home') }}" aria-label="{{ site_name() }} — на главную">
+        <a class="brand" href="{{ public_route('home') }}" aria-label="{{ site_name() }} — {{ __('Go to the home page') }}">
             @if (site_logo_url())
                 <img class="brand-logo" src="{{ site_logo_url() }}" alt="{{ site_name() }}">
             @else
@@ -8,34 +8,44 @@
                 <span><strong>{{ site_name() }}</strong><small>LINEAGE II</small></span>
             @endif
         </a>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">Меню</button>
-        <nav id="main-menu" class="main-nav" aria-label="Основная навигация">
-            <a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Главная</a>
-            <a class="{{ request()->routeIs('news.*') ? 'active' : '' }}" href="{{ route('news.index') }}">Новости</a>
-            <a href="{{ route('home') }}#rating">Статистика</a>
-            <a class="{{ request()->routeIs('downloads') ? 'active' : '' }}" href="{{ route('downloads') }}">Файлы</a>
-            <a class="{{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">О сервере</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu">{{ __('Menu') }}</button>
+        <nav id="main-menu" class="main-nav" aria-label="{{ __('Main navigation') }}">
+            <a class="{{ request()->routeIs('home', 'localized.home') ? 'active' : '' }}" href="{{ public_route('home') }}">{{ __('Home') }}</a>
+            <a class="{{ request()->routeIs('news.*', 'localized.news.*') ? 'active' : '' }}" href="{{ public_route('news.index') }}">{{ __('News') }}</a>
+            <a href="{{ public_route('home') }}#rating">{{ __('Statistics') }}</a>
+            <a class="{{ request()->routeIs('downloads', 'localized.downloads') ? 'active' : '' }}" href="{{ public_route('downloads') }}">{{ __('Files') }}</a>
+            <a class="{{ request()->routeIs('about', 'localized.about') ? 'active' : '' }}" href="{{ public_route('about') }}">{{ __('About the server') }}</a>
             @auth
-                <a class="mobile-account-link {{ request()->routeIs('account') ? 'active' : '' }}" href="{{ route('account') }}">Кабинет</a>
+                <a class="mobile-account-link {{ request()->routeIs('account', 'localized.account') ? 'active' : '' }}" href="{{ public_route('account') }}">{{ __('Account') }}</a>
             @else
-                <a class="mobile-account-link {{ request()->routeIs('login') ? 'active' : '' }}" href="{{ route('login') }}">Вход</a>
+                <a class="mobile-account-link {{ request()->routeIs('login', 'localized.login') ? 'active' : '' }}" href="{{ public_route('login') }}">{{ __('Sign in') }}</a>
                 @if (registration_available())
-                    <a class="mobile-account-link {{ request()->routeIs('register') ? 'active' : '' }}" href="{{ route('register') }}">Регистрация</a>
+                    <a class="mobile-account-link {{ request()->routeIs('register', 'localized.register') ? 'active' : '' }}" href="{{ public_route('register') }}">{{ __('Register') }}</a>
                 @endif
             @endauth
         </nav>
 
         <div class="header-actions">
+            @if(count($enabledLanguages ?? []) > 1)
+                <div class="language-switcher" aria-label="{{ __('Switch language') }}">
+                    @foreach($enabledLanguages as $code => $language)
+                        <a class="{{ app()->getLocale() === $code ? 'active' : '' }}" href="{{ route('language.switch', ['locale' => $code, 'return' => request()->getRequestUri()]) }}" lang="{{ $code }}" hreflang="{{ $code }}">
+                            {{ strtoupper($code) }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+
             @auth
-                <a class="button button-gold" href="{{ route('account') }}">Кабинет</a>
-                <form class="header-logout-form" method="POST" action="{{ route('logout') }}">
+                <a class="button button-gold" href="{{ public_route('account') }}">{{ __('Account') }}</a>
+                <form class="header-logout-form" method="POST" action="{{ public_route('logout') }}">
                     @csrf
-                    <button class="button button-ghost" type="submit">Выйти</button>
+                    <button class="button button-ghost" type="submit">{{ __('Sign out') }}</button>
                 </form>
             @else
-                <a class="button button-ghost" href="{{ route('login') }}">Вход</a>
+                <a class="button button-ghost" href="{{ public_route('login') }}">{{ __('Sign in') }}</a>
                 @if (registration_available())
-                    <a class="button button-gold" href="{{ route('register') }}">Регистрация</a>
+                    <a class="button button-gold" href="{{ public_route('register') }}">{{ __('Register') }}</a>
                 @endif
             @endauth
         </div>

@@ -103,7 +103,7 @@ class UserController extends Controller
         $newStatus = (bool) $validated['is_active'];
 
         if ($user->is_active === $newStatus) {
-            return back()->with('status', 'Статус пользователя не изменился.');
+            return back()->with('status', __('The user status did not change.'));
         }
 
         $oldStatus = $user->is_active;
@@ -131,7 +131,7 @@ class UserController extends Controller
 
         return back()->with(
             'status',
-            $newStatus ? 'Учётная запись пользователя включена.' : 'Учётная запись пользователя отключена.',
+            $newStatus ? __('The user account was enabled.') : __('The user account was disabled.'),
         );
     }
 
@@ -141,12 +141,12 @@ class UserController extends Controller
         AuditLogger $auditLogger,
     ): RedirectResponse {
         if ($user->hasVerifiedEmail()) {
-            return back()->with('status', 'Email пользователя уже подтверждён.');
+            return back()->with('status', __('The user email is already verified.'));
         }
 
         if (! $mailSettings->isReady()) {
             return back()->withErrors([
-                'mail' => 'Почтовая система не готова. Сначала настройте SMTP и выполните тестовую отправку.',
+                'mail' => __('The mail system is not ready. Configure SMTP and complete a test delivery first.'),
             ]);
         }
 
@@ -166,7 +166,7 @@ class UserController extends Controller
             );
 
             return back()->withErrors([
-                'mail' => 'Письмо подтверждения отправить не удалось. Проверьте журнал и настройки почты.',
+                'mail' => __('The verification email could not be sent. Check the audit log and mail settings.'),
             ]);
         }
 
@@ -176,7 +176,7 @@ class UserController extends Controller
             target: $user,
         );
 
-        return back()->with('status', 'Письмо подтверждения отправлено повторно.');
+        return back()->with('status', __('The verification email was sent again.'));
     }
 
     public function sendPasswordReset(
@@ -186,7 +186,7 @@ class UserController extends Controller
     ): RedirectResponse {
         if (! $mailSettings->isReady()) {
             return back()->withErrors([
-                'mail' => 'Почтовая система не готова. Сначала настройте SMTP и выполните тестовую отправку.',
+                'mail' => __('The mail system is not ready. Configure SMTP and complete a test delivery first.'),
             ]);
         }
 
@@ -208,7 +208,7 @@ class UserController extends Controller
             );
 
             return back()->withErrors([
-                'mail' => 'Ссылку восстановления отправить не удалось. Проверьте журнал и настройки почты.',
+                'mail' => __('The password reset link could not be sent. Check the audit log and mail settings.'),
             ]);
         }
 
@@ -221,8 +221,8 @@ class UserController extends Controller
             );
 
             $message = $status === Password::RESET_THROTTLED
-                ? 'Ссылка уже отправлялась недавно. Повторите попытку позже.'
-                : 'Ссылку восстановления отправить не удалось.';
+                ? __('A link was sent recently. Try again later.')
+                : __('The password reset link could not be sent.');
 
             return back()->withErrors(['mail' => $message]);
         }
@@ -233,6 +233,6 @@ class UserController extends Controller
             target: $user,
         );
 
-        return back()->with('status', 'Ссылка восстановления пароля отправлена пользователю.');
+        return back()->with('status', __('The password reset link was sent to the user.'));
     }
 }

@@ -87,7 +87,7 @@ final class ThemeManager
         ];
 
         if (! preg_match('/\A[a-z0-9][a-z0-9_-]*\z/', $slug)) {
-            $result['errors'][] = 'Недопустимое имя каталога темы.';
+            $result['errors'][] = __('Invalid theme directory name.');
 
             return $result;
         }
@@ -96,7 +96,7 @@ final class ThemeManager
         $path = realpath($this->themesPath.DIRECTORY_SEPARATOR.$slug);
 
         if ($root === false || $path === false || ! str_starts_with($path.DIRECTORY_SEPARATOR, $root.DIRECTORY_SEPARATOR)) {
-            $result['errors'][] = 'Каталог темы не найден.';
+            $result['errors'][] = __('Theme directory not found.');
 
             return $result;
         }
@@ -104,7 +104,7 @@ final class ThemeManager
         $manifestPath = $path.DIRECTORY_SEPARATOR.'theme.json';
 
         if (! $this->files->isFile($manifestPath)) {
-            $result['errors'][] = 'Не найден файл theme.json.';
+            $result['errors'][] = __('The theme.json file was not found.');
 
             return $result;
         }
@@ -112,13 +112,13 @@ final class ThemeManager
         try {
             $manifest = json_decode($this->files->get($manifestPath), true, flags: JSON_THROW_ON_ERROR);
         } catch (Throwable) {
-            $result['errors'][] = 'Файл theme.json содержит некорректный JSON.';
+            $result['errors'][] = __('The theme.json file contains invalid JSON.');
 
             return $result;
         }
 
         if (! is_array($manifest)) {
-            $result['errors'][] = 'Файл theme.json должен содержать JSON-объект.';
+            $result['errors'][] = __('The theme.json file must contain a JSON object.');
 
             return $result;
         }
@@ -133,17 +133,17 @@ final class ThemeManager
 
         foreach (['name', 'slug', 'version', 'author'] as $requiredField) {
             if (! is_string(Arr::get($manifest, $requiredField)) || trim((string) Arr::get($manifest, $requiredField)) === '') {
-                $result['errors'][] = "В theme.json не заполнено поле {$requiredField}.";
+                $result['errors'][] = __('The :field field is missing from theme.json.', ['field' => $requiredField]);
             }
         }
 
         if (Arr::get($manifest, 'slug') !== $slug) {
-            $result['errors'][] = 'Поле slug не совпадает с именем каталога темы.';
+            $result['errors'][] = __('The slug field does not match the theme directory name.');
         }
 
         foreach (['views/layouts/app.blade.php', 'views/home.blade.php'] as $requiredFile) {
             if (! $this->files->isFile($path.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $requiredFile))) {
-                $result['errors'][] = "Не найден обязательный файл {$requiredFile}.";
+                $result['errors'][] = __('Required file :file was not found.', ['file' => $requiredFile]);
             }
         }
 
@@ -153,7 +153,7 @@ final class ThemeManager
         $result['preview_url'] = $this->previewUrl($slug, $manifest);
 
         if ($result['valid'] && ! $result['compatible']) {
-            $result['errors'][] = 'Тема несовместима с текущей версией CMS.';
+            $result['errors'][] = __('The theme is incompatible with the current CMS version.');
         }
 
         return $result;
@@ -164,11 +164,11 @@ final class ThemeManager
         $theme = $this->inspect($slug);
 
         if (! $theme['valid']) {
-            throw new RuntimeException('Нельзя активировать повреждённую тему.');
+            throw new RuntimeException(__('A damaged theme cannot be activated.'));
         }
 
         if (! $theme['compatible']) {
-            throw new RuntimeException('Нельзя активировать тему, несовместимую с этой версией CMS.');
+            throw new RuntimeException(__('A theme incompatible with this CMS version cannot be activated.'));
         }
 
         $this->settings->set(self::ACTIVE_THEME_SETTING, $slug);

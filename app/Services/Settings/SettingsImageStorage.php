@@ -28,11 +28,11 @@ final class SettingsImageStorage
     public function validateUpload(UploadedFile $file, string $kind): ?string
     {
         if (! in_array($kind, ['logo', 'favicon'], true)) {
-            return 'Неизвестный тип изображения.';
+            return __('Unknown image type.');
         }
 
         if (! $file->isValid() || ! is_string($file->getRealPath())) {
-            return 'Файл не удалось загрузить.';
+            return __('The file could not be uploaded.');
         }
 
         $path = $file->getRealPath();
@@ -41,7 +41,7 @@ final class SettingsImageStorage
 
         if ($kind === 'favicon' && $extension === 'ico') {
             if (! in_array($mime, self::ICON_MIME_TYPES, true) || ! $this->isValidIco($path)) {
-                return 'ICO-файл повреждён или имеет недопустимый формат.';
+                return __('The ICO file is damaged or has an unsupported format.');
             }
 
             return null;
@@ -49,24 +49,24 @@ final class SettingsImageStorage
 
         if (! isset(self::IMAGE_MIME_EXTENSIONS[$mime])) {
             return $kind === 'logo'
-                ? 'Логотип должен быть изображением JPG, PNG или WebP.'
-                : 'Favicon должен быть изображением PNG, WebP или ICO.';
+                ? __('The logo must be a JPG, PNG or WebP image.')
+                : __('The favicon must be a PNG, WebP or ICO image.');
         }
 
         $detectedExtension = self::IMAGE_MIME_EXTENSIONS[$mime];
 
         if ($kind === 'favicon' && $detectedExtension === 'jpg') {
-            return 'Favicon должен быть изображением PNG, WebP или ICO.';
+            return __('The favicon must be a PNG, WebP or ICO image.');
         }
 
         $size = @getimagesize($path);
         if (! is_array($size) || ! isset($size[0], $size[1])) {
-            return 'Файл не является корректным изображением.';
+            return __('The file is not a valid image.');
         }
 
         $maxDimension = $kind === 'logo' ? 6000 : 2048;
         if ($size[0] < 1 || $size[1] < 1 || $size[0] > $maxDimension || $size[1] > $maxDimension) {
-            return "Размер изображения не должен превышать {$maxDimension}×{$maxDimension} пикселей.";
+            return __('The image dimensions must not exceed :width×:height pixels.', ['width' => $maxDimension, 'height' => $maxDimension]);
         }
 
         return null;

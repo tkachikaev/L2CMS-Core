@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\Localization\LanguageManager;
 use App\Services\MailTemplateSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -23,7 +24,14 @@ class ResetPasswordNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('password.reset', [
+        $languages = app(LanguageManager::class);
+        $locale = $languages->normalizeCode((string) ($notifiable->locale ?? '')) ?? $languages->default();
+        if (! $languages->isEnabled($locale)) {
+            $locale = $languages->default();
+        }
+
+        $url = route('localized.password.reset', [
+            'locale' => $locale,
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
         ]);
@@ -34,9 +42,10 @@ class ResetPasswordNotification extends Notification
             MailTemplateSettings::PASSWORD_RESET,
             $templates->userVariables($notifiable, [
                 'reset_url' => $url,
-                'expires_in' => '60 минут',
-            ]),
+                'expires_in' => $templates->translatedDuration($locale),
+            ], $locale),
             $url,
+            $locale,
         );
     }
 }

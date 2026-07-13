@@ -32,7 +32,7 @@ final class SystemInformation
             'software' => [
                 'php' => PHP_VERSION,
                 'laravel' => app()->version(),
-                'composer' => $this->composerVersion() ?? 'Не удалось определить',
+                'composer' => $this->composerVersion() ?? __('Could not determine'),
                 'os' => $this->operatingSystem(),
                 'architecture' => (PHP_INT_SIZE * 8).'-bit',
                 'sapi' => PHP_SAPI,
@@ -96,7 +96,7 @@ final class SystemInformation
                 $databasePath = $this->relativeProjectPath($configuredPath);
                 $databaseSize = is_file($configuredPath)
                     ? $this->formatBytes((int) filesize($configuredPath))
-                    : 'Файл не найден';
+                    : __('File not found');
             }
         }
 
@@ -121,25 +121,25 @@ final class SystemInformation
         $components = [];
 
         $components[] = [
-            'label' => 'База данных',
+            'label' => __('Database'),
             'state' => $database['connected'] ? 'success' : 'danger',
-            'status' => $database['connected'] ? 'Работает' : 'Ошибка',
+            'status' => $database['connected'] ? __('Working') : __('Error'),
             'details' => $database['connected']
                 ? trim((string) $database['driver_label'].' '.(string) ($database['version'] ?? ''))
-                : 'Подключение установить не удалось',
+                : __('Could not establish a connection'),
         ];
 
         foreach ([
-            'Каталог storage' => storage_path(),
-            'Каталог bootstrap/cache' => base_path('bootstrap/cache'),
-            'Загрузка изображений новостей' => public_path('uploads/news'),
-            'Загрузка логотипа и favicon' => public_path('uploads/settings'),
+            __('Storage directory') => storage_path(),
+            __('Bootstrap cache directory') => base_path('bootstrap/cache'),
+            __('News image uploads') => public_path('uploads/news'),
+            __('Logo and favicon uploads') => public_path('uploads/settings'),
         ] as $label => $path) {
             $writable = $this->canWriteDirectory($path);
             $components[] = [
                 'label' => $label,
                 'state' => $writable ? 'success' : 'danger',
-                'status' => $writable ? 'Доступен для записи' : 'Недоступен для записи',
+                'status' => $writable ? __('Writable') : __('Not writable'),
                 'details' => $this->relativeProjectPath($path),
             ];
         }
@@ -149,37 +149,37 @@ final class SystemInformation
             $mailReady = $this->mailSettings->isReady();
 
             $components[] = [
-                'label' => 'Почтовая система',
+                'label' => __('Mail system'),
                 'state' => $mailReady ? 'success' : ($mailConfigured ? 'warning' : 'neutral'),
-                'status' => $mailReady ? 'Настроена и проверена' : ($mailConfigured ? 'Требуется проверка' : 'Не настроена'),
+                'status' => $mailReady ? __('Configured and verified') : ($mailConfigured ? __('Verification required') : __('Not configured')),
                 'details' => $mailReady
-                    ? 'Тестовое письмо было успешно отправлено'
-                    : 'Проверьте вкладку «Почта»',
+                    ? __('A test email was sent successfully')
+                    : __('Check the Mail tab'),
             ];
         } catch (Throwable) {
             $components[] = [
-                'label' => 'Почтовая система',
+                'label' => __('Mail system'),
                 'state' => 'warning',
-                'status' => 'Состояние не определено',
-                'details' => 'Не удалось прочитать почтовые настройки',
+                'status' => __('Status could not be determined'),
+                'details' => __('Could not read mail settings'),
             ];
         }
 
         $queue = (string) config('queue.default');
         $components[] = [
-            'label' => 'Очереди',
+            'label' => __('Queues'),
             'state' => $queue === 'sync' ? 'success' : 'neutral',
-            'status' => $queue === 'sync' ? 'Синхронный режим' : 'Драйвер: '.$queue,
+            'status' => $queue === 'sync' ? __('Synchronous mode') : __('Driver: :driver', ['driver' => $queue]),
             'details' => $queue === 'sync'
-                ? 'Отдельный обработчик очереди не требуется'
-                : 'Для фоновой обработки должен быть запущен queue worker',
+                ? __('A separate queue worker is not required')
+                : __('A queue worker must be running for background processing'),
         ];
 
         $components[] = [
-            'label' => 'Планировщик Laravel',
+            'label' => __('Laravel scheduler'),
             'state' => 'neutral',
-            'status' => 'Не проверяется автоматически',
-            'details' => 'На production требуется системный запуск php artisan schedule:run',
+            'status' => __('Not checked automatically'),
+            'details' => __('Production requires a system task that runs php artisan schedule:run'),
         ];
 
         return $components;
@@ -319,10 +319,10 @@ final class SystemInformation
     private function formatBytes(int $bytes): string
     {
         if ($bytes < 1024) {
-            return $bytes.' Б';
+            return __(':bytes B', ['bytes' => $bytes]);
         }
 
-        $units = ['КБ', 'МБ', 'ГБ', 'ТБ'];
+        $units = [__('KB'), __('MB'), __('GB'), __('TB')];
         $value = $bytes / 1024;
         $unit = $units[0];
 
@@ -335,7 +335,7 @@ final class SystemInformation
             $unit = $nextUnit;
         }
 
-        return number_format($value, $value >= 10 ? 1 : 2, ',', ' ').' '.$unit;
+        return number_format($value, $value >= 10 ? 1 : 2, app()->getLocale() === 'ru' ? ',' : '.', app()->getLocale() === 'ru' ? ' ' : ',').' '.$unit;
     }
 
     /**
@@ -348,23 +348,23 @@ final class SystemInformation
         $software = $information['software'];
 
         return implode(PHP_EOL, [
-            'L2Forge CMS: '.$information['cms']['version'],
-            'Laravel: '.$software['laravel'],
-            'PHP: '.$software['php'],
-            'Composer: '.$software['composer'],
-            'OS: '.$software['os'],
-            'Architecture: '.$software['architecture'],
-            'PHP SAPI: '.$software['sapi'],
-            'Database: '.$database['driver_label'].($database['version'] ? ' '.$database['version'] : ''),
-            'Database connection: '.($database['connected'] ? 'OK' : 'ERROR'),
+            __('L2Forge CMS: :value', ['value' => $information['cms']['version']]),
+            __('Laravel: :value', ['value' => $software['laravel']]),
+            __('PHP: :value', ['value' => $software['php']]),
+            __('Composer: :value', ['value' => $software['composer']]),
+            __('OS: :value', ['value' => $software['os']]),
+            __('Architecture: :value', ['value' => $software['architecture']]),
+            __('PHP SAPI: :value', ['value' => $software['sapi']]),
+            __('Database: :value', ['value' => $database['driver_label'].($database['version'] ? ' '.$database['version'] : '')]),
+            __('Database connection: :value', ['value' => $database['connected'] ? 'OK' : 'ERROR']),
             'APP_ENV: '.$environment['name'],
             'APP_DEBUG: '.($environment['debug'] ? 'true' : 'false'),
-            'CMS timezone: '.$environment['cms_timezone'],
-            'Cache: '.$environment['cache'],
-            'Session: '.$environment['session'],
-            'Queue: '.$environment['queue'],
-            'Mail: '.$environment['mail'],
-            'Logging: '.$environment['logging'],
+            __('CMS timezone: :value', ['value' => $environment['cms_timezone']]),
+            __('Cache: :value', ['value' => $environment['cache']]),
+            __('Session: :value', ['value' => $environment['session']]),
+            __('Queue: :value', ['value' => $environment['queue']]),
+            __('Mail: :value', ['value' => $environment['mail']]),
+            __('Logging: :value', ['value' => $environment['logging']]),
         ]);
     }
 }

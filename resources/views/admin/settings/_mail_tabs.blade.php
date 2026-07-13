@@ -1,6 +1,6 @@
-<nav class="mail-template-tabs" aria-label="Разделы почты">
+<nav class="mail-template-tabs" aria-label="{{ __('Mail sections') }}">
     <a @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail')]) href="{{ route('admin.settings.mail') }}">
-        Подключение
+        {{ __('Connection') }}
     </a>
 
     @foreach ($mailTemplates as $templateKey => $item)
@@ -9,7 +9,7 @@
                 'mail-template-tab',
                 'active' => request()->routeIs('admin.settings.mail.template') && request()->route('template') === $templateKey,
             ])
-            href="{{ route('admin.settings.mail.template', ['template' => $templateKey]) }}"
+            href="{{ route('admin.settings.mail.template', ['template' => $templateKey, 'locale' => $templateLocale ?? app()->getLocale()]) }}"
         >
             {{ $item['title'] }}
         </a>

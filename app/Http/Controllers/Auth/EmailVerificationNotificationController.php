@@ -20,16 +20,16 @@ class EmailVerificationNotificationController extends Controller
         AuditLogger $auditLogger,
     ): RedirectResponse {
         if (! $registrationSettings->emailVerificationRequired()) {
-            return redirect()->route('account');
+            return redirect()->to(public_route('account'));
         }
 
         if ($request->user()?->hasVerifiedEmail()) {
-            return redirect()->route('account');
+            return redirect()->to(public_route('account'));
         }
 
         if (! $mailSettings->isReady()) {
             return back()->withErrors([
-                'email' => 'Отправка почты временно недоступна. Обратитесь к администрации сайта.',
+                'email' => __('Email delivery is temporarily unavailable. Contact the website administration.'),
             ]);
         }
 
@@ -44,12 +44,12 @@ class EmailVerificationNotificationController extends Controller
                 category: 'mail',
                 action: 'mail.verification_failed',
                 actor: $request->user(),
-                target: $request->user()?->email ?? 'Email пользователя',
+                target: $request->user()?->email ?? __('User email'),
                 details: ['exception_class' => $exception::class],
             );
 
             return back()->withErrors([
-                'email' => 'Письмо отправить не удалось. Повторите попытку позже.',
+                'email' => __('The email could not be sent. Try again later.'),
             ]);
         }
 
@@ -57,10 +57,10 @@ class EmailVerificationNotificationController extends Controller
             category: 'mail',
             action: 'mail.verification_sent',
             actor: $request->user(),
-            target: $request->user()?->email ?? 'Email пользователя',
+            target: $request->user()?->email ?? __('User email'),
             details: ['resend' => true],
         );
 
-        return back()->with('status', 'Новая ссылка подтверждения отправлена на ваш email.');
+        return back()->with('status', __('A new verification link has been sent to your email.'));
     }
 }

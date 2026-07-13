@@ -13,7 +13,7 @@ use Throwable;
 
 class AuditLogger
 {
-    private const REDACTED = '[СКРЫТО]';
+    private const REDACTED = '[REDACTED]';
 
     /** @var array<int, string> */
     private const SENSITIVE_PARTS = [
@@ -70,7 +70,7 @@ class AuditLogger
         array $details = [],
         string $result = 'success',
     ): ?AuditLog {
-        return $this->write($category, $action, $result, 'Система', $target, $details, 'system');
+        return $this->write($category, $action, $result, __('System'), $target, $details, 'system');
     }
 
     /**
@@ -201,7 +201,7 @@ class AuditLogger
     private function sanitize(mixed $value, int $depth = 0): mixed
     {
         if ($depth >= 6) {
-            return '[Слишком глубокая структура]';
+            return __('Structure depth limit reached');
         }
 
         if (is_array($value)) {
@@ -210,7 +210,7 @@ class AuditLogger
 
             foreach ($value as $key => $item) {
                 if ($count >= 100) {
-                    $result['__truncated'] = 'Оставшиеся элементы не сохранены.';
+                    $result['__truncated'] = __('Remaining items were not stored.');
                     break;
                 }
 

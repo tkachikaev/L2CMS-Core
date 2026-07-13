@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveGameServerSettingsRequest;
 use App\Http\Requests\Admin\SaveGeneralSettingsRequest;
+use App\Http\Requests\Admin\SaveLanguageSettingsRequest;
 use App\Http\Requests\Admin\SaveMailSettingsRequest;
 use App\Http\Requests\Admin\SaveMailTemplateRequest;
 use App\Http\Requests\Admin\SaveRegistrationSettingsRequest;
@@ -15,12 +16,14 @@ use App\Notifications\MailTemplateTestNotification;
 use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
 use App\Services\MailSettings;
+use App\Services\Localization\LanguageManager;
 use App\Services\MailTemplateSettings;
 use App\Services\RegistrationSettings;
 use App\Services\Settings\SettingsImageStorage;
 use App\Services\SiteSettings;
 use App\Services\SystemInformation;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -38,6 +41,9 @@ class SettingsController extends Controller
     {
         return view('admin.settings.general', [
             'settings' => $siteSettings->values(),
+            'translations' => $siteSettings->translations(),
+            'languages' => app(LanguageManager::class)->enabled(),
+            'defaultLocale' => app(LanguageManager::class)->default(),
             'timezones' => timezone_identifiers_list(),
         ]);
     }
@@ -66,15 +72,19 @@ class SettingsController extends Controller
             $favicon = $storedFavicon
                 ?? ($request->boolean('remove_favicon') ? null : $current['favicon']);
 
+            $translations = is_array($validated['translations'] ?? null)
+                ? $validated['translations']
+                : [];
+
             $siteSettings->update([
-                'name' => (string) $validated['site_name'],
-                'description' => (string) ($validated['site_description'] ?? ''),
+                'name' => (string) ($validated['site_name'] ?? $current['name']),
+                'description' => (string) ($validated['site_description'] ?? $current['description']),
                 'logo' => $logo,
                 'favicon' => $favicon,
                 'timezone' => (string) $validated['timezone'],
                 'admin_email' => (string) ($validated['admin_email'] ?? ''),
-                'footer_text' => (string) ($validated['footer_text'] ?? ''),
-            ]);
+                'footer_text' => (string) ($validated['footer_text'] ?? $current['footer_text']),
+            ], $translations);
         } catch (Throwable $exception) {
             if ($storedLogo !== null) {
                 $images->delete($storedLogo, 'logo');
@@ -99,7 +109,7 @@ class SettingsController extends Controller
         $this->auditLogger->success(
             category: 'admin',
             action: 'settings.general_updated',
-            target: 'Основные настройки',
+            target: __('General settings'),
             details: [
                 'changes' => $this->auditChanges(
                     $this->generalAuditValues($current),
@@ -112,13 +122,15 @@ class SettingsController extends Controller
 
         return redirect()
             ->route('admin.settings.general')
-            ->with('status', 'Основные настройки сохранены.');
+            ->with('status', __('General settings saved.'));
     }
 
     public function gameServer(GameServerSettings $gameServerSettings): View
     {
         return view('admin.settings.game-server', [
             'servers' => $gameServerSettings->all(),
+            'languages' => app(LanguageManager::class)->enabled(),
+            'defaultLocale' => app(LanguageManager::class)->default(),
         ]);
     }
 
@@ -139,7 +151,7 @@ class SettingsController extends Controller
 
         return redirect()
             ->route('admin.settings.game-server')
-            ->with('status', 'Игровой сервер добавлен.');
+            ->with('status', __('Game server added.'));
     }
 
     public function updateGameServer(
@@ -162,7 +174,7 @@ class SettingsController extends Controller
 
         return redirect()
             ->route('admin.settings.game-server')
-            ->with('status', 'Настройки игрового сервера сохранены.');
+            ->with('status', __('Game server settings saved.'));
     }
 
     public function destroyGameServer(
@@ -186,14 +198,14 @@ class SettingsController extends Controller
 
         return redirect()
             ->route('admin.settings.game-server')
-            ->with('status', 'Игровой сервер «'.$name.'» удалён.');
+            ->with('status', __('Game server :name deleted.', ['name' => $name]));
     }
 
     public function loginServer(): View
     {
         return $this->placeholder(
-            title: 'Логин сервер',
-            description: 'Здесь появятся параметры подключения и состояния логин-сервера.',
+            title: __('Login Server'),
+            description: __('Login Server connection and status settings will appear here.'),
         );
     }
 
@@ -202,6 +214,51 @@ class SettingsController extends Controller
         return view('admin.settings.system', [
             'system' => $systemInformation->collect(),
         ]);
+    }
+
+    public function languages(LanguageManager $languages): View
+    {
+        return view('admin.settings.languages', [
+            'installedLanguages' => $languages->installed(),
+            'enabledLocales' => $languages->enabledCodes(),
+            'defaultLocale' => $languages->default(),
+            'fallbackLocale' => $languages->fallback(),
+        ]);
+    }
+
+    public function updateLanguages(
+        SaveLanguageSettingsRequest $request,
+        LanguageManager $languages,
+    ): RedirectResponse {
+        $validated = $request->validated();
+        $before = [
+            'enabled' => $languages->enabledCodes(),
+            'default' => $languages->default(),
+            'fallback' => $languages->fallback(),
+        ];
+
+        $languages->update(
+            enabled: array_values(array_map('strval', (array) $validated['enabled_locales'])),
+            default: (string) $validated['default_locale'],
+            fallback: (string) $validated['fallback_locale'],
+        );
+
+        $after = [
+            'enabled' => $languages->enabledCodes(),
+            'default' => $languages->default(),
+            'fallback' => $languages->fallback(),
+        ];
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'settings.languages_updated',
+            target: __('Language settings'),
+            details: ['changes' => $this->auditChanges($before, $after)],
+        );
+
+        return redirect()
+            ->route('admin.settings.languages')
+            ->with('status', __('Language settings saved.'));
     }
 
     public function registration(RegistrationSettings $registrationSettings, MailSettings $mailSettings): View
@@ -226,20 +283,20 @@ class SettingsController extends Controller
         $this->auditLogger->success(
             category: 'admin',
             action: 'settings.registration_updated',
-            target: 'Настройки регистрации',
+            target: __('Registration settings'),
             details: ['changes' => $this->auditChanges($before, $after)],
         );
 
         return redirect()
             ->route('admin.settings.registration')
-            ->with('status', 'Настройки регистрации сохранены.');
+            ->with('status', __('Registration settings saved.'));
     }
 
     public function mail(MailSettings $mailSettings, MailTemplateSettings $mailTemplates): View
     {
         return view('admin.settings.mail', [
             'settings' => $mailSettings->values(),
-            'mailTemplates' => $mailTemplates->navigation(),
+            'mailTemplates' => $mailTemplates->navigation(app()->getLocale()),
         ]);
     }
 
@@ -269,7 +326,7 @@ class SettingsController extends Controller
         $this->auditLogger->success(
             category: 'admin',
             action: 'settings.mail_updated',
-            target: 'Почтовые настройки',
+            target: __('Mail settings'),
             details: [
                 'changes' => $this->auditChanges($before, $after),
                 'smtp_password_changed' => $passwordChanged,
@@ -278,7 +335,7 @@ class SettingsController extends Controller
 
         return redirect()
             ->route('admin.settings.mail')
-            ->with('status', 'Почтовые настройки сохранены. Отправьте тестовое письмо для проверки.');
+            ->with('status', __('Mail settings saved. Send a test email to verify them.'));
     }
 
     public function testMail(
@@ -287,7 +344,7 @@ class SettingsController extends Controller
     ): RedirectResponse {
         if (! $mailSettings->isConfigured()) {
             return back()->withErrors([
-                'test_email' => 'Сначала сохраните полные почтовые настройки.',
+                'test_email' => __('Save the complete mail settings first.'),
             ]);
         }
 
@@ -296,9 +353,9 @@ class SettingsController extends Controller
 
         try {
             Mail::raw(
-                "Это тестовое письмо от L2Forge CMS.\n\nЕсли вы получили его, SMTP-настройки работают корректно.",
+                __('This is a test email from L2Forge CMS.')."\n\n".__('If you received it, the SMTP settings are working correctly.'),
                 function (Message $message) use ($address): void {
-                    $message->to($address)->subject('Проверка почты — '.site_name());
+                    $message->to($address)->subject(__('Mail test — :site', ['site' => site_name()]));
                 }
             );
 
@@ -315,7 +372,7 @@ class SettingsController extends Controller
             );
 
             return back()->withErrors([
-                'test_email' => 'Тестовое письмо отправить не удалось. Проверьте сервер, порт, шифрование, логин и пароль.',
+                'test_email' => __('The test email could not be sent. Check the server, port, encryption, username and password.'),
             ]);
         }
 
@@ -327,23 +384,31 @@ class SettingsController extends Controller
 
         return redirect()
             ->route('admin.settings.mail')
-            ->with('status', 'Тестовое письмо успешно отправлено на '.$address.'.');
+            ->with('status', __('Test email sent successfully to :email.', ['email' => $address]));
     }
 
     public function mailTemplate(
+        Request $request,
         string $template,
         MailTemplateSettings $mailTemplates,
         MailSettings $mailSettings,
+        LanguageManager $languages,
     ): View {
         abort_unless($mailTemplates->exists($template), 404);
+        $locale = $languages->normalizeCode((string) $request->query('locale', app()->getLocale()));
+        if ($locale === null || ! $languages->isEnabled($locale)) {
+            $locale = $languages->default();
+        }
 
-        $values = $mailTemplates->values($template);
+        $values = $mailTemplates->values($template, $locale);
 
         return view('admin.settings.mail-template', [
             'template' => $values,
-            'mailTemplates' => $mailTemplates->navigation(),
-            'preview' => $mailTemplates->render($template, $mailTemplates->demoVariables($template)),
+            'mailTemplates' => $mailTemplates->navigation($locale),
+            'preview' => $mailTemplates->render($template, $mailTemplates->demoVariables($template, $locale), $locale),
             'mailSettings' => $mailSettings->values(),
+            'languages' => $languages->enabled(),
+            'templateLocale' => $locale,
         ]);
     }
 
@@ -354,6 +419,7 @@ class SettingsController extends Controller
     ): RedirectResponse {
         abort_unless($mailTemplates->exists($template), 404);
         $validated = $request->validated();
+        $locale = (string) $validated['locale'];
         $values = [
             'subject' => trim((string) $validated['subject']),
             'heading' => trim((string) $validated['heading']),
@@ -363,24 +429,24 @@ class SettingsController extends Controller
         ];
 
         $errors = [];
-        foreach ($mailTemplates->unknownVariables($template, $values) as $field => $variables) {
-            $errors[$field] = 'Неизвестные переменные: '.implode(', ', array_map(
+        foreach ($mailTemplates->unknownVariables($template, $values, $locale) as $field => $variables) {
+            $errors[$field] = __('Unknown variables: ').implode(', ', array_map(
                 static fn (string $variable): string => '{{'.$variable.'}}',
                 $variables,
             )).'.';
         }
 
         foreach ($mailTemplates->fieldsContainingHtml($values) as $field) {
-            $errors[$field] = 'HTML-теги не поддерживаются. Используйте обычный текст и доступные переменные.';
+            $errors[$field] = __('HTML tags are not supported. Use plain text and the available variables.');
         }
 
         if ($errors !== []) {
             return back()->withInput()->withErrors($errors);
         }
 
-        $before = $mailTemplates->values($template);
-        $mailTemplates->update($template, $values);
-        $after = $mailTemplates->values($template);
+        $before = $mailTemplates->values($template, $locale);
+        $mailTemplates->update($template, $values, $locale);
+        $after = $mailTemplates->values($template, $locale);
         $changedFields = array_keys($this->auditChanges(
             $this->mailTemplateAuditValues($before),
             $this->mailTemplateAuditValues($after),
@@ -392,33 +458,38 @@ class SettingsController extends Controller
             target: $after['title'],
             details: [
                 'template' => $template,
+                'locale' => $locale,
                 'changed_fields' => $changedFields,
             ],
         );
 
         return redirect()
-            ->route('admin.settings.mail.template', ['template' => $template])
-            ->with('status', 'Шаблон письма сохранён.');
+            ->route('admin.settings.mail.template', ['template' => $template, 'locale' => $locale])
+            ->with('status', __('Mail template saved.'));
     }
 
     public function resetMailTemplate(
+        Request $request,
         string $template,
         MailTemplateSettings $mailTemplates,
+        LanguageManager $languages,
     ): RedirectResponse {
         abort_unless($mailTemplates->exists($template), 404);
-        $title = $mailTemplates->values($template)['title'];
-        $mailTemplates->reset($template);
+        $locale = $languages->normalizeCode((string) $request->input('locale'));
+        abort_unless($locale !== null && $languages->isEnabled($locale), 422);
+        $title = $mailTemplates->values($template, $locale)['title'];
+        $mailTemplates->reset($template, $locale);
 
         $this->auditLogger->success(
             category: 'mail',
             action: 'mail.template_reset',
             target: $title,
-            details: ['template' => $template],
+            details: ['template' => $template, 'locale' => $locale],
         );
 
         return redirect()
-            ->route('admin.settings.mail.template', ['template' => $template])
-            ->with('status', 'Стандартный шаблон восстановлен.');
+            ->route('admin.settings.mail.template', ['template' => $template, 'locale' => $locale])
+            ->with('status', __('Default mail template restored.'));
     }
 
     public function testMailTemplate(
@@ -431,17 +502,19 @@ class SettingsController extends Controller
 
         if (! $mailSettings->isReady()) {
             return back()->withErrors([
-                'test_email' => 'Сначала настройте SMTP и успешно отправьте проверочное письмо во вкладке «Подключение».',
+                'test_email' => __('Configure SMTP and successfully send a test email from the Connection tab first.'),
             ]);
         }
 
-        $address = (string) $request->validated()['test_email'];
-        $title = $mailTemplates->values($template)['title'];
+        $validated = $request->validated();
+        $address = (string) $validated['test_email'];
+        $locale = (string) $validated['locale'];
+        $title = $mailTemplates->values($template, $locale)['title'];
         $mailSettings->applyConfiguration();
 
         try {
             Notification::route('mail', $address)
-                ->notify(new MailTemplateTestNotification($template));
+                ->notify(new MailTemplateTestNotification($template, $locale));
         } catch (Throwable $exception) {
             Log::warning('Mail template test failed.', [
                 'template' => $template,
@@ -453,12 +526,13 @@ class SettingsController extends Controller
                 target: $title,
                 details: [
                     'template' => $template,
+                    'locale' => $locale,
                     'exception_class' => $exception::class,
                 ],
             );
 
             return back()->withErrors([
-                'test_email' => 'Тестовое письмо отправить не удалось. Проверьте SMTP и повторите попытку.',
+                'test_email' => __('The test email could not be sent. Check SMTP and try again.'),
             ]);
         }
 
@@ -466,12 +540,12 @@ class SettingsController extends Controller
             category: 'mail',
             action: 'mail.template_test_sent',
             target: $title,
-            details: ['template' => $template],
+            details: ['template' => $template, 'locale' => $locale],
         );
 
         return redirect()
-            ->route('admin.settings.mail.template', ['template' => $template])
-            ->with('status', 'Тестовый шаблон отправлен на '.$address.'.');
+            ->route('admin.settings.mail.template', ['template' => $template, 'locale' => $locale])
+            ->with('status', __('Test template sent to :email.', ['email' => $address]));
     }
 
     /**
@@ -551,8 +625,16 @@ class SettingsController extends Controller
      */
     private function gameServerValues(array $validated): array
     {
+        $translations = [];
+        foreach ((array) ($validated['translations'] ?? []) as $locale => $translation) {
+            if (is_array($translation)) {
+                $translations[(string) $locale] = (string) ($translation['name'] ?? '');
+            }
+        }
+
         return [
-            'name' => (string) $validated['server_name'],
+            'name' => (string) ($validated['server_name'] ?? ''),
+            'translations' => $translations,
             'rates' => isset($validated['server_rates']) ? (string) $validated['server_rates'] : null,
             'chronicle' => isset($validated['server_chronicle']) ? (string) $validated['server_chronicle'] : null,
             'mode' => isset($validated['server_mode']) ? (string) $validated['server_mode'] : null,

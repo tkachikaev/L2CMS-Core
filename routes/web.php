@@ -19,52 +19,83 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\Localization\LocaleController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', HomeController::class)->name('home');
-Route::get('/news', [NewsController::class, 'index'])->name('news.index');
-Route::get('/news/{news:slug}', [NewsController::class, 'show'])->name('news.show');
-Route::view('/downloads', 'theme::pages.downloads')->name('downloads');
-Route::view('/about', 'theme::pages.about')->name('about');
+$registerPublicRoutes = static function (bool $localized = false): void {
+    $namePrefix = $localized ? 'localized.' : '';
 
-Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:10,1')
-        ->name('login.store');
+    Route::get('/', HomeController::class)->name($namePrefix.'home');
+    Route::get('/news', [NewsController::class, 'index'])->name($namePrefix.'news.index');
 
-    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('register.store');
+    if ($localized) {
+        Route::get('/news/{slug}', [NewsController::class, 'showLocalized'])
+            ->where('slug', '[^/]+')
+            ->name($namePrefix.'news.show');
+    } else {
+        Route::get('/news/{news:slug}', [NewsController::class, 'show'])->name($namePrefix.'news.show');
+    }
 
-    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('password.email');
+    Route::view('/downloads', 'theme::pages.downloads')->name($namePrefix.'downloads');
+    Route::view('/about', 'theme::pages.about')->name($namePrefix.'about');
 
-    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('/reset-password', [NewPasswordController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('password.store');
-});
+    Route::middleware('guest')->group(function () use ($namePrefix): void {
+        Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name($namePrefix.'login');
+        Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name($namePrefix.'login.store');
 
-Route::middleware(['auth', 'site.active'])->group(function (): void {
-    Route::get('/email/verify', EmailVerificationPromptController::class)->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
-        ->name('verification.verify');
-    Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
-        ->name('verification.send');
+        Route::get('/register', [RegisteredUserController::class, 'create'])->name($namePrefix.'register');
+        Route::post('/register', [RegisteredUserController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name($namePrefix.'register.store');
 
-    Route::get('/account', AccountController::class)
-        ->middleware('site.verified')
-        ->name('account');
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-});
+        Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name($namePrefix.'password.request');
+        Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name($namePrefix.'password.email');
+
+        Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name($namePrefix.'password.reset');
+        Route::post('/reset-password', [NewPasswordController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name($namePrefix.'password.store');
+    });
+
+    Route::middleware(['auth', 'site.active'])->group(function () use ($namePrefix): void {
+        Route::get('/email/verify', EmailVerificationPromptController::class)->name($namePrefix.'verification.notice');
+        Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name($namePrefix.'verification.verify');
+        Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+            ->middleware('throttle:6,1')
+            ->name($namePrefix.'verification.send');
+
+        Route::get('/account', AccountController::class)
+            ->middleware('site.verified')
+            ->name($namePrefix.'account');
+        Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name($namePrefix.'logout');
+    });
+};
+
+$registerPublicRoutes();
+
+Route::prefix('{locale}')
+    ->where(['locale' => (string) config('localization.locale_pattern')])
+    ->group(static function () use ($registerPublicRoutes): void {
+        $registerPublicRoutes(true);
+    });
+
+Route::get('/language/{locale}', [LocaleController::class, 'public'])
+    ->where('locale', (string) config('localization.locale_pattern'))
+    ->middleware('throttle:20,1')
+    ->name('language.switch');
 
 Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(function (): void {
+    Route::post('/language/{locale}', [LocaleController::class, 'admin'])
+        ->where('locale', (string) config('localization.locale_pattern'))
+        ->middleware('throttle:20,1')
+        ->name('language.switch');
+
     Route::middleware('admin.guest')->group(function (): void {
         Route::get('/login', [AdminSessionController::class, 'create'])->name('login');
         Route::post('/login', [AdminSessionController::class, 'store'])->name('login.store');
@@ -143,6 +174,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
             ->middleware('throttle:5,1')
             ->name('settings.mail.template.test');
         Route::get('/settings/system', [AdminSettingsController::class, 'system'])->name('settings.system');
+        Route::get('/settings/languages', [AdminSettingsController::class, 'languages'])->name('settings.languages');
+        Route::put('/settings/languages', [AdminSettingsController::class, 'updateLanguages'])->name('settings.languages.update');
 
         Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
     });

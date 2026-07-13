@@ -20,8 +20,8 @@ class RequireActiveSiteUser
             $request->session()->regenerateToken();
 
             return redirect()
-                ->route('login')
-                ->with('status', 'Учётная запись отключена администратором.');
+                ->to(public_route('login'))
+                ->with('status', __('The account was disabled by an administrator.'));
         }
 
         return $next($request);

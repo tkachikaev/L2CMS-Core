@@ -17,7 +17,7 @@ class EmailVerificationPromptController extends Controller
         MailSettings $mailSettings,
     ): View|RedirectResponse {
         if (! $registrationSettings->emailVerificationRequired() || $request->user()?->hasVerifiedEmail()) {
-            return redirect()->route('account');
+            return redirect()->to(public_route('account'));
         }
 
         return view('theme::auth.verify-email', [

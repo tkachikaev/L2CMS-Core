@@ -1,22 +1,25 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Вход администратора')
+@section('title', __('Administrator sign in'))
 
 @section('body')
 <main class="login-shell">
     <section class="login-panel" aria-labelledby="login-title">
-        <a class="brand" href="{{ route('home') }}" aria-label="Вернуться на сайт">
-            <span class="brand-mark">L2</span>
-            <span>
-                <strong>{{ config('app.name') }}</strong>
-                <small>CONTROL PANEL</small>
-            </span>
-        </a>
+        <div class="login-topline">
+            <a class="brand" href="{{ public_route('home') }}" aria-label="{{ __('Return to website') }}">
+                <span class="brand-mark">L2</span>
+                <span>
+                    <strong>{{ config('app.name') }}</strong>
+                    <small>CONTROL PANEL</small>
+                </span>
+            </a>
+            @include('admin.partials.language-switcher')
+        </div>
 
         <div class="login-copy">
-            <p class="eyebrow">ЗАЩИЩЁННАЯ ЗОНА</p>
-            <h1 id="login-title">Вход администратора</h1>
-            <p>Используйте отдельную учётную запись CMS. Игровой логин здесь не подходит.</p>
+            <p class="eyebrow">{{ __('SECURE AREA') }}</p>
+            <h1 id="login-title">{{ __('Administrator sign in') }}</h1>
+            <p>{{ __('Use a separate CMS administrator account. A game account cannot be used here.') }}</p>
         </div>
 
         @if (session('status'))
@@ -26,7 +29,7 @@
         <form method="POST" action="{{ route('admin.login.store') }}" class="login-form">
             @csrf
 
-            <label for="email">Электронная почта</label>
+            <label for="email">{{ __('Email address') }}</label>
             <input
                 id="email"
                 name="email"
@@ -41,7 +44,7 @@
             >
             @error('email')<p class="error-text">{{ $message }}</p>@enderror
 
-            <label for="password">Пароль</label>
+            <label for="password">{{ __('Password') }}</label>
             <input
                 id="password"
                 name="password"
@@ -55,21 +58,21 @@
 
             <label class="remember-row" for="remember">
                 <input id="remember" name="remember" type="checkbox" value="1" @checked(old('remember'))>
-                <span>Запомнить вход на этом устройстве</span>
+                <span>{{ __('Remember this device') }}</span>
             </label>
 
-            <button type="submit" class="primary-button">Войти в панель</button>
+            <button type="submit" class="primary-button">{{ __('Sign in to control panel') }}</button>
         </form>
 
-        <p class="login-note">Попытки входа ограничиваются и записываются в журнал безопасности.</p>
+        <p class="login-note">{{ __('Sign-in attempts are rate-limited and written to the security log.') }}</p>
     </section>
 
     <aside class="login-art" aria-hidden="true">
         <div class="ornament"></div>
         <div class="art-content">
             <span>L2FORGE CMS</span>
-            <strong>Управление проектом</strong>
-            <p>Новости, настройки, темы и модули будут собраны в единой панели.</p>
+            <strong>{{ __('Project management') }}</strong>
+            <p>{{ __('News, settings, themes and modules are managed from one control panel.') }}</p>
         </div>
     </aside>
 </main>

@@ -40,14 +40,14 @@ class NewPasswordController extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
         ], [
-            'email.required' => 'Укажите email.',
-            'email.email' => 'Email указан неверно.',
-            'password.required' => 'Укажите новый пароль.',
-            'password.string' => 'Пароль должен быть строкой.',
-            'password.min' => 'Пароль должен содержать не менее 8 символов.',
-            'password.letters' => 'Пароль должен содержать хотя бы одну букву.',
-            'password.numbers' => 'Пароль должен содержать хотя бы одну цифру.',
-            'password.confirmed' => 'Пароли не совпадают.',
+            'email.required' => __('Enter an email address.'),
+            'email.email' => __('The email address is invalid.'),
+            'password.required' => __('Enter a new password.'),
+            'password.string' => __('The password must be a string.'),
+            'password.min' => __('The password must be at least 8 characters.'),
+            'password.letters' => __('The password must contain at least one letter.'),
+            'password.numbers' => __('The password must contain at least one digit.'),
+            'password.confirmed' => __('The passwords do not match.'),
         ]);
 
         $changedUser = null;
@@ -72,7 +72,7 @@ class NewPasswordController extends Controller
 
         if ($status !== Password::PASSWORD_RESET) {
             return back()->withInput($request->only('email'))->withErrors([
-                'email' => 'Ссылка восстановления недействительна или устарела.',
+                'email' => __('The password reset link is invalid or has expired.'),
             ]);
         }
 
@@ -101,7 +101,7 @@ class NewPasswordController extends Controller
         }
 
         return redirect()
-            ->route('login')
-            ->with('status', 'Пароль изменён. Теперь можно войти.');
+            ->to(public_route('login'))
+            ->with('status', __('The password was changed. You can now sign in.'));
     }
 }

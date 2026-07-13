@@ -1,14 +1,14 @@
 @extends('theme::layouts.app')
 
-@section('title', 'Регистрация отключена — '.site_name())
+@section('title', __('Registration disabled').' — '.site_name())
 
 @section('content')
 <section class="auth-page">
     <div class="panel auth-card auth-message-card">
-        <p class="eyebrow">РЕГИСТРАЦИЯ</p>
-        <h1>Регистрация отключена</h1>
-        <p class="muted">{{ $reason ?? 'Администрация сайта временно закрыла создание новых учётных записей.' }}</p>
-        <a class="button button-gold" href="{{ route('home') }}">Вернуться на главную</a>
+        <p class="eyebrow">{{ __('REGISTRATION') }}</p>
+        <h1>{{ __('Registration disabled') }}</h1>
+        <p class="muted">{{ $reason ?? __('The site administration has temporarily disabled new account registration.') }}</p>
+        <a class="button button-gold" href="{{ public_route('home') }}">{{ __('Return to home') }}</a>
     </div>
 </section>
 @endsection

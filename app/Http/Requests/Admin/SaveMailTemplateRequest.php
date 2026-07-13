@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Services\Localization\LanguageManager;
 use App\Services\MailTemplateSettings;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SaveMailTemplateRequest extends FormRequest
 {
@@ -12,14 +14,23 @@ class SaveMailTemplateRequest extends FormRequest
         return $this->user('admin') !== null;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'locale' => (string) ($this->input('locale') ?: $this->query('locale') ?: app()->getLocale()),
+        ]);
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
         $template = (string) $this->route('template');
         $requiresAction = app(MailTemplateSettings::class)->exists($template)
             && app(MailTemplateSettings::class)->requiresAction($template);
+        $locales = app(LanguageManager::class)->enabledCodes();
 
         return [
+            'locale' => ['required', 'string', Rule::in($locales)],
             'subject' => ['required', 'string', 'max:200'],
             'heading' => ['required', 'string', 'max:150'],
             'body' => ['required', 'string', 'max:5000'],
@@ -32,15 +43,15 @@ class SaveMailTemplateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'subject.required' => 'Укажите тему письма.',
-            'subject.max' => 'Тема письма не должна превышать 200 символов.',
-            'heading.required' => 'Укажите заголовок письма.',
-            'heading.max' => 'Заголовок письма не должен превышать 150 символов.',
-            'body.required' => 'Укажите основной текст письма.',
-            'body.max' => 'Основной текст письма не должен превышать 5000 символов.',
-            'action_text.required' => 'Укажите текст кнопки.',
-            'action_text.max' => 'Текст кнопки не должен превышать 100 символов.',
-            'footer.max' => 'Дополнительный текст не должен превышать 3000 символов.',
+            'subject.required' => __('Enter the email subject.'),
+            'subject.max' => __('The email subject must not exceed 200 characters.'),
+            'heading.required' => __('Enter the email heading.'),
+            'heading.max' => __('The email heading must not exceed 150 characters.'),
+            'body.required' => __('Enter the main email text.'),
+            'body.max' => __('The main email text must not exceed 5000 characters.'),
+            'action_text.required' => __('Enter the button text.'),
+            'action_text.max' => __('The button text must not exceed 100 characters.'),
+            'footer.max' => __('The additional text must not exceed 3000 characters.'),
         ];
     }
 }

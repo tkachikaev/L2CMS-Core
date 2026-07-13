@@ -1,71 +1,57 @@
 @extends('admin.layouts.panel')
 
-@section('title', 'Новости')
-@section('description', 'Создание, оформление, редактирование и публикация новостей публичного сайта.')
+@section('title', __('News'))
+@section('description', __('Create, format, edit and publish news for the public website.'))
 
 @section('content')
 <div class="content-toolbar">
-    <div class="content-stat">
-        <span>Всего</span>
-        <strong>{{ $totalCount }}</strong>
-    </div>
-    <div class="content-stat">
-        <span>Опубликовано</span>
-        <strong>{{ $publishedCount }}</strong>
-    </div>
-    <div class="content-stat">
-        <span>Запланировано</span>
-        <strong>{{ $scheduledCount }}</strong>
-    </div>
-    <div class="content-stat">
-        <span>Черновики</span>
-        <strong>{{ $draftCount }}</strong>
-    </div>
-    <a class="button button-primary" href="{{ route('admin.news.create') }}">Создать новость</a>
+    <div class="content-stat"><span>{{ __('Total') }}</span><strong>{{ $totalCount }}</strong></div>
+    <div class="content-stat"><span>{{ __('Published') }}</span><strong>{{ $publishedCount }}</strong></div>
+    <div class="content-stat"><span>{{ __('Scheduled') }}</span><strong>{{ $scheduledCount }}</strong></div>
+    <div class="content-stat"><span>{{ __('Drafts') }}</span><strong>{{ $draftCount }}</strong></div>
+    <a class="button button-primary" href="{{ route('admin.news.create') }}">{{ __('Create news') }}</a>
 </div>
 
 @if ($news->isEmpty())
     <div class="empty-state">
         <div class="empty-state-mark" aria-hidden="true">N</div>
-        <h2>Новостей пока нет</h2>
-        <p>Создайте первую новость, добавьте оформление и опубликуйте её на сайте.</p>
-        <a class="button button-primary" href="{{ route('admin.news.create') }}">Создать первую новость</a>
+        <h2>{{ __('No news yet') }}</h2>
+        <p>{{ __('Create the first article, add an image and publish it on the website.') }}</p>
+        <a class="button button-primary" href="{{ route('admin.news.create') }}">{{ __('Create first news') }}</a>
     </div>
 @else
     <div class="content-list">
         @foreach ($news as $item)
+            @php
+                $itemTitle = $item->titleFor(app()->getLocale());
+                $itemExcerpt = $item->excerptFor(app()->getLocale());
+            @endphp
             <article class="content-row">
-                <a class="content-row-preview" href="{{ route('admin.news.edit', $item) }}" aria-label="Редактировать: {{ $item->title }}">
+                <a class="content-row-preview" href="{{ route('admin.news.edit', $item) }}" aria-label="{{ __('Edit: :title', ['title' => $itemTitle]) }}">
                     @if ($item->coverUrl())
                         <img src="{{ $item->coverUrl() }}" alt="">
                     @else
-                        <span>Без изображения</span>
+                        <span>{{ __('No image') }}</span>
                     @endif
                 </a>
 
                 <div class="content-row-main">
-                    <a class="content-row-title" href="{{ route('admin.news.edit', $item) }}">{{ $item->title }}</a>
-                    <p>{{ $item->excerpt ?: 'Краткое описание не задано.' }}</p>
+                    <a class="content-row-title" href="{{ route('admin.news.edit', $item) }}">{{ $itemTitle }}</a>
+                    <p>{{ $itemExcerpt ?: __('No short description.') }}</p>
                     <div class="content-row-meta">
-                        <span>/news/{{ $item->slug }}</span>
-                        <span>Изменена {{ $item->updated_at->format('d.m.Y H:i') }}</span>
+                        <span>/{{ app()->getLocale() }}/news/{{ $item->slugFor(app()->getLocale()) }}</span>
+                        <span>{{ __('Updated :date', ['date' => $item->updated_at->format('d.m.Y H:i')]) }}</span>
                     </div>
                 </div>
 
                 <div class="content-row-publication">
                     <span class="publication-state {{ $item->publicationState() }}">{{ $item->publicationLabel() }}</span>
-                    <time>{{ $item->published_at?->format('d.m.Y H:i') ?: 'Дата не указана' }}</time>
+                    <time>{{ $item->published_at?->format('d.m.Y H:i') ?: __('Date not set') }}</time>
                 </div>
 
                 <div class="content-row-actions">
-                    <a class="button button-primary" href="{{ route('admin.news.edit', $item) }}">Редактировать</a>
-                    <button
-                        class="button button-danger"
-                        type="button"
-                        data-news-delete-open
-                        data-news-delete-title="{{ $item->title }}"
-                        data-news-delete-url="{{ route('admin.news.destroy', $item) }}"
-                    >Удалить</button>
+                    <a class="button button-primary" href="{{ route('admin.news.edit', $item) }}">{{ __('Edit') }}</a>
+                    <button class="button button-danger" type="button" data-news-delete-open data-news-delete-title="{{ $itemTitle }}" data-news-delete-url="{{ route('admin.news.destroy', $item) }}">{{ __('Delete') }}</button>
                 </div>
             </article>
         @endforeach
@@ -76,15 +62,13 @@
             $firstPage = max(1, $news->currentPage() - 2);
             $lastPage = min($news->lastPage(), $news->currentPage() + 2);
         @endphp
-
-        <nav class="simple-pagination" aria-label="Навигация по страницам">
+        <nav class="simple-pagination" aria-label="{{ __('Page navigation') }}">
             @if ($news->onFirstPage())
-                <span class="button button-secondary disabled">← Назад</span>
+                <span class="button button-secondary disabled">← {{ __('Back') }}</span>
             @else
-                <a class="button button-secondary" href="{{ $news->previousPageUrl() }}" rel="prev">← Назад</a>
+                <a class="button button-secondary" href="{{ $news->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>
             @endif
-
-            <div class="pagination-pages" aria-label="Страницы">
+            <div class="pagination-pages" aria-label="{{ __('Pages') }}">
                 @foreach ($news->getUrlRange($firstPage, $lastPage) as $page => $url)
                     @if ($page === $news->currentPage())
                         <span class="pagination-page active" aria-current="page">{{ $page }}</span>
@@ -93,33 +77,29 @@
                     @endif
                 @endforeach
             </div>
-
             @if ($news->hasMorePages())
-                <a class="button button-secondary" href="{{ $news->nextPageUrl() }}" rel="next">Вперёд →</a>
+                <a class="button button-secondary" href="{{ $news->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>
             @else
-                <span class="button button-secondary disabled">Вперёд →</span>
+                <span class="button button-secondary disabled">{{ __('Next') }} →</span>
             @endif
         </nav>
     @endif
-
 
     <dialog class="confirm-dialog" data-news-delete-dialog aria-labelledby="delete-news-title">
         <div class="confirm-dialog-card">
             <div class="confirm-dialog-copy">
                 <span class="confirm-dialog-mark" aria-hidden="true">!</span>
                 <div>
-                    <h2 id="delete-news-title">Удалить новость?</h2>
-                    <p>Новость «<strong data-news-delete-title></strong>» будет удалена с сайта вместе с неиспользуемыми изображениями. Отменить это действие нельзя.</p>
+                    <h2 id="delete-news-title">{{ __('Delete news?') }}</h2>
+                    <p>{!! __('The news “<strong data-news-delete-title></strong>” and its unused images will be deleted. This action cannot be undone.') !!}</p>
                 </div>
             </div>
-
             <div class="confirm-dialog-actions">
-                <button class="button button-secondary" type="button" data-news-delete-cancel>Отмена</button>
-
+                <button class="button button-secondary" type="button" data-news-delete-cancel>{{ __('Cancel') }}</button>
                 <form method="POST" action="" data-news-delete-form>
                     @csrf
                     @method('DELETE')
-                    <button class="button button-danger" type="submit">Да, удалить</button>
+                    <button class="button button-danger" type="submit">{{ __('Yes, delete') }}</button>
                 </form>
             </div>
         </div>

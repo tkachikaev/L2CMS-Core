@@ -11,7 +11,7 @@ final class HomeController
 {
     public function __invoke(GameServerAdapter $game, GameServerSettings $gameServerSettings): View
     {
-        $news = News::query()->published()->latest('published_at')->limit(3)->get();
+        $news = News::query()->with('translations')->published()->latest('published_at')->limit(3)->get();
         $status = $game->status();
         $servers = array_map(
             static fn (array $server): array => array_merge($server, $status),

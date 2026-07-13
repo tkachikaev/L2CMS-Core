@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Services\Localization\LanguageManager;
 use App\Services\Settings\SettingsImageStorage;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,12 +19,14 @@ class SaveGeneralSettingsRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        return [
-            'site_name' => ['required', 'string', 'max:100'],
+        $languages = app(LanguageManager::class);
+        $rules = [
+            'site_name' => ['nullable', 'required_without:translations', 'string', 'max:100'],
             'site_description' => ['nullable', 'string', 'max:255'],
+            'footer_text' => ['nullable', 'string', 'max:255'],
+            'translations' => ['nullable', 'array'],
             'timezone' => ['required', 'string', Rule::in(timezone_identifiers_list())],
             'admin_email' => ['nullable', 'string', 'email:rfc', 'max:255'],
-            'footer_text' => ['nullable', 'string', 'max:255'],
             'logo' => [
                 'nullable',
                 'file',
@@ -39,30 +42,59 @@ class SaveGeneralSettingsRequest extends FormRequest
             'remove_logo' => ['nullable', 'boolean'],
             'remove_favicon' => ['nullable', 'boolean'],
         ];
+
+        foreach ($languages->enabledCodes() as $locale) {
+            $nameRules = ['nullable', 'string', 'max:100'];
+            if ($locale === $languages->default()) {
+                array_splice($nameRules, 1, 0, ['required_with:translations']);
+            }
+
+            $rules['translations.'.$locale.'.name'] = $nameRules;
+            $rules['translations.'.$locale.'.description'] = ['nullable', 'string', 'max:255'];
+            $rules['translations.'.$locale.'.footer_text'] = ['nullable', 'string', 'max:255'];
+        }
+
+        return $rules;
     }
 
     /** @return array<string, string> */
     public function attributes(): array
     {
         return [
-            'site_name' => 'название сайта',
-            'site_description' => 'краткое описание',
-            'timezone' => 'часовой пояс',
-            'admin_email' => 'email администрации',
-            'footer_text' => 'текст в подвале',
-            'logo' => 'логотип',
+            'site_name' => __('site name'),
+            'site_description' => __('short description'),
+            'timezone' => __('time zone'),
+            'admin_email' => __('administrator email'),
+            'footer_text' => __('footer text'),
+            'logo' => __('logo'),
             'favicon' => 'favicon',
         ];
     }
 
     protected function prepareForValidation(): void
     {
+        $translations = $this->input('translations');
+        if (is_array($translations)) {
+            foreach ($translations as $locale => $values) {
+                if (! is_array($values)) {
+                    continue;
+                }
+
+                $translations[$locale] = [
+                    'name' => trim((string) ($values['name'] ?? '')),
+                    'description' => trim((string) ($values['description'] ?? '')),
+                    'footer_text' => trim((string) ($values['footer_text'] ?? '')),
+                ];
+            }
+        }
+
         $this->merge([
             'site_name' => trim((string) $this->input('site_name')),
             'site_description' => trim((string) $this->input('site_description')),
             'timezone' => trim((string) $this->input('timezone')),
             'admin_email' => trim((string) $this->input('admin_email')),
             'footer_text' => trim((string) $this->input('footer_text')),
+            'translations' => $translations,
             'remove_logo' => $this->boolean('remove_logo'),
             'remove_favicon' => $this->boolean('remove_favicon'),
         ]);

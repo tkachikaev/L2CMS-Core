@@ -25,7 +25,7 @@ class RequireAdminAuthentication
 
             return redirect()
                 ->route('admin.login')
-                ->with('status', 'Учётная запись администратора отключена.');
+                ->with('status', __('The administrator account was disabled.'));
         }
 
         return $next($request);

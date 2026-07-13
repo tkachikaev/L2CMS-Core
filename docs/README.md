@@ -6,6 +6,7 @@
 - [Авторизация администраторов](ADMIN_AUTH.md)
 - [Управление администраторами](ADMINISTRATORS.md)
 - [Настройки сайта](SETTINGS.md)
+- [Языки и переводы](LANGUAGES.md)
 - [Пользователи сайта](USERS.md)
 - [Почтовая система](MAIL.md)
 - [Новости](NEWS.md)
@@ -18,4 +19,5 @@
 
 - [Архитектура](ARCHITECTURE.md)
 - [Добавление событий в журнал](development/AUDIT_LOGGING.md)
+- [Локализация ядра, тем и модулей](development/LOCALIZATION.md)
 - [Дорожная карта](ROADMAP.md)

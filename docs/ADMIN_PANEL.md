@@ -7,7 +7,7 @@ The administrative interface is part of L2Forge Core and is never rendered throu
 - `/admin` — the main administration page and the single panel entry point.
 - `/admin/news` — news management inside the same administration shell.
 - `/admin/themes` — theme management inside the same administration shell.
-- `/admin/settings` — site, game-server, registration, SMTP and system settings.
+- `/admin/settings` — site, game-server, registration, SMTP, system and language settings.
 - `/admin/users` — CMS user management and account details.
 - `/admin/administrators` — administrator account management.
 - `/admin/logs` — human-readable audit log with categories and event details.
@@ -31,11 +31,13 @@ Current sections:
 - Main page — implemented.
 - News — implemented.
 - Themes — implemented.
-- Settings — general, game-server, registration and SMTP settings implemented; login-server tab prepared.
+- Settings — general, game-server, registration, SMTP, system and language settings implemented; login-server tab prepared.
 - Users — implemented with search, filters, account details and safe access management.
 - Modules — planned.
 - Administrators — implemented without roles; all accounts have equal access.
 - Activity log — implemented.
+
+The panel language switcher is independent of the public theme. Russian and English are built in; the selected locale is stored in the administrator account.
 
 ## Theme activation
 

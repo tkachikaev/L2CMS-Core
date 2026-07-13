@@ -7,7 +7,7 @@ final class MockGameServerAdapter implements GameServerAdapter
 {
     public function status(): array
     {
-        return ['online' => true, 'players' => 1254, 'max_players' => config('cms.server.max_online', 5000), 'uptime' => '15д. 7ч.'];
+        return ['online' => true, 'players' => 1254, 'max_players' => config('cms.server.max_online', 5000), 'uptime' => '15d 7h'];
     }
 
     public function topCharacters(int $limit = 5): array

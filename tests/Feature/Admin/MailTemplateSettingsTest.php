@@ -50,17 +50,18 @@ class MailTemplateSettingsTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->put('/admin/settings/mail/templates/email_verification', [
+                'locale' => 'ru',
                 'subject' => 'Добро пожаловать на {{site_name}}',
                 'heading' => 'Подтвердите адрес',
                 'body' => 'Здравствуйте, {{username}}!',
                 'action_text' => 'Завершить регистрацию',
                 'footer' => 'Ссылка работает {{expires_in}}.',
             ])
-            ->assertRedirect(route('admin.settings.mail.template', ['template' => 'email_verification']))
+            ->assertRedirect(route('admin.settings.mail.template', ['template' => 'email_verification', 'locale' => 'ru']))
             ->assertSessionHas('status');
 
         $this->assertDatabaseHas('cms_settings', [
-            'key' => 'mail.template.email_verification.subject',
+            'key' => 'mail.template.email_verification.ru.subject',
             'value' => 'Добро пожаловать на {{site_name}}',
         ]);
         $this->assertDatabaseHas('audit_logs', [
@@ -69,12 +70,12 @@ class MailTemplateSettingsTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'admin')
-            ->post('/admin/settings/mail/templates/email_verification/reset')
-            ->assertRedirect(route('admin.settings.mail.template', ['template' => 'email_verification']))
+            ->post('/admin/settings/mail/templates/email_verification/reset', ['locale' => 'ru'])
+            ->assertRedirect(route('admin.settings.mail.template', ['template' => 'email_verification', 'locale' => 'ru']))
             ->assertSessionHas('status');
 
         $this->assertNull(CmsSetting::query()
-            ->where('key', 'mail.template.email_verification.subject')
+            ->where('key', 'mail.template.email_verification.ru.subject')
             ->value('value'));
         $this->assertSame(
             'Подтвердите регистрацию на {{site_name}}',
@@ -86,6 +87,7 @@ class MailTemplateSettingsTest extends TestCase
     {
         $admin = $this->createAdmin();
         $base = [
+            'locale' => 'ru',
             'subject' => 'Письмо от {{site_name}}',
             'heading' => 'Подтверждение',
             'body' => 'Здравствуйте, {{unknown_variable}}!',
@@ -154,8 +156,9 @@ class MailTemplateSettingsTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->post('/admin/settings/mail/templates/password_reset/test', [
                 'test_email' => 'recipient@example.com',
+                'locale' => 'ru',
             ])
-            ->assertRedirect(route('admin.settings.mail.template', ['template' => 'password_reset']))
+            ->assertRedirect(route('admin.settings.mail.template', ['template' => 'password_reset', 'locale' => 'ru']))
             ->assertSessionHas('status');
 
         Notification::assertSentOnDemand(MailTemplateTestNotification::class);

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Services\Localization\LanguageManager;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SendMailTemplateTestRequest extends FormRequest
 {
@@ -11,10 +13,18 @@ class SendMailTemplateTestRequest extends FormRequest
         return $this->user('admin') !== null;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'locale' => (string) ($this->input('locale') ?: $this->query('locale') ?: app()->getLocale()),
+        ]);
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
+            'locale' => ['required', 'string', Rule::in(app(LanguageManager::class)->enabledCodes())],
             'test_email' => ['required', 'email:rfc', 'max:255'],
         ];
     }
@@ -23,8 +33,8 @@ class SendMailTemplateTestRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'test_email.required' => 'Укажите адрес для тестового письма.',
-            'test_email.email' => 'Адрес для тестового письма указан неверно.',
+            'test_email.required' => __('Enter an address for the test email.'),
+            'test_email.email' => __('The test email address is invalid.'),
         ];
     }
 }

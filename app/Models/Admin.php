@@ -17,6 +17,7 @@ class Admin extends Authenticatable
         'is_active',
         'last_login_at',
         'last_login_ip',
+        'locale',
     ];
 
     protected $hidden = [
@@ -30,6 +31,7 @@ class Admin extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'locale' => 'string',
         ];
     }
 }

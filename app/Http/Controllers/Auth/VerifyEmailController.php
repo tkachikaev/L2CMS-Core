@@ -24,7 +24,7 @@ class VerifyEmailController extends Controller
         }
 
         return redirect()
-            ->route('account')
-            ->with('status', 'Email успешно подтверждён.');
+            ->to(public_route('account'))
+            ->with('status', __('Email verified successfully.'));
     }
 }

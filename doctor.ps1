@@ -166,6 +166,62 @@ $settingsUploadDetails = if ($missingSettingsUploadPaths.Count -gt 0) {
 }
 Test-ItemStatus 'Settings upload directories' $settingsUploadWritable $settingsUploadDetails
 
+$builtInLanguageFiles = @(
+    'lang\ru\language.php',
+    'lang\ru.json',
+    'lang\en\language.php',
+    'lang\en.json'
+)
+$missingLanguageFiles = @($builtInLanguageFiles | Where-Object {
+    -not (Test-Path -LiteralPath (Get-ProjectPath -RelativePath $_) -PathType Leaf)
+})
+Test-ItemStatus 'Built-in language files' ($missingLanguageFiles.Count -eq 0) $(
+    if ($missingLanguageFiles.Count -eq 0) { 'Russian and English packs are present' }
+    else { 'missing: ' + ($missingLanguageFiles -join ', ') }
+)
+
+$languageJsonOk = $true
+$languageJsonDetails = @()
+$languageKeys = @{}
+foreach ($locale in @('ru', 'en')) {
+    $jsonPath = Get-ProjectPath -RelativePath ("lang\$locale.json")
+    if (-not (Test-Path -LiteralPath $jsonPath -PathType Leaf)) {
+        $languageJsonOk = $false
+        continue
+    }
+
+    try {
+        $jsonObject = Get-Content -LiteralPath $jsonPath -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+        $keys = @($jsonObject.PSObject.Properties.Name)
+        $languageKeys[$locale] = $keys
+        $languageJsonDetails += "$locale=$($keys.Count) keys"
+    } catch {
+        $languageJsonOk = $false
+        $languageJsonDetails += "$locale invalid JSON: $($_.Exception.Message)"
+    }
+}
+
+if ($languageJsonOk -and $languageKeys.ContainsKey('ru') -and $languageKeys.ContainsKey('en')) {
+    $missingInRussian = @($languageKeys['en'] | Where-Object { $languageKeys['ru'] -notcontains $_ })
+    $missingInEnglish = @($languageKeys['ru'] | Where-Object { $languageKeys['en'] -notcontains $_ })
+    if ($missingInRussian.Count -gt 0 -or $missingInEnglish.Count -gt 0) {
+        $languageJsonOk = $false
+        $languageJsonDetails += "missing ru=$($missingInRussian.Count), missing en=$($missingInEnglish.Count)"
+    }
+}
+Test-ItemStatus 'Built-in language translations' $languageJsonOk $(
+    if ($languageJsonDetails.Count -gt 0) { $languageJsonDetails -join '; ' }
+    else { 'language JSON files are unavailable' }
+)
+
+if ($phpCommand -and $missingLanguageFiles.Count -eq 0) {
+    foreach ($locale in @('ru', 'en')) {
+        $metadataPath = Get-ProjectPath -RelativePath ("lang\$locale\language.php")
+        & php -l $metadataPath *> $null
+        Test-ItemStatus "Language metadata $locale" ($LASTEXITCODE -eq 0) $(if ($LASTEXITCODE -eq 0) { 'valid PHP' } else { 'PHP syntax error' })
+    }
+}
+
 if ((Test-Path -LiteralPath $autoloadPath -PathType Leaf) -and (Test-Path -LiteralPath $envPath -PathType Leaf)) {
     Write-Host ''
     Write-Host 'Laravel check:'

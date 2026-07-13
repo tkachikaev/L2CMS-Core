@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\Localization\LanguageManager;
 use App\Services\MailTemplateSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -20,10 +21,17 @@ class VerifyEmailNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $languages = app(LanguageManager::class);
+        $locale = $languages->normalizeCode((string) ($notifiable->locale ?? '')) ?? $languages->default();
+        if (! $languages->isEnabled($locale)) {
+            $locale = $languages->default();
+        }
+
         $url = URL::temporarySignedRoute(
-            'verification.verify',
+            'localized.verification.verify',
             now()->addMinutes(60),
             [
+                'locale' => $locale,
                 'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
@@ -35,9 +43,10 @@ class VerifyEmailNotification extends Notification
             MailTemplateSettings::EMAIL_VERIFICATION,
             $templates->userVariables($notifiable, [
                 'verification_url' => $url,
-                'expires_in' => '60 минут',
-            ]),
+                'expires_in' => $templates->translatedDuration($locale),
+            ], $locale),
             $url,
+            $locale,
         );
     }
 }

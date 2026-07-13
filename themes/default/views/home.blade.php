@@ -7,6 +7,15 @@
             $server['show_rates'] ? $server['rates'] : null,
         ], static fn ($value) => is_string($value) && $value !== ''))
         : [];
+
+    $features = [
+        ['⚔', __('Fair play'), __('No paid advantages')],
+        ['◆', __('Stable operation'), __('Isolated infrastructure and backups')],
+        ['♜', __('Classic world'), __('Familiar mechanics without unnecessary changes')],
+        ['◎', __('Active community'), __('Open development and transparent rules')],
+        ['✦', __('Regular events'), __('New content without turning the game into a store')],
+        ['⛨', __('Security'), __('Modern authentication and action auditing')],
+    ];
 @endphp
 
 @section('title', site_name().($server && $server['show_chronicle'] ? ' — '.$server['chronicle'] : ''))
@@ -15,7 +24,7 @@
 <section class="hero">
     <div class="hero-overlay"></div>
     <div class="container hero-content">
-        <p class="eyebrow">КЛАССИЧЕСКИЙ МИР · ТВОЯ ЛЕГЕНДА</p>
+        <p class="eyebrow">{{ __('CLASSIC WORLD · YOUR LEGEND') }}</p>
         <h1>LINEAGE II</h1>
         @if ($heroDetails !== [])
             <h2>{{ implode(' · ', $heroDetails) }}</h2>
@@ -25,13 +34,13 @@
         @endif
         <div class="hero-actions">
             @auth
-                <a class="button button-gold button-large" href="{{ route('account') }}">Личный кабинет</a>
+                <a class="button button-gold button-large" href="{{ public_route('account') }}">{{ __('Personal account') }}</a>
             @elseif (registration_available())
-                <a class="button button-gold button-large" href="{{ route('register') }}">Регистрация</a>
+                <a class="button button-gold button-large" href="{{ public_route('register') }}">{{ __('Register') }}</a>
             @else
-                <a class="button button-gold button-large" href="{{ route('login') }}">Войти</a>
+                <a class="button button-gold button-large" href="{{ public_route('login') }}">{{ __('Log in') }}</a>
             @endauth
-            <a class="button button-ghost button-large" href="{{ route('downloads') }}">Скачать клиент</a>
+            <a class="button button-ghost button-large" href="{{ public_route('downloads') }}">{{ __('Download client') }}</a>
         </div>
     </div>
 </section>
@@ -40,7 +49,7 @@
     @if ($servers !== [])
         <article class="panel server-panel">
             <div class="panel-title">
-                <h2>{{ count($servers) > 1 ? 'Игровые серверы' : 'Статус сервера' }}</h2>
+                <h2>{{ count($servers) > 1 ? __('Game servers') : __('Server status') }}</h2>
             </div>
 
             <div class="server-list">
@@ -49,25 +58,25 @@
                         <div class="server-summary">
                             <strong>{{ $currentServer['name'] }}</strong>
                             <span class="status {{ $currentServer['online'] ? 'online' : 'offline' }}">
-                                {{ $currentServer['online'] ? 'Онлайн' : 'Офлайн' }}
+                                {{ $currentServer['online'] ? __('Online') : __('Offline') }}
                             </span>
-                            <small>{{ number_format($currentServer['players'], 0, '.', ' ') }} / {{ number_format($currentServer['max_players'], 0, '.', ' ') }} игроков</small>
+                            <small>{{ number_format($currentServer['players'], 0, '.', ' ') }} / {{ number_format($currentServer['max_players'], 0, '.', ' ') }} {{ __('players') }}</small>
                         </div>
 
-                        <div class="progress" aria-label="Заполнение сервера">
+                        <div class="progress" aria-label="{{ __('Server population') }}">
                             <span style="width: {{ min(100, ($currentServer['players'] / max(1, $currentServer['max_players'])) * 100) }}%"></span>
                         </div>
 
                         @if ($currentServer['show_chronicle'] || $currentServer['show_rates'] || $currentServer['show_mode'])
                             <dl>
                                 @if ($currentServer['show_chronicle'])
-                                    <div><dt>Хроники</dt><dd>{{ $currentServer['chronicle'] }}</dd></div>
+                                    <div><dt>{{ __('Chronicle') }}</dt><dd>{{ $currentServer['chronicle'] }}</dd></div>
                                 @endif
                                 @if ($currentServer['show_rates'])
-                                    <div><dt>Рейты</dt><dd>{{ $currentServer['rates'] }}</dd></div>
+                                    <div><dt>{{ __('Rates') }}</dt><dd>{{ $currentServer['rates'] }}</dd></div>
                                 @endif
                                 @if ($currentServer['show_mode'])
-                                    <div><dt>Режим</dt><dd>{{ $currentServer['mode'] }}</dd></div>
+                                    <div><dt>{{ __('Mode') }}</dt><dd>{{ $currentServer['mode'] }}</dd></div>
                                 @endif
                             </dl>
                         @endif
@@ -79,57 +88,57 @@
 
     <div class="content-grid">
         <section class="panel news-panel">
-            <div class="panel-title"><h2>Последние новости</h2><a href="{{ route('news.index') }}">Все новости →</a></div>
+            <div class="panel-title"><h2>{{ __('Latest news') }}</h2><a href="{{ public_route('news.index') }}">{{ __('All news →') }}</a></div>
             <div class="news-list">
                 @forelse($news as $item)
                     <article class="news-item">
-                        <a class="news-thumb" href="{{ route('news.show', $item) }}" aria-label="{{ $item->title }}">
+                        <a class="news-thumb" href="{{ news_url($item) }}" aria-label="{{ $item->titleFor() }}">
                             @if ($item->coverUrl())
                                 <img src="{{ $item->coverUrl() }}" alt="">
                             @endif
                         </a>
-                        <div><time>{{ $item->published_at?->format('d.m.Y') }}</time><h3><a href="{{ route('news.show', $item) }}">{{ $item->title }}</a></h3><p>{{ $item->excerpt }}</p></div>
+                        <div><time>{{ $item->published_at?->format('d.m.Y') }}</time><h3><a href="{{ news_url($item) }}">{{ $item->titleFor() }}</a></h3><p>{{ $item->excerptFor() }}</p></div>
                     </article>
                 @empty
-                    <p class="empty">Новостей пока нет.</p>
+                    <p class="empty">{{ __('There is no news yet.') }}</p>
                 @endforelse
             </div>
         </section>
 
         <section class="panel features-panel">
-            <div class="panel-title"><h2>Особенности сервера</h2></div>
+            <div class="panel-title"><h2>{{ __('Server features') }}</h2></div>
             <div class="features-grid">
-                @foreach([['⚔','Честная игра','Никаких платных преимуществ'],['◆','Стабильная работа','Изолированная инфраструктура и резервные копии'],['♜','Классический мир','Знакомая механика без лишних изменений'],['◎','Живое сообщество','Открытая разработка и прозрачные правила'],['✦','Регулярные события','Новый контент без превращения игры в магазин'],['⛨','Безопасность','Современная авторизация и аудит действий']] as [$icon,$title,$text])
-                <article><span class="feature-icon">{{ $icon }}</span><div><h3>{{ $title }}</h3><p>{{ $text }}</p></div></article>
+                @foreach($features as [$icon, $title, $text])
+                    <article><span class="feature-icon">{{ $icon }}</span><div><h3>{{ $title }}</h3><p>{{ $text }}</p></div></article>
                 @endforeach
             </div>
         </section>
 
         <aside class="side-column">
             <section class="panel login-panel">
-                <div class="panel-title"><h2>{{ auth()->check() ? 'Личный кабинет' : 'Авторизация' }}</h2></div>
+                <div class="panel-title"><h2>{{ auth()->check() ? __('Personal account') : __('Authentication') }}</h2></div>
                 @auth
                     <div class="login-panel-user">
-                        <span>Вы вошли как</span>
+                        <span>{{ __('You are signed in as') }}</span>
                         <strong>{{ auth()->user()->name }}</strong>
-                        <a class="button button-gold" href="{{ route('account') }}">Открыть кабинет</a>
+                        <a class="button button-gold" href="{{ public_route('account') }}">{{ __('Open account') }}</a>
                     </div>
                 @else
-                    <form method="POST" action="{{ route('login.store') }}">
+                    <form method="POST" action="{{ public_route('login.store') }}">
                         @csrf
-                        <label><span>Логин или email</span><input name="login" required autocomplete="username" placeholder="user@example.com"></label>
-                        <label><span>Пароль</span><input name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></label>
-                        <button class="button button-gold" type="submit">Войти</button>
+                        <label><span>{{ __('Login or email') }}</span><input name="login" required autocomplete="username" placeholder="user@example.com"></label>
+                        <label><span>{{ __('Password') }}</span><input name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></label>
+                        <button class="button button-gold" type="submit">{{ __('Log in') }}</button>
                         <p>
-                            <a href="{{ route('password.request') }}">Забыли пароль?</a>
+                            <a href="{{ public_route('password.request') }}">{{ __('Forgot your password?') }}</a>
                             @if (registration_available())
-                                · <a href="{{ route('register') }}">Регистрация</a>
+                                · <a href="{{ public_route('register') }}">{{ __('Register') }}</a>
                             @endif
                         </p>
                     </form>
                 @endauth
             </section>
-            <section id="rating" class="panel rating-panel"><div class="panel-title"><h2>Топ персонажей</h2></div><table><thead><tr><th>#</th><th>Персонаж</th><th>Класс</th><th>Уровень</th></tr></thead><tbody>@foreach($topCharacters as $character)<tr><td>{{ $loop->iteration }}</td><td>{{ $character['name'] }}</td><td>{{ $character['class'] }}</td><td>{{ $character['level'] }}</td></tr>@endforeach</tbody></table></section>
+            <section id="rating" class="panel rating-panel"><div class="panel-title"><h2>{{ __('Top characters') }}</h2></div><table><thead><tr><th>#</th><th>{{ __('Character') }}</th><th>{{ __('Class') }}</th><th>{{ __('Level') }}</th></tr></thead><tbody>@foreach($topCharacters as $character)<tr><td>{{ $loop->iteration }}</td><td>{{ $character['name'] }}</td><td>{{ $character['class'] }}</td><td>{{ $character['level'] }}</td></tr>@endforeach</tbody></table></section>
         </aside>
     </div>
 </section>

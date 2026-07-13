@@ -9,8 +9,8 @@ use Illuminate\Console\Command;
 class CleanupAuditLogsCommand extends Command
 {
     protected $signature = 'l2forge:logs-clean
-        {--days= : Удалить записи старше указанного количества дней}
-        {--dry-run : Только показать количество записей без удаления}';
+        {--days= : Delete entries older than the specified number of days}
+        {--dry-run : Show the number of entries without deleting them}';
 
     protected $description = 'Remove expired L2Forge CMS audit log entries';
 
@@ -21,7 +21,7 @@ class CleanupAuditLogsCommand extends Command
             : (int) config('cms.audit.retention_days', 90);
 
         if ($days < 1 || $days > 3650) {
-            $this->error('Количество дней должно быть от 1 до 3650.');
+            $this->error(__('The number of days must be between 1 and 3650.'));
 
             return self::FAILURE;
         }
@@ -31,8 +31,8 @@ class CleanupAuditLogsCommand extends Command
         $count = (clone $query)->count();
 
         if ($this->option('dry-run')) {
-            $this->info("Будет удалено записей: {$count}.");
-            $this->line('Граница хранения: '.$threshold->format('d.m.Y H:i:s').'.');
+            $this->info(__('Entries to delete: :count.', ['count' => $count]));
+            $this->line(__('Retention threshold: :date.', ['date' => $threshold->format('d.m.Y H:i:s')]));
 
             return self::SUCCESS;
         }
@@ -46,7 +46,7 @@ class CleanupAuditLogsCommand extends Command
             ]);
         }
 
-        $this->info("Удалено записей: {$deleted}.");
+        $this->info(__('Deleted entries: :count.', ['count' => $deleted]));
 
         return self::SUCCESS;
     }

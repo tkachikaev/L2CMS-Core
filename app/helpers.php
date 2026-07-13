@@ -23,16 +23,16 @@ if (! function_exists('theme_asset')) {
 }
 
 if (! function_exists('site_name')) {
-    function site_name(): string
+    function site_name(?string $locale = null): string
     {
-        return app(SiteSettings::class)->name();
+        return app(SiteSettings::class)->name($locale);
     }
 }
 
 if (! function_exists('site_description')) {
-    function site_description(): string
+    function site_description(?string $locale = null): string
     {
-        return app(SiteSettings::class)->description();
+        return app(SiteSettings::class)->description($locale);
     }
 }
 
@@ -51,9 +51,9 @@ if (! function_exists('site_favicon_url')) {
 }
 
 if (! function_exists('site_footer_text')) {
-    function site_footer_text(): string
+    function site_footer_text(?string $locale = null): string
     {
-        return app(SiteSettings::class)->footerText();
+        return app(SiteSettings::class)->footerText($locale);
     }
 }
 
@@ -108,5 +108,88 @@ if (! function_exists('game_servers')) {
     function game_servers(): array
     {
         return app(GameServerSettings::class)->all();
+    }
+}
+
+if (! function_exists('language_manager')) {
+    function language_manager(): \App\Services\Localization\LanguageManager
+    {
+        return app(\App\Services\Localization\LanguageManager::class);
+    }
+}
+
+if (! function_exists('public_route')) {
+    /** @param array<string, mixed> $parameters */
+    function public_route(string $name, array $parameters = [], bool $absolute = true): string
+    {
+        $routeLocale = request()->route('locale');
+        $locale = is_string($routeLocale) && language_manager()->isEnabled($routeLocale)
+            ? $routeLocale
+            : null;
+
+        if ($locale !== null && \Illuminate\Support\Facades\Route::has('localized.'.$name)) {
+            return route('localized.'.$name, array_merge(['locale' => $locale], $parameters), $absolute);
+        }
+
+        return route($name, $parameters, $absolute);
+    }
+}
+
+if (! function_exists('localized_current_url')) {
+    function localized_current_url(string $locale, ?string $requestUri = null): string
+    {
+        $languages = language_manager();
+        $locale = $languages->normalizeCode($locale) ?? $languages->default();
+        $requestUri ??= request()->getRequestUri();
+
+        $parts = parse_url($requestUri);
+        $path = is_array($parts) ? (string) ($parts['path'] ?? '/') : '/';
+        $query = is_array($parts) ? (string) ($parts['query'] ?? '') : '';
+
+        if (! str_starts_with($path, '/') || str_starts_with($path, '//')) {
+            $path = '/';
+            $query = '';
+        }
+
+        $segments = array_values(array_filter(explode('/', trim($path, '/')), static fn (string $segment): bool => $segment !== ''));
+        if ($segments !== [] && $languages->isInstalled($segments[0])) {
+            array_shift($segments);
+        }
+
+        if ($segments !== [] && in_array(strtolower($segments[0]), ['admin', 'language'], true)) {
+            $segments = [];
+            $query = '';
+        }
+
+        $target = '/'.$locale;
+        if ($segments !== []) {
+            $target .= '/'.implode('/', array_map('rawurlencode', array_map('rawurldecode', $segments)));
+        }
+
+        return url($target).($query !== '' ? '?'.$query : '');
+    }
+}
+
+if (! function_exists('locale_direction')) {
+    function locale_direction(?string $locale = null): string
+    {
+        return language_manager()->direction($locale);
+    }
+}
+
+if (! function_exists('news_url')) {
+    function news_url(\App\Models\News $news, ?string $locale = null): string
+    {
+        $routeLocale = request()->route('locale');
+        $locale ??= is_string($routeLocale) ? $routeLocale : null;
+
+        if ($locale !== null && language_manager()->isEnabled($locale)) {
+            return route('localized.news.show', [
+                'locale' => $locale,
+                'slug' => $news->slugFor($locale),
+            ]);
+        }
+
+        return route('news.show', ['news' => $news]);
     }
 }

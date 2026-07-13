@@ -20,10 +20,13 @@ class PasswordChangedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $templates = app(MailTemplateSettings::class);
+        $locale = (string) ($notifiable->locale ?? app()->getLocale());
 
         return $templates->mailMessage(
             MailTemplateSettings::PASSWORD_CHANGED,
-            $templates->userVariables($notifiable),
+            $templates->userVariables($notifiable, [], $locale),
+            null,
+            $locale,
         );
     }
 }

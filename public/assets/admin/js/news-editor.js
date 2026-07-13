@@ -25,7 +25,7 @@
             if (remove) remove.checked = false;
 
             const url = URL.createObjectURL(file);
-            preview.innerHTML = `<img src="${url}" alt="Предпросмотр выбранного изображения">`;
+            preview.innerHTML = `<img src="${url}" alt="${escapeHtml(wrapper.dataset.previewAlt ?? 'Selected image preview')}">`;
             preview.classList.add('has-image');
 
             const image = preview.querySelector('img');
@@ -187,7 +187,7 @@
         editor.querySelector('[data-editor-link]')?.addEventListener('mousedown', (event) => event.preventDefault());
         editor.querySelector('[data-editor-link]')?.addEventListener('click', () => {
             saveSelection();
-            const url = window.prompt('Адрес ссылки:');
+            const url = window.prompt(editor.dataset.linkPrompt ?? 'Link URL:');
             if (!url) return;
             execute('createLink', url.trim());
         });
@@ -195,7 +195,7 @@
         const uploadImage = async (file) => {
             if (!file || !uploadUrl) return;
 
-            setStatus('Загрузка изображения…');
+            setStatus(editor.dataset.uploadingMessage ?? 'Uploading image…');
             const data = new FormData();
             data.append('image', file);
 
@@ -213,18 +213,18 @@
                 const payload = await response.json().catch(() => ({}));
                 if (!response.ok || !payload.url) {
                     const errors = Object.values(payload.errors ?? {}).flat();
-                    throw new Error(errors[0] ?? payload.message ?? 'Не удалось загрузить изображение.');
+                    throw new Error(errors[0] ?? payload.message ?? editor.dataset.uploadFailedMessage ?? 'Could not upload the image.');
                 }
 
-                const alt = window.prompt('Краткое описание изображения:', file.name.replace(/\.[^.]+$/, '')) ?? '';
+                const alt = window.prompt(editor.dataset.imageAltPrompt ?? 'Short image description:', file.name.replace(/\.[^.]+$/, '')) ?? '';
                 const html = `<figure><img src="${escapeHtml(payload.url)}" alt="${escapeHtml(alt)}"><figcaption>${escapeHtml(alt)}</figcaption></figure><p><br></p>`;
                 focusCanvas();
                 document.execCommand('insertHTML', false, html);
                 saveSelection();
                 syncSource();
-                setStatus('Изображение добавлено.', 'success');
+                setStatus(editor.dataset.imageAddedMessage ?? 'Image added.', 'success');
             } catch (error) {
-                setStatus(error instanceof Error ? error.message : 'Ошибка загрузки изображения.', 'error');
+                setStatus(error instanceof Error ? error.message : (editor.dataset.uploadErrorMessage ?? 'Image upload error.'), 'error');
             } finally {
                 if (imageInput) imageInput.value = '';
             }
@@ -275,9 +275,9 @@
             }
 
             const plainText = canvas.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
-            if (plainText === '') {
+            if (editor.dataset.required === '1' && plainText === '') {
                 event.preventDefault();
-                setStatus('Добавьте в новость текст.', 'error');
+                setStatus(editor.dataset.emptyMessage ?? 'Add text in the default language.', 'error');
                 canvas.focus();
             }
         });

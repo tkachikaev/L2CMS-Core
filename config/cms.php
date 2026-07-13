@@ -19,6 +19,18 @@ return [
         'timezone' => env('APP_TIMEZONE', 'Europe/Moscow'),
         'admin_email' => env('SITE_ADMIN_EMAIL', ''),
         'footer_text' => env('SITE_FOOTER_TEXT', '© 2026 L2Forge-CMS'),
+        'translations' => [
+            'ru' => [
+                'name' => env('SITE_NAME_RU', env('SITE_NAME', env('APP_NAME', 'L2Forge CMS'))),
+                'description' => env('SITE_DESCRIPTION_RU', env('SITE_DESCRIPTION', 'Бесплатная open-source CMS для серверов Lineage II.')),
+                'footer_text' => env('SITE_FOOTER_TEXT_RU', env('SITE_FOOTER_TEXT', '© 2026 L2Forge-CMS')),
+            ],
+            'en' => [
+                'name' => env('SITE_NAME_EN', env('SITE_NAME', env('APP_NAME', 'L2Forge CMS'))),
+                'description' => env('SITE_DESCRIPTION_EN', 'Free open-source CMS for Lineage II servers.'),
+                'footer_text' => env('SITE_FOOTER_TEXT_EN', env('SITE_FOOTER_TEXT', '© 2026 L2Forge-CMS')),
+            ],
+        ],
     ],
 
 

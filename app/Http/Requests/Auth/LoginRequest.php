@@ -25,8 +25,8 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'login.required' => 'Укажите логин или email.',
-            'password.required' => 'Укажите пароль.',
+            'login.required' => __('Enter a username or email.'),
+            'password.required' => __('Enter a password.'),
         ];
     }
 }

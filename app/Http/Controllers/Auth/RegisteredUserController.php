@@ -23,13 +23,13 @@ class RegisteredUserController extends Controller
     {
         if (! $settings->enabled()) {
             return view('theme::auth.registration-disabled', [
-                'reason' => 'Администрация сайта временно закрыла создание новых учётных записей.',
+                'reason' => __('Website registration is temporarily disabled by the administration.'),
             ]);
         }
 
         if ($settings->emailVerificationRequired() && ! $mailSettings->isReady()) {
             return view('theme::auth.registration-disabled', [
-                'reason' => 'Регистрация временно недоступна, потому что отправка почты ещё не настроена.',
+                'reason' => __('Registration is temporarily unavailable because email delivery is not configured.'),
             ]);
         }
 
@@ -44,11 +44,11 @@ class RegisteredUserController extends Controller
         MailSettings $mailSettings,
         AuditLogger $auditLogger,
     ): RedirectResponse {
-        abort_unless($settings->enabled(), 403, 'Регистрация новых пользователей отключена.');
+        abort_unless($settings->enabled(), 403, __('New user registration is disabled.'));
         abort_if(
             $settings->emailVerificationRequired() && ! $mailSettings->isReady(),
             503,
-            'Регистрация временно недоступна: отправка почты не настроена.'
+            __('Registration is temporarily unavailable because email delivery is not configured.')
         );
 
         $validated = $request->validated();
@@ -56,6 +56,7 @@ class RegisteredUserController extends Controller
             'name' => Str::lower(trim((string) $validated['name'])),
             'email' => Str::lower(trim((string) $validated['email'])),
             'password' => Hash::make((string) $validated['password']),
+            'locale' => app()->getLocale(),
         ]);
 
         if (! $settings->emailVerificationRequired()) {
@@ -93,8 +94,8 @@ class RegisteredUserController extends Controller
             );
 
             return redirect()
-                ->route('verification.notice')
-                ->with('warning', 'Учётная запись создана, но письмо подтверждения отправить не удалось. Повторите отправку позже.');
+                ->to(public_route('verification.notice'))
+                ->with('warning', __('The account was created, but the verification email could not be sent. Try sending it again later.'));
         }
 
         if ($settings->emailVerificationRequired() && ! $user->hasVerifiedEmail()) {
@@ -106,12 +107,12 @@ class RegisteredUserController extends Controller
             );
 
             return redirect()
-                ->route('verification.notice')
-                ->with('status', 'Учётная запись создана. Проверьте почту и подтвердите email.');
+                ->to(public_route('verification.notice'))
+                ->with('status', __('The account was created. Check your inbox and verify your email.'));
         }
 
         return redirect()
-            ->route('account')
-            ->with('status', 'Учётная запись успешно создана.');
+            ->to(public_route('account'))
+            ->with('status', __('The account was created successfully.'));
     }
 }

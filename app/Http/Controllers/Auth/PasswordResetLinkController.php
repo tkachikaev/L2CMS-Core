@@ -28,8 +28,8 @@ class PasswordResetLinkController extends Controller
         $request->validate([
             'email' => ['required', 'email:rfc', 'max:255'],
         ], [
-            'email.required' => 'Укажите email.',
-            'email.email' => 'Email указан неверно.',
+            'email.required' => __('Enter an email address.'),
+            'email.email' => __('The email address is invalid.'),
         ]);
 
         $email = (string) $request->input('email');
@@ -37,7 +37,7 @@ class PasswordResetLinkController extends Controller
             category: 'user',
             action: 'user.password_reset_requested',
             actor: $email,
-            target: 'Восстановление пароля',
+            target: __('Password reset'),
             actorType: 'user',
         );
 
@@ -52,7 +52,7 @@ class PasswordResetLinkController extends Controller
             );
 
             return back()->withErrors([
-                'email' => 'Восстановление пароля временно недоступно. Обратитесь к администрации сайта.',
+                'email' => __('Password reset is temporarily unavailable. Contact the website administration.'),
             ]);
         }
 
@@ -72,13 +72,13 @@ class PasswordResetLinkController extends Controller
             );
 
             return back()->withErrors([
-                'email' => 'Письмо отправить не удалось. Повторите попытку позже.',
+                'email' => __('The email could not be sent. Try again later.'),
             ]);
         }
 
         if ($status === Password::RESET_THROTTLED) {
             return back()->withErrors([
-                'email' => 'Запрос уже отправлялся недавно. Повторите попытку позже.',
+                'email' => __('A request was sent recently. Try again later.'),
             ]);
         }
 
@@ -93,6 +93,6 @@ class PasswordResetLinkController extends Controller
             );
         }
 
-        return back()->with('status', 'Если этот email зарегистрирован, на него отправлена ссылка восстановления пароля.');
+        return back()->with('status', __('If this email is registered, a password reset link has been sent to it.'));
     }
 }

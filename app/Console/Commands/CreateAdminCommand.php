@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Admin;
+use App\Services\Localization\LanguageManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +18,7 @@ class CreateAdminCommand extends Command
 
     protected $description = 'Create an administrator for the L2Forge CMS control panel';
 
-    public function handle(): int
+    public function handle(LanguageManager $languages): int
     {
         if (! Schema::hasTable('admins')) {
             $this->error('The admins table is missing. Run: php artisan migrate');
@@ -58,6 +59,7 @@ class CreateAdminCommand extends Command
             'email' => $email,
             'password' => Hash::make($password),
             'is_active' => true,
+            'locale' => $languages->default(),
         ]);
 
         $this->newLine();

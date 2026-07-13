@@ -36,20 +36,20 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Укажите логин.',
-            'name.min' => 'Логин должен содержать не менее 3 символов.',
-            'name.max' => 'Логин не должен быть длиннее 32 символов.',
-            'name.alpha_dash' => 'Логин может содержать латинские буквы, цифры, дефис и подчёркивание.',
-            'name.unique' => 'Этот логин уже занят.',
-            'email.required' => 'Укажите email.',
-            'email.email' => 'Email указан неверно.',
-            'email.unique' => 'Этот email уже используется.',
-            'password.required' => 'Укажите пароль.',
-            'password.string' => 'Пароль должен быть строкой.',
-            'password.min' => 'Пароль должен содержать не менее 8 символов.',
-            'password.letters' => 'Пароль должен содержать хотя бы одну букву.',
-            'password.numbers' => 'Пароль должен содержать хотя бы одну цифру.',
-            'password.confirmed' => 'Пароли не совпадают.',
+            'name.required' => __('Enter a username.'),
+            'name.min' => __('The username must be at least 3 characters.'),
+            'name.max' => __('The username must not exceed 32 characters.'),
+            'name.alpha_dash' => __('The username may contain Latin letters, digits, hyphens and underscores.'),
+            'name.unique' => __('This username is already taken.'),
+            'email.required' => __('Enter an email address.'),
+            'email.email' => __('The email address is invalid.'),
+            'email.unique' => __('This email address is already in use.'),
+            'password.required' => __('Enter a password.'),
+            'password.string' => __('The password must be a string.'),
+            'password.min' => __('The password must be at least 8 characters.'),
+            'password.letters' => __('The password must contain at least one letter.'),
+            'password.numbers' => __('The password must contain at least one digit.'),
+            'password.confirmed' => __('The passwords do not match.'),
         ];
     }
 }
