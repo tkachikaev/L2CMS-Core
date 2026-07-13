@@ -6,12 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveGameServerSettingsRequest;
 use App\Http\Requests\Admin\SaveGeneralSettingsRequest;
 use App\Http\Requests\Admin\SaveMailSettingsRequest;
+use App\Http\Requests\Admin\SaveMailTemplateRequest;
 use App\Http\Requests\Admin\SaveRegistrationSettingsRequest;
+use App\Http\Requests\Admin\SendMailTemplateTestRequest;
 use App\Http\Requests\Admin\SendTestMailRequest;
 use App\Models\GameServer;
+use App\Notifications\MailTemplateTestNotification;
 use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
 use App\Services\MailSettings;
+use App\Services\MailTemplateSettings;
 use App\Services\RegistrationSettings;
 use App\Services\Settings\SettingsImageStorage;
 use App\Services\SiteSettings;
@@ -20,6 +24,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 use Throwable;
 
@@ -230,10 +235,11 @@ class SettingsController extends Controller
             ->with('status', 'Настройки регистрации сохранены.');
     }
 
-    public function mail(MailSettings $mailSettings): View
+    public function mail(MailSettings $mailSettings, MailTemplateSettings $mailTemplates): View
     {
         return view('admin.settings.mail', [
             'settings' => $mailSettings->values(),
+            'mailTemplates' => $mailTemplates->navigation(),
         ]);
     }
 
@@ -324,6 +330,150 @@ class SettingsController extends Controller
             ->with('status', 'Тестовое письмо успешно отправлено на '.$address.'.');
     }
 
+    public function mailTemplate(
+        string $template,
+        MailTemplateSettings $mailTemplates,
+        MailSettings $mailSettings,
+    ): View {
+        abort_unless($mailTemplates->exists($template), 404);
+
+        $values = $mailTemplates->values($template);
+
+        return view('admin.settings.mail-template', [
+            'template' => $values,
+            'mailTemplates' => $mailTemplates->navigation(),
+            'preview' => $mailTemplates->render($template, $mailTemplates->demoVariables($template)),
+            'mailSettings' => $mailSettings->values(),
+        ]);
+    }
+
+    public function updateMailTemplate(
+        SaveMailTemplateRequest $request,
+        string $template,
+        MailTemplateSettings $mailTemplates,
+    ): RedirectResponse {
+        abort_unless($mailTemplates->exists($template), 404);
+        $validated = $request->validated();
+        $values = [
+            'subject' => trim((string) $validated['subject']),
+            'heading' => trim((string) $validated['heading']),
+            'body' => trim((string) $validated['body']),
+            'action_text' => trim((string) ($validated['action_text'] ?? '')),
+            'footer' => trim((string) ($validated['footer'] ?? '')),
+        ];
+
+        $errors = [];
+        foreach ($mailTemplates->unknownVariables($template, $values) as $field => $variables) {
+            $errors[$field] = 'Неизвестные переменные: '.implode(', ', array_map(
+                static fn (string $variable): string => '{{'.$variable.'}}',
+                $variables,
+            )).'.';
+        }
+
+        foreach ($mailTemplates->fieldsContainingHtml($values) as $field) {
+            $errors[$field] = 'HTML-теги не поддерживаются. Используйте обычный текст и доступные переменные.';
+        }
+
+        if ($errors !== []) {
+            return back()->withInput()->withErrors($errors);
+        }
+
+        $before = $mailTemplates->values($template);
+        $mailTemplates->update($template, $values);
+        $after = $mailTemplates->values($template);
+        $changedFields = array_keys($this->auditChanges(
+            $this->mailTemplateAuditValues($before),
+            $this->mailTemplateAuditValues($after),
+        ));
+
+        $this->auditLogger->success(
+            category: 'mail',
+            action: 'mail.template_updated',
+            target: $after['title'],
+            details: [
+                'template' => $template,
+                'changed_fields' => $changedFields,
+            ],
+        );
+
+        return redirect()
+            ->route('admin.settings.mail.template', ['template' => $template])
+            ->with('status', 'Шаблон письма сохранён.');
+    }
+
+    public function resetMailTemplate(
+        string $template,
+        MailTemplateSettings $mailTemplates,
+    ): RedirectResponse {
+        abort_unless($mailTemplates->exists($template), 404);
+        $title = $mailTemplates->values($template)['title'];
+        $mailTemplates->reset($template);
+
+        $this->auditLogger->success(
+            category: 'mail',
+            action: 'mail.template_reset',
+            target: $title,
+            details: ['template' => $template],
+        );
+
+        return redirect()
+            ->route('admin.settings.mail.template', ['template' => $template])
+            ->with('status', 'Стандартный шаблон восстановлен.');
+    }
+
+    public function testMailTemplate(
+        SendMailTemplateTestRequest $request,
+        string $template,
+        MailTemplateSettings $mailTemplates,
+        MailSettings $mailSettings,
+    ): RedirectResponse {
+        abort_unless($mailTemplates->exists($template), 404);
+
+        if (! $mailSettings->isReady()) {
+            return back()->withErrors([
+                'test_email' => 'Сначала настройте SMTP и успешно отправьте проверочное письмо во вкладке «Подключение».',
+            ]);
+        }
+
+        $address = (string) $request->validated()['test_email'];
+        $title = $mailTemplates->values($template)['title'];
+        $mailSettings->applyConfiguration();
+
+        try {
+            Notification::route('mail', $address)
+                ->notify(new MailTemplateTestNotification($template));
+        } catch (Throwable $exception) {
+            Log::warning('Mail template test failed.', [
+                'template' => $template,
+                'exception' => $exception::class,
+            ]);
+            $this->auditLogger->failed(
+                category: 'mail',
+                action: 'mail.template_test_failed',
+                target: $title,
+                details: [
+                    'template' => $template,
+                    'exception_class' => $exception::class,
+                ],
+            );
+
+            return back()->withErrors([
+                'test_email' => 'Тестовое письмо отправить не удалось. Проверьте SMTP и повторите попытку.',
+            ]);
+        }
+
+        $this->auditLogger->success(
+            category: 'mail',
+            action: 'mail.template_test_sent',
+            target: $title,
+            details: ['template' => $template],
+        );
+
+        return redirect()
+            ->route('admin.settings.mail.template', ['template' => $template])
+            ->with('status', 'Тестовый шаблон отправлен на '.$address.'.');
+    }
+
     /**
      * @param array<string, mixed> $before
      * @param array<string, mixed> $after
@@ -365,6 +515,18 @@ class SettingsController extends Controller
             'rates' => $gameServer->rates,
             'chronicle' => $gameServer->chronicle,
             'mode' => $gameServer->mode,
+        ];
+    }
+
+    /** @param array<string, mixed> $values @return array<string, string> */
+    private function mailTemplateAuditValues(array $values): array
+    {
+        return [
+            'subject' => (string) ($values['subject'] ?? ''),
+            'heading' => (string) ($values['heading'] ?? ''),
+            'body' => (string) ($values['body'] ?? ''),
+            'action_text' => (string) ($values['action_text'] ?? ''),
+            'footer' => (string) ($values['footer'] ?? ''),
         ];
     }
 

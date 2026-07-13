@@ -5,6 +5,7 @@
 
 @section('content')
 @include('admin.settings._tabs')
+@include('admin.settings._mail_tabs')
 
 <div class="mail-settings-status">
     @if ($settings['password_saved'] && ! $settings['password_valid'])

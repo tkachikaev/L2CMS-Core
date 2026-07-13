@@ -7,13 +7,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ResetPasswordNotification extends Notification
+class PasswordChangedNotification extends Notification
 {
     use Queueable;
-
-    public function __construct(private readonly string $token)
-    {
-    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -23,20 +19,11 @@ class ResetPasswordNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('password.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ]);
-
         $templates = app(MailTemplateSettings::class);
 
         return $templates->mailMessage(
-            MailTemplateSettings::PASSWORD_RESET,
-            $templates->userVariables($notifiable, [
-                'reset_url' => $url,
-                'expires_in' => '60 минут',
-            ]),
-            $url,
+            MailTemplateSettings::PASSWORD_CHANGED,
+            $templates->userVariables($notifiable),
         );
     }
 }

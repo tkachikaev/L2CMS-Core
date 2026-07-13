@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\MailTemplateSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -28,12 +29,15 @@ class VerifyEmailNotification extends Notification
             ]
         );
 
-        return (new MailMessage)
-            ->subject('Подтверждение email — '.site_name())
-            ->greeting('Подтверждение регистрации')
-            ->line('Вы зарегистрировали учётную запись на сайте '.site_name().'.')
-            ->line('Нажмите кнопку ниже, чтобы подтвердить адрес электронной почты.')
-            ->action('Подтвердить email', $url)
-            ->line('Ссылка действительна 60 минут. Если вы не регистрировались, просто проигнорируйте письмо.');
+        $templates = app(MailTemplateSettings::class);
+
+        return $templates->mailMessage(
+            MailTemplateSettings::EMAIL_VERIFICATION,
+            $templates->userVariables($notifiable, [
+                'verification_url' => $url,
+                'expires_in' => '60 минут',
+            ]),
+            $url,
+        );
     }
 }

@@ -125,11 +125,24 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::get('/settings/registration', [AdminSettingsController::class, 'registration'])->name('settings.registration');
         Route::put('/settings/registration', [AdminSettingsController::class, 'updateRegistration'])->name('settings.registration.update');
         Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
-        Route::get('/settings/system', [AdminSettingsController::class, 'system'])->name('settings.system');
         Route::put('/settings/mail', [AdminSettingsController::class, 'updateMail'])->name('settings.mail.update');
         Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])
             ->middleware('throttle:5,1')
             ->name('settings.mail.test');
+        Route::get('/settings/mail/templates/{template}', [AdminSettingsController::class, 'mailTemplate'])
+            ->where('template', 'email_verification|password_reset|password_changed')
+            ->name('settings.mail.template');
+        Route::put('/settings/mail/templates/{template}', [AdminSettingsController::class, 'updateMailTemplate'])
+            ->where('template', 'email_verification|password_reset|password_changed')
+            ->name('settings.mail.template.update');
+        Route::post('/settings/mail/templates/{template}/reset', [AdminSettingsController::class, 'resetMailTemplate'])
+            ->where('template', 'email_verification|password_reset|password_changed')
+            ->name('settings.mail.template.reset');
+        Route::post('/settings/mail/templates/{template}/test', [AdminSettingsController::class, 'testMailTemplate'])
+            ->where('template', 'email_verification|password_reset|password_changed')
+            ->middleware('throttle:5,1')
+            ->name('settings.mail.template.test');
+        Route::get('/settings/system', [AdminSettingsController::class, 'system'])->name('settings.system');
 
         Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
     });
