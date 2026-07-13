@@ -7,7 +7,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="theme-color" content="#090c10">
     <title>@yield('title', 'Панель управления') — {{ config('app.name') }}</title>
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/app.css') }}?v={{ config('cms.version') }}">
     @stack('head')
 </head>
 <body class="admin-body">

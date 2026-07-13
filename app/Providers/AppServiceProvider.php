@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
 use App\Services\MailSettings;
 use App\Services\News\NewsHtmlSanitizer;
@@ -16,6 +17,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(AuditLogger::class);
         $this->app->singleton(GameServerSettings::class);
         $this->app->singleton(MailSettings::class);
         $this->app->singleton(NewsHtmlSanitizer::class);

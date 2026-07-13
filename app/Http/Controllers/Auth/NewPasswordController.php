@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class NewPasswordController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuditLogger $auditLogger): RedirectResponse
     {
         $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
 
@@ -44,13 +45,19 @@ class NewPasswordController extends Controller
 
         $status = Password::reset(
             $validated,
-            function (User $user, string $password): void {
+            function (User $user, string $password) use ($auditLogger): void {
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
                 event(new PasswordReset($user));
+                $auditLogger->success(
+                    category: 'user',
+                    action: 'user.password_changed',
+                    actor: $user,
+                    target: $user,
+                );
             }
         );
 

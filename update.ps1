@@ -27,6 +27,10 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
     throw 'Composer was not found in PATH.'
 }
 
+if (-not (Test-Path 'composer.lock')) {
+    throw 'composer.lock is missing. Re-extract the complete L2Forge CMS release or patch. Update will not install unpinned dependency versions.'
+}
+
 $directories = @(
     'bootstrap\cache',
     'storage\framework\cache\data',

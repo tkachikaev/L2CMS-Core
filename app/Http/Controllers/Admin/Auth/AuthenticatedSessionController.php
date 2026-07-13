@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\AdminLoginLog;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class AuthenticatedSessionController extends Controller
         return view('admin.auth.login');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuditLogger $auditLogger): RedirectResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'string', 'email', 'max:255'],
@@ -36,6 +37,14 @@ class AuthenticatedSessionController extends Controller
         if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($throttleKey);
             $this->writeLoginLog($request, $email, false, 'throttled');
+            $auditLogger->failed(
+                category: 'admin',
+                action: 'auth.login_failed',
+                actor: $email,
+                target: 'Панель управления',
+                details: ['reason' => 'throttled'],
+                actorType: 'admin',
+            );
 
             throw ValidationException::withMessages([
                 'email' => "Слишком много попыток входа. Повторите через {$seconds} сек.",
@@ -54,6 +63,14 @@ class AuthenticatedSessionController extends Controller
             $admin = Admin::query()->where('email', $email)->first();
             $reason = $admin && ! $admin->is_active ? 'inactive' : 'invalid_credentials';
             $this->writeLoginLog($request, $email, false, $reason, $admin);
+            $auditLogger->failed(
+                category: 'admin',
+                action: 'auth.login_failed',
+                actor: $admin ?? $email,
+                target: 'Панель управления',
+                details: ['reason' => $reason],
+                actorType: $admin === null ? 'admin' : null,
+            );
 
             throw ValidationException::withMessages([
                 'email' => 'Неверный адрес электронной почты или пароль.',
@@ -71,12 +88,29 @@ class AuthenticatedSessionController extends Controller
         ])->save();
 
         $this->writeLoginLog($request, $email, true, null, $admin);
+        $auditLogger->success(
+            category: 'admin',
+            action: 'auth.login',
+            actor: $admin,
+            target: 'Панель управления',
+        );
 
         return redirect()->intended(route('admin.dashboard'));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, AuditLogger $auditLogger): RedirectResponse
     {
+        $admin = Auth::guard('admin')->user();
+
+        if ($admin !== null) {
+            $auditLogger->success(
+                category: 'admin',
+                action: 'auth.logout',
+                actor: $admin,
+                target: 'Панель управления',
+            );
+        }
+
         Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

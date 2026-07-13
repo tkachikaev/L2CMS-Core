@@ -30,10 +30,30 @@ class CleanupNewsMediaCommand extends Command
         $removed = 0;
         $kept = 0;
 
-        foreach (File::allFiles($newsRoot) as $file) {
-            $relative = 'news/'.str_replace('\\', '/', $file->getRelativePathname());
+        $files = array_map(
+            static fn ($file): string => $file->getPathname(),
+            File::allFiles($newsRoot)
+        );
+
+        foreach ($files as $absolutePath) {
+            // Another cleanup operation or a previous iteration may already have
+            // removed the file. SplFileInfo::getMTime() throws on Windows in that
+            // situation, so work with a stable path and re-check it first.
+            if (! File::isFile($absolutePath)) {
+                continue;
+            }
+
+            $relativePath = ltrim(substr($absolutePath, strlen($newsRoot)), '\\/');
+            $relative = 'news/'.str_replace('\\', '/', $relativePath);
             $normalized = $storage->normalizeNewsPath($relative);
-            $isOldEnough = $file->getMTime() <= $cutoff;
+            $modifiedAt = @filemtime($absolutePath);
+
+            if ($modifiedAt === false) {
+                $kept++;
+                continue;
+            }
+
+            $isOldEnough = $modifiedAt <= $cutoff;
 
             if ($normalized === null || ! $isOldEnough || $storage->isReferenced($normalized)) {
                 $kept++;

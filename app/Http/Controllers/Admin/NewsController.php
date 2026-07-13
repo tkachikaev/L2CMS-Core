@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveNewsRequest;
 use App\Models\News;
+use App\Services\AuditLogger;
 use App\Services\News\NewsHtmlSanitizer;
 use App\Services\News\NewsImageStorage;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,7 @@ class NewsController extends Controller
     public function __construct(
         private readonly NewsHtmlSanitizer $sanitizer,
         private readonly NewsImageStorage $images,
+        private readonly AuditLogger $auditLogger,
     ) {
     }
 
@@ -80,6 +82,18 @@ class NewsController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'news.created',
+            target: $newsItem,
+            details: [
+                'slug' => $newsItem->slug,
+                'publication_state' => $newsItem->publicationState(),
+                'published_at' => $newsItem->published_at?->toDateTimeString(),
+                'has_cover' => $newsItem->image !== null,
+            ],
+        );
+
         return redirect()
             ->route('admin.news.index')
             ->with('status', "Новость «{$newsItem->title}» создана.");
@@ -131,6 +145,14 @@ class NewsController extends Controller
 
     public function update(SaveNewsRequest $request, News $news): RedirectResponse
     {
+        $beforeAudit = [
+            'title' => $news->title,
+            'excerpt' => $news->excerpt,
+            'body_hash' => hash('sha256', (string) $news->body),
+            'published_at' => $news->published_at?->toDateTimeString(),
+            'is_published' => (bool) $news->is_published,
+            'has_cover' => $news->image !== null,
+        ];
         $data = $this->prepareData($request);
         $oldCover = $news->image;
         $oldContentImages = $this->images->extractContentPaths((string) $news->body);
@@ -173,6 +195,28 @@ class NewsController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
+        $afterAudit = [
+            'title' => $news->title,
+            'excerpt' => $news->excerpt,
+            'body_hash' => hash('sha256', (string) $news->body),
+            'published_at' => $news->published_at?->toDateTimeString(),
+            'is_published' => (bool) $news->is_published,
+            'has_cover' => $news->image !== null,
+        ];
+        $changes = $this->auditChanges($beforeAudit, $afterAudit);
+
+        if (isset($changes['body_hash'])) {
+            unset($changes['body_hash']);
+            $changes['body'] = ['old' => 'Текст до изменения', 'new' => 'Текст изменён'];
+        }
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'news.updated',
+            target: $news,
+            details: ['changes' => $changes],
+        );
+
         return redirect()
             ->route('admin.news.index')
             ->with('status', "Новость «{$news->title}» сохранена.");
@@ -201,6 +245,18 @@ class NewsController extends Controller
             'slug' => $slug,
             'ip_address' => request()->ip(),
         ]);
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'news.deleted',
+            target: $title,
+            details: [
+                'news_id' => $newsId,
+                'slug' => $slug,
+                'removed_cover' => $cover !== null,
+                'removed_content_images' => count($contentImages),
+            ],
+        );
 
         return redirect()
             ->route('admin.news.index')
@@ -235,6 +291,26 @@ class NewsController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $before
+     * @param array<string, mixed> $after
+     * @return array<string, array{old: mixed, new: mixed}>
+     */
+    private function auditChanges(array $before, array $after): array
+    {
+        $changes = [];
+
+        foreach ($after as $key => $newValue) {
+            $oldValue = $before[$key] ?? null;
+
+            if ($oldValue !== $newValue) {
+                $changes[$key] = ['old' => $oldValue, 'new' => $newValue];
+            }
+        }
+
+        return $changes;
     }
 
     private function makeUniqueSlug(string $title): string

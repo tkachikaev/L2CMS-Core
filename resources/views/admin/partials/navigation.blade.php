@@ -25,8 +25,7 @@
         <span>Администраторы</span>
         <small>Скоро</small>
     </span>
-    <span class="admin-menu-item disabled" aria-disabled="true">
+    <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.logs.*')]) href="{{ route('admin.logs.index') }}">
         <span>Журнал действий</span>
-        <small>Скоро</small>
-    </span>
+    </a>
 </nav>

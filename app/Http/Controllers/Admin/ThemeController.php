@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogger;
 use App\Support\Themes\ThemeManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,10 @@ use RuntimeException;
 
 class ThemeController extends Controller
 {
+    public function __construct(private readonly AuditLogger $auditLogger)
+    {
+    }
+
     public function index(ThemeManager $themes): View
     {
         $installedThemes = $themes->installed();
@@ -44,6 +49,16 @@ class ThemeController extends Controller
             'active_theme' => $theme,
             'ip_address' => $request->ip(),
         ]);
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'theme.activated',
+            target: $theme,
+            details: [
+                'previous_theme' => $previousTheme,
+                'active_theme' => $theme,
+            ],
+        );
 
         return redirect()
             ->route('admin.themes.index')

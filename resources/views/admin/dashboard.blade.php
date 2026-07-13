@@ -48,12 +48,13 @@
         </div>
     </article>
 
-    <article class="admin-section-card planned">
+    <a class="admin-section-card available" href="{{ route('admin.logs.index') }}">
         <div>
-            <span class="section-status">В разработке</span>
+            <span class="section-status">Доступно</span>
             <h2>Журнал действий</h2>
-            <p>История входов и изменений в административной панели.</p>
+            <p>Входы, изменения контента и настроек, события пользователей, почты и системы.</p>
         </div>
-    </article>
+        <span class="section-arrow" aria-hidden="true">→</span>
+    </a>
 </div>
 @endsection

@@ -2,7 +2,7 @@
 
 return [
     'name' => 'L2Forge CMS',
-    'version' => '0.8.1',
+    'version' => '0.8.3',
     'theme' => env('CMS_THEME', 'default'),
     'themes_path' => base_path('themes'),
 
@@ -31,6 +31,10 @@ return [
     'admin' => [
         'login_max_attempts' => (int) env('ADMIN_LOGIN_MAX_ATTEMPTS', 5),
         'login_decay_seconds' => (int) env('ADMIN_LOGIN_DECAY_SECONDS', 60),
+    ],
+
+    'audit' => [
+        'retention_days' => (int) env('AUDIT_LOG_RETENTION_DAYS', 90),
     ],
 
     'server' => [

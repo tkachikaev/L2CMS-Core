@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\SaveMailSettingsRequest;
 use App\Http\Requests\Admin\SaveRegistrationSettingsRequest;
 use App\Http\Requests\Admin\SendTestMailRequest;
 use App\Models\GameServer;
+use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
 use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
@@ -23,6 +24,10 @@ use Throwable;
 
 class SettingsController extends Controller
 {
+    public function __construct(private readonly AuditLogger $auditLogger)
+    {
+    }
+
     public function general(SiteSettings $siteSettings): View
     {
         return view('admin.settings.general', [
@@ -84,6 +89,21 @@ class SettingsController extends Controller
             $images->delete($current['favicon'], 'favicon');
         }
 
+        $after = $siteSettings->values();
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'settings.general_updated',
+            target: 'Основные настройки',
+            details: [
+                'changes' => $this->auditChanges(
+                    $this->generalAuditValues($current),
+                    $this->generalAuditValues($after),
+                ),
+                'logo_changed' => $current['logo'] !== $after['logo'],
+                'favicon_changed' => $current['favicon'] !== $after['favicon'],
+            ],
+        );
+
         return redirect()
             ->route('admin.settings.general')
             ->with('status', 'Основные настройки сохранены.');
@@ -102,7 +122,14 @@ class SettingsController extends Controller
     ): RedirectResponse {
         $validated = $request->validated();
 
-        $gameServerSettings->create($this->gameServerValues($validated));
+        $gameServer = $gameServerSettings->create($this->gameServerValues($validated));
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'game_server.created',
+            target: $gameServer,
+            details: ['values' => $this->gameServerAuditValues($gameServer)],
+        );
 
         return redirect()
             ->route('admin.settings.game-server')
@@ -115,8 +142,17 @@ class SettingsController extends Controller
         GameServerSettings $gameServerSettings,
     ): RedirectResponse {
         $validated = $request->validated();
+        $before = $this->gameServerAuditValues($gameServer);
 
         $gameServerSettings->update($gameServer, $this->gameServerValues($validated));
+        $gameServer->refresh();
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'game_server.updated',
+            target: $gameServer,
+            details: ['changes' => $this->auditChanges($before, $this->gameServerAuditValues($gameServer))],
+        );
 
         return redirect()
             ->route('admin.settings.game-server')
@@ -128,7 +164,19 @@ class SettingsController extends Controller
         GameServerSettings $gameServerSettings,
     ): RedirectResponse {
         $name = $gameServer->name;
+        $gameServerId = $gameServer->id;
+        $values = $this->gameServerAuditValues($gameServer);
         $gameServerSettings->delete($gameServer);
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'game_server.deleted',
+            target: $name,
+            details: [
+                'game_server_id' => $gameServerId,
+                'values' => $values,
+            ],
+        );
 
         return redirect()
             ->route('admin.settings.game-server')
@@ -155,9 +203,18 @@ class SettingsController extends Controller
         SaveRegistrationSettingsRequest $request,
         RegistrationSettings $registrationSettings,
     ): RedirectResponse {
+        $before = $registrationSettings->values();
         $registrationSettings->update(
             enabled: $request->boolean('registration_enabled'),
             emailVerificationRequired: $request->boolean('email_verification_required'),
+        );
+        $after = $registrationSettings->values();
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'settings.registration_updated',
+            target: 'Настройки регистрации',
+            details: ['changes' => $this->auditChanges($before, $after)],
         );
 
         return redirect()
@@ -177,6 +234,8 @@ class SettingsController extends Controller
         MailSettings $mailSettings,
     ): RedirectResponse {
         $validated = $request->validated();
+        $before = $this->mailAuditValues($mailSettings->values());
+        $passwordChanged = isset($validated['smtp_password']) && $validated['smtp_password'] !== '';
 
         $mailSettings->update([
             'host' => (string) $validated['smtp_host'],
@@ -191,6 +250,17 @@ class SettingsController extends Controller
             'admin_email' => (string) ($validated['notification_email'] ?? ''),
         ]);
         $mailSettings->applyConfiguration();
+        $after = $this->mailAuditValues($mailSettings->values());
+
+        $this->auditLogger->success(
+            category: 'admin',
+            action: 'settings.mail_updated',
+            target: 'Почтовые настройки',
+            details: [
+                'changes' => $this->auditChanges($before, $after),
+                'smtp_password_changed' => $passwordChanged,
+            ],
+        );
 
         return redirect()
             ->route('admin.settings.mail')
@@ -223,15 +293,86 @@ class SettingsController extends Controller
             Log::warning('SMTP test failed.', [
                 'exception' => $exception::class,
             ]);
+            $this->auditLogger->failed(
+                category: 'mail',
+                action: 'mail.test_failed',
+                target: $address,
+                details: ['exception_class' => $exception::class],
+            );
 
             return back()->withErrors([
                 'test_email' => 'Тестовое письмо отправить не удалось. Проверьте сервер, порт, шифрование, логин и пароль.',
             ]);
         }
 
+        $this->auditLogger->success(
+            category: 'mail',
+            action: 'mail.test_sent',
+            target: $address,
+        );
+
         return redirect()
             ->route('admin.settings.mail')
             ->with('status', 'Тестовое письмо успешно отправлено на '.$address.'.');
+    }
+
+    /**
+     * @param array<string, mixed> $before
+     * @param array<string, mixed> $after
+     * @return array<string, array{old: mixed, new: mixed}>
+     */
+    private function auditChanges(array $before, array $after): array
+    {
+        $changes = [];
+
+        foreach ($after as $key => $newValue) {
+            $oldValue = $before[$key] ?? null;
+
+            if ($oldValue !== $newValue) {
+                $changes[$key] = ['old' => $oldValue, 'new' => $newValue];
+            }
+        }
+
+        return $changes;
+    }
+
+    /** @param array<string, mixed> $values */
+    private function generalAuditValues(array $values): array
+    {
+        return [
+            'name' => $values['name'] ?? '',
+            'description' => $values['description'] ?? '',
+            'timezone' => $values['timezone'] ?? '',
+            'admin_email' => $values['admin_email'] ?? '',
+            'footer_text' => $values['footer_text'] ?? '',
+            'logo_configured' => ! empty($values['logo']),
+            'favicon_configured' => ! empty($values['favicon']),
+        ];
+    }
+
+    private function gameServerAuditValues(GameServer $gameServer): array
+    {
+        return [
+            'name' => $gameServer->name,
+            'rates' => $gameServer->rates,
+            'chronicle' => $gameServer->chronicle,
+            'mode' => $gameServer->mode,
+        ];
+    }
+
+    /** @param array<string, mixed> $values */
+    private function mailAuditValues(array $values): array
+    {
+        return [
+            'host' => $values['host'] ?? '',
+            'port' => $values['port'] ?? 0,
+            'encryption' => $values['encryption'] ?? '',
+            'username' => $values['username'] ?? '',
+            'from_address' => $values['from_address'] ?? '',
+            'from_name' => $values['from_name'] ?? '',
+            'admin_email' => $values['admin_email'] ?? '',
+            'password_saved' => (bool) ($values['password_saved'] ?? false),
+        ];
     }
 
     /**

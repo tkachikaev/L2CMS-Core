@@ -44,6 +44,10 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
     throw 'Composer was not found in PATH.'
 }
 
+if (-not (Test-Path 'composer.lock')) {
+    throw 'composer.lock is missing. Re-extract the complete L2Forge CMS release. Setup will not install unpinned dependency versions.'
+}
+
 $phpVersionText = (& php -r "echo PHP_VERSION;").Trim()
 if ($LASTEXITCODE -ne 0) {
     throw 'Unable to read PHP version.'

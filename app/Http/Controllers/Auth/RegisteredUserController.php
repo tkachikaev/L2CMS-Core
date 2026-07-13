@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
 use Illuminate\Auth\Events\Registered;
@@ -41,6 +42,7 @@ class RegisteredUserController extends Controller
         RegisterRequest $request,
         RegistrationSettings $settings,
         MailSettings $mailSettings,
+        AuditLogger $auditLogger,
     ): RedirectResponse {
         abort_unless($settings->enabled(), 403, 'Регистрация новых пользователей отключена.');
         abort_if(
@@ -60,8 +62,18 @@ class RegisteredUserController extends Controller
             $user->markEmailAsVerified();
         }
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
+
+        $auditLogger->success(
+            category: 'user',
+            action: 'user.registered',
+            actor: $user,
+            target: $user,
+            details: [
+                'email_verification_required' => $settings->emailVerificationRequired(),
+            ],
+        );
 
         try {
             event(new Registered($user));
@@ -70,6 +82,13 @@ class RegisteredUserController extends Controller
                 'user_id' => $user->id,
                 'exception' => $exception::class,
             ]);
+            $auditLogger->failed(
+                category: 'mail',
+                action: 'mail.verification_failed',
+                actor: $user,
+                target: $user->email,
+                details: ['exception_class' => $exception::class],
+            );
 
             return redirect()
                 ->route('verification.notice')
@@ -77,6 +96,13 @@ class RegisteredUserController extends Controller
         }
 
         if ($settings->emailVerificationRequired() && ! $user->hasVerifiedEmail()) {
+            $auditLogger->success(
+                category: 'mail',
+                action: 'mail.verification_sent',
+                actor: $user,
+                target: $user->email,
+            );
+
             return redirect()
                 ->route('verification.notice')
                 ->with('status', 'Учётная запись создана. Проверьте почту и подтвердите email.');
