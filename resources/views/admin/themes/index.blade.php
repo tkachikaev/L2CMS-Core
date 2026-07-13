@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="content-toolbar themes-toolbar">
-    <div class="content-stat"><span>{{ __('Active theme') }}</span><strong>{{ $activeTheme ?: '—' }}</strong></div>
+    <div class="content-stat"><span>{{ __('Active theme') }}</span><strong>{{ $activeThemeSlug ?: '—' }}</strong></div>
     <div class="content-stat"><span>{{ __('Installed') }}</span><strong>{{ count($themes) }}</strong></div>
     <a class="button button-secondary" href="{{ public_route('home') }}" target="_blank" rel="noopener">{{ __('Open website') }} ↗</a>
 </div>

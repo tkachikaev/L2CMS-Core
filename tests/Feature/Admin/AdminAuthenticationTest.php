@@ -21,7 +21,9 @@ class AdminAuthenticationTest extends TestCase
     {
         $this->get('/admin/login')
             ->assertOk()
-            ->assertSee('Вход администратора');
+            ->assertSee('Вход администратора')
+            ->assertSee('login-brand-top', false)
+            ->assertSee('login-brand-copy', false);
     }
 
     public function test_active_admin_can_login(): void

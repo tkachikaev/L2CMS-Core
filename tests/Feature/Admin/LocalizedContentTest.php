@@ -95,6 +95,7 @@ class LocalizedContentTest extends TestCase
             ->put('/admin/settings/mail/templates/email_verification', [
                 'locale' => 'en',
                 'subject' => 'Verify {{site_name}} account for {{username}}',
+                'header' => '{{site_name}}',
                 'heading' => 'Verify your email',
                 'body' => 'Hello, {{username}}!',
                 'action_text' => 'Verify email',

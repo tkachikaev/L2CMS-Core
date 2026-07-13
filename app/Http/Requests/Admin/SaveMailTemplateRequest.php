@@ -32,6 +32,7 @@ class SaveMailTemplateRequest extends FormRequest
         return [
             'locale' => ['required', 'string', Rule::in($locales)],
             'subject' => ['required', 'string', 'max:200'],
+            'header' => ['required', 'string', 'max:150'],
             'heading' => ['required', 'string', 'max:150'],
             'body' => ['required', 'string', 'max:5000'],
             'action_text' => [$requiresAction ? 'required' : 'nullable', 'string', 'max:100'],
@@ -45,6 +46,8 @@ class SaveMailTemplateRequest extends FormRequest
         return [
             'subject.required' => __('Enter the email subject.'),
             'subject.max' => __('The email subject must not exceed 200 characters.'),
+            'header.required' => __('Enter the name shown in the email header.'),
+            'header.max' => __('The email header name must not exceed 150 characters.'),
             'heading.required' => __('Enter the email heading.'),
             'heading.max' => __('The email heading must not exceed 150 characters.'),
             'body.required' => __('Enter the main email text.'),

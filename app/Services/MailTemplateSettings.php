@@ -16,6 +16,7 @@ final class MailTemplateSettings
     /** @var array<int, string> */
     private const EDITABLE_FIELDS = [
         'subject',
+        'header',
         'heading',
         'body',
         'action_text',
@@ -74,6 +75,7 @@ final class MailTemplateSettings
      *     requires_action: bool,
      *     variables: array<int, string>,
      *     subject: string,
+     *     header: string,
      *     heading: string,
      *     body: string,
      *     action_text: string,
@@ -123,6 +125,7 @@ final class MailTemplateSettings
             'requires_action' => (bool) ($definition['requires_action'] ?? false),
             'variables' => array_values(array_map('strval', (array) ($definition['variables'] ?? []))),
             'subject' => $values['subject'],
+            'header' => $values['header'],
             'heading' => $values['heading'],
             'body' => $values['body'],
             'action_text' => $values['action_text'],
@@ -131,7 +134,7 @@ final class MailTemplateSettings
         ];
     }
 
-    /** @param array{subject: string, heading: string, body: string, action_text: string, footer: string} $values */
+    /** @param array{subject: string, header: string, heading: string, body: string, action_text: string, footer: string} $values */
     public function update(string $key, array $values, ?string $locale = null): void
     {
         $definition = $this->definition($key, $locale);
@@ -207,7 +210,7 @@ final class MailTemplateSettings
         return $fields;
     }
 
-    /** @param array<string, string> $variables @return array{subject: string, heading: string, body: string, action_text: string, footer: string} */
+    /** @param array<string, string> $variables @return array{subject: string, header: string, heading: string, body: string, action_text: string, footer: string} */
     public function render(string $key, array $variables, ?string $locale = null): array
     {
         $values = $this->values($key, $locale);
@@ -230,9 +233,15 @@ final class MailTemplateSettings
         try {
             $template = $this->values($key, $locale);
             $rendered = $this->render($key, $variables, $locale);
+            $brandName = $this->plainText($rendered['header']);
+            if ($brandName === '') {
+                $brandName = $this->plainText($variables['site_name'] ?? site_name($locale));
+            }
+
             $message = (new MailMessage)
                 ->subject($this->plainText($rendered['subject']))
-                ->greeting($this->plainText($rendered['heading']));
+                ->greeting($this->plainText($rendered['heading']))
+                ->markdown('mail.system-notification', ['brandName' => $brandName]);
 
             foreach ($this->blocks($rendered['body']) as $block) {
                 $message->line(e($block));

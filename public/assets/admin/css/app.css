@@ -61,6 +61,14 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .brand strong, .brand small { display: block; }
 .brand strong { font-size: 17px; }
 .brand small { color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+.login-brand-block { display: grid; gap: 12px; }
+.login-brand-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.login-brand-mark-link { display: inline-flex; border-radius: 9px; }
+.login-brand-mark-link:focus-visible,
+.login-brand-copy:focus-visible { outline: 3px solid rgba(37, 99, 235, .24); outline-offset: 3px; }
+.login-brand-copy { display: inline-grid; justify-self: start; gap: 1px; }
+.login-brand-copy strong { font-size: 18px; line-height: 1.25; }
+.login-brand-copy small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .14em; }
 .login-copy { margin: 34px 0 22px; }
 .login-copy .eyebrow { display: none; }
 .login-copy h1 { margin: 0; font-size: 28px; line-height: 1.2; }
@@ -1449,7 +1457,6 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 }
 .admin-language-switcher button:hover,
 .admin-language-switcher button.active { background: var(--accent); color: #fff; }
-.login-topline { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 .translation-editor { display: grid; gap: 16px; }
 .translation-editor.compact { gap: 12px; }
 .translation-tabs {
@@ -1520,4 +1527,49 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
     .translation-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .translation-tab { width: 100%; }
     [dir="rtl"] .admin-main { margin-right: 0; }
+}
+
+/* Custom mail */
+.custom-mail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr);
+    gap: 18px;
+    align-items: start;
+}
+.custom-mail-form textarea {
+    min-height: 560px;
+    resize: vertical;
+    font: 12px/1.55 Consolas, "Cascadia Code", "Courier New", monospace;
+    tab-size: 4;
+}
+.custom-mail-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+.custom-mail-heading h2 { margin: 0; }
+.custom-mail-heading p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.custom-mail-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.custom-mail-preview-card { position: sticky; top: 18px; }
+.custom-mail-preview-frame {
+    display: block;
+    width: 100%;
+    min-height: 640px;
+    margin-top: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+@media (max-width: 1100px) {
+    .custom-mail-layout { grid-template-columns: 1fr; }
+    .custom-mail-preview-card { position: static; }
+}
+
+@media (max-width: 560px) {
+    .custom-mail-actions { flex-direction: column; }
+    .custom-mail-actions .button { width: 100%; }
+    .custom-mail-form textarea { min-height: 440px; }
+    .custom-mail-preview-frame { min-height: 520px; }
 }

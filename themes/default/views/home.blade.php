@@ -126,7 +126,7 @@
                 @else
                     <form method="POST" action="{{ public_route('login.store') }}">
                         @csrf
-                        <label><span>{{ __('Login or email') }}</span><input name="login" required autocomplete="username" placeholder="user@example.com"></label>
+                        <label><span>{{ __('Username or email') }}</span><input name="login" required autocomplete="username" placeholder="user@example.com"></label>
                         <label><span>{{ __('Password') }}</span><input name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></label>
                         <button class="button button-gold" type="submit">{{ __('Log in') }}</button>
                         <p>

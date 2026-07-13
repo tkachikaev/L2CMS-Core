@@ -5,15 +5,18 @@
 @section('body')
 <main class="login-shell">
     <section class="login-panel" aria-labelledby="login-title">
-        <div class="login-topline">
-            <a class="brand" href="{{ public_route('home') }}" aria-label="{{ __('Return to website') }}">
-                <span class="brand-mark">L2</span>
-                <span>
-                    <strong>{{ config('app.name') }}</strong>
-                    <small>CONTROL PANEL</small>
-                </span>
+        <div class="login-brand-block">
+            <div class="login-brand-top">
+                <a class="login-brand-mark-link" href="{{ public_route('home') }}" aria-label="{{ __('Return to website') }}">
+                    <span class="brand-mark">L2</span>
+                </a>
+                @include('admin.partials.language-switcher')
+            </div>
+
+            <a class="login-brand-copy" href="{{ public_route('home') }}">
+                <strong>{{ config('app.name') }}</strong>
+                <small>CONTROL PANEL</small>
             </a>
-            @include('admin.partials.language-switcher')
         </div>
 
         <div class="login-copy">

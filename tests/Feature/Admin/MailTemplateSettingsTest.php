@@ -13,6 +13,7 @@ use App\Services\MailSettings;
 use App\Services\MailTemplateSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
@@ -52,6 +53,7 @@ class MailTemplateSettingsTest extends TestCase
             ->put('/admin/settings/mail/templates/email_verification', [
                 'locale' => 'ru',
                 'subject' => 'Добро пожаловать на {{site_name}}',
+                'header' => 'Тестовый сервер',
                 'heading' => 'Подтвердите адрес',
                 'body' => 'Здравствуйте, {{username}}!',
                 'action_text' => 'Завершить регистрацию',
@@ -63,6 +65,10 @@ class MailTemplateSettingsTest extends TestCase
         $this->assertDatabaseHas('cms_settings', [
             'key' => 'mail.template.email_verification.ru.subject',
             'value' => 'Добро пожаловать на {{site_name}}',
+        ]);
+        $this->assertDatabaseHas('cms_settings', [
+            'key' => 'mail.template.email_verification.ru.header',
+            'value' => 'Тестовый сервер',
         ]);
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'mail.template_updated',
@@ -77,6 +83,9 @@ class MailTemplateSettingsTest extends TestCase
         $this->assertNull(CmsSetting::query()
             ->where('key', 'mail.template.email_verification.ru.subject')
             ->value('value'));
+        $this->assertNull(CmsSetting::query()
+            ->where('key', 'mail.template.email_verification.ru.header')
+            ->value('value'));
         $this->assertSame(
             'Подтвердите регистрацию на {{site_name}}',
             app(MailTemplateSettings::class)->values('email_verification')['subject'],
@@ -89,6 +98,7 @@ class MailTemplateSettingsTest extends TestCase
         $base = [
             'locale' => 'ru',
             'subject' => 'Письмо от {{site_name}}',
+            'header' => '{{site_name}}',
             'heading' => 'Подтверждение',
             'body' => 'Здравствуйте, {{unknown_variable}}!',
             'action_text' => 'Подтвердить',
@@ -115,6 +125,7 @@ class MailTemplateSettingsTest extends TestCase
         $templates = app(MailTemplateSettings::class);
         $templates->update(MailTemplateSettings::EMAIL_VERIFICATION, [
             'subject' => 'Проверка {{site_name}} для {{username}}',
+            'header' => '{{site_name}}',
             'heading' => 'Новый заголовок',
             'body' => 'Пользователь: {{user_email}}',
             'action_text' => 'Проверить адрес',
@@ -122,6 +133,7 @@ class MailTemplateSettingsTest extends TestCase
         ]);
         $templates->update(MailTemplateSettings::PASSWORD_RESET, [
             'subject' => 'Сброс для {{username}}',
+            'header' => '{{site_name}}',
             'heading' => 'Установите пароль',
             'body' => 'Адрес: {{user_email}}',
             'action_text' => 'Открыть восстановление',
@@ -143,6 +155,8 @@ class MailTemplateSettingsTest extends TestCase
         $this->assertStringContainsString('Проверка', (string) $verificationData['subject']);
         $this->assertSame('Новый заголовок', $verificationData['greeting']);
         $this->assertSame('Проверить адрес', $verificationData['actionText']);
+        $this->assertSame('Eternal World', $verification->data()['brandName']);
+        $this->assertStringContainsString('Eternal World', (string) $verification->render());
         $this->assertSame('Сброс для player', $resetData['subject']);
         $this->assertSame('Открыть восстановление', $resetData['actionText']);
     }
@@ -165,6 +179,55 @@ class MailTemplateSettingsTest extends TestCase
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'mail.template_test_sent',
             'result' => 'success',
+        ]);
+    }
+
+    public function test_administrator_can_send_one_custom_html_email(): void
+    {
+        Mail::fake();
+        $admin = $this->createAdmin();
+        $this->configureReadyMail();
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/settings/mail/custom')
+            ->assertOk()
+            ->assertSee('Произвольное HTML-письмо')
+            ->assertSee('HTML-код');
+
+        $this->actingAs($admin, 'admin')
+            ->post('/admin/settings/mail/custom', [
+                'recipient' => 'recipient@example.com',
+                'subject' => 'Новость сервера',
+                'html' => '<!doctype html><html><body><h1>Событие</h1><p>Текст письма.</p></body></html>',
+            ])
+            ->assertRedirect(route('admin.settings.mail.custom'))
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'mail.custom_sent',
+            'target_name' => 'recipient@example.com',
+            'result' => 'success',
+        ]);
+    }
+
+    public function test_custom_html_email_rejects_executable_code(): void
+    {
+        Mail::fake();
+        $admin = $this->createAdmin();
+        $this->configureReadyMail();
+
+        $this->actingAs($admin, 'admin')
+            ->from('/admin/settings/mail/custom')
+            ->post('/admin/settings/mail/custom', [
+                'recipient' => 'recipient@example.com',
+                'subject' => 'Unsafe',
+                'html' => '<html><body><script>alert(1)</script><p>Text</p></body></html>',
+            ])
+            ->assertRedirect('/admin/settings/mail/custom')
+            ->assertSessionHasErrors('html');
+
+        $this->assertDatabaseMissing('audit_logs', [
+            'action' => 'mail.custom_sent',
         ]);
     }
 

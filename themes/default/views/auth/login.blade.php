@@ -12,7 +12,7 @@
         <form method="POST" action="{{ public_route('login.store') }}">
             @csrf
 
-            <label for="login">{{ __('Login or email') }}
+            <label for="login">{{ __('Username or email') }}
                 <input id="login" name="login" type="text" maxlength="255" required autofocus autocomplete="username" value="{{ old('login') }}">
             </label>
 

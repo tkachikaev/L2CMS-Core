@@ -33,4 +33,11 @@ return [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'L2Forge CMS')),
     ],
+
+    'markdown' => [
+        'theme' => 'default',
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
 ];

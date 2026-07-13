@@ -14,4 +14,8 @@
             {{ $item['title'] }}
         </a>
     @endforeach
+
+    <a @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail.custom') || request()->routeIs('admin.settings.mail.custom.send')]) href="{{ route('admin.settings.mail.custom') }}">
+        {{ __('Send email') }}
+    </a>
 </nav>

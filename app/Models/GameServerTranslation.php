@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 final class GameServerTranslation extends Model
 {
-    protected $fillable = ['locale', 'name'];
+    protected $fillable = ['game_server_id', 'locale', 'name'];
 
     public function gameServer(): BelongsTo
     {

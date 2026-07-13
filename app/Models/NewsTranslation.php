@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class NewsTranslation extends Model
 {
     protected $fillable = [
+        'news_id',
         'locale',
         'title',
         'slug',

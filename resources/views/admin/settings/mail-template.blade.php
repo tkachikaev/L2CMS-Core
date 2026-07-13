@@ -51,6 +51,12 @@
             </div>
 
             <div class="form-group">
+                <label for="header">{{ __('Name in the email header') }}</label>
+                <input id="header" name="header" type="text" maxlength="150" required value="{{ old('header', $template['header']) }}" data-mail-template-field="header">
+                <small>{{ __('This text is shown in the dark header of the standard email layout.') }}</small>
+            </div>
+
+            <div class="form-group">
                 <label for="heading">{{ __('Heading') }}</label>
                 <input id="heading" name="heading" type="text" maxlength="150" required value="{{ old('heading', $template['heading']) }}" data-mail-template-field="heading">
             </div>
@@ -110,7 +116,7 @@
             </div>
 
             <div class="mail-preview-window">
-                <div class="mail-preview-brand">{{ site_name($templateLocale) }}</div>
+                <div class="mail-preview-brand" data-mail-preview="header">{{ $preview['header'] }}</div>
                 <div class="mail-preview-content">
                     <h3 data-mail-preview="heading">{{ $preview['heading'] }}</h3>
                     <div class="mail-preview-copy" data-mail-preview="body">{{ $preview['body'] }}</div>

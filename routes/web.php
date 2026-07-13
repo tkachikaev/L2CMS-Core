@@ -160,6 +160,11 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])
             ->middleware('throttle:5,1')
             ->name('settings.mail.test');
+        Route::get('/settings/mail/custom', [AdminSettingsController::class, 'customMail'])
+            ->name('settings.mail.custom');
+        Route::post('/settings/mail/custom', [AdminSettingsController::class, 'sendCustomMail'])
+            ->middleware('throttle:5,1')
+            ->name('settings.mail.custom.send');
         Route::get('/settings/mail/templates/{template}', [AdminSettingsController::class, 'mailTemplate'])
             ->where('template', 'email_verification|password_reset|password_changed')
             ->name('settings.mail.template');

@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\SaveLanguageSettingsRequest;
 use App\Http\Requests\Admin\SaveMailSettingsRequest;
 use App\Http\Requests\Admin\SaveMailTemplateRequest;
 use App\Http\Requests\Admin\SaveRegistrationSettingsRequest;
+use App\Http\Requests\Admin\SendCustomMailRequest;
 use App\Http\Requests\Admin\SendMailTemplateTestRequest;
 use App\Http\Requests\Admin\SendTestMailRequest;
 use App\Models\GameServer;
@@ -17,6 +18,7 @@ use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
 use App\Services\MailSettings;
 use App\Services\Localization\LanguageManager;
+use App\Services\Mail\CustomMailHtmlSanitizer;
 use App\Services\MailTemplateSettings;
 use App\Services\RegistrationSettings;
 use App\Services\Settings\SettingsImageStorage;
@@ -300,6 +302,79 @@ class SettingsController extends Controller
         ]);
     }
 
+    public function customMail(MailSettings $mailSettings, MailTemplateSettings $mailTemplates): View
+    {
+        return view('admin.settings.mail-custom', [
+            'mailSettings' => $mailSettings->values(),
+            'mailTemplates' => $mailTemplates->navigation(app()->getLocale()),
+            'templateLocale' => app()->getLocale(),
+            'exampleHtml' => $this->customMailExample(),
+        ]);
+    }
+
+    public function sendCustomMail(
+        SendCustomMailRequest $request,
+        MailSettings $mailSettings,
+        CustomMailHtmlSanitizer $sanitizer,
+    ): RedirectResponse {
+        if (! $mailSettings->isReady()) {
+            return back()->withInput()->withErrors([
+                'recipient' => __('Configure SMTP and successfully send a test email from the Connection tab first.'),
+            ]);
+        }
+
+        $validated = $request->validated();
+        $address = trim((string) $validated['recipient']);
+        $subject = trim((string) preg_replace('/[\r\n\t]+/u', ' ', strip_tags((string) $validated['subject'])));
+        $safeHtml = $sanitizer->sanitize((string) $validated['html']);
+
+        if ($sanitizer->plainText($safeHtml) === '') {
+            return back()->withInput()->withErrors([
+                'html' => __('The email must contain visible text.'),
+            ]);
+        }
+
+        $mailSettings->applyConfiguration();
+
+        try {
+            Mail::html($safeHtml, function (Message $message) use ($address, $subject): void {
+                $message->to($address)->subject($subject);
+            });
+        } catch (Throwable $exception) {
+            Log::warning('Custom email sending failed.', [
+                'exception' => $exception::class,
+            ]);
+            $this->auditLogger->failed(
+                category: 'mail',
+                action: 'mail.custom_failed',
+                target: $address,
+                details: [
+                    'subject' => $subject,
+                    'html_length' => strlen($safeHtml),
+                    'exception_class' => $exception::class,
+                ],
+            );
+
+            return back()->withInput()->withErrors([
+                'recipient' => __('The custom email could not be sent. Check SMTP and try again.'),
+            ]);
+        }
+
+        $this->auditLogger->success(
+            category: 'mail',
+            action: 'mail.custom_sent',
+            target: $address,
+            details: [
+                'subject' => $subject,
+                'html_length' => strlen($safeHtml),
+            ],
+        );
+
+        return redirect()
+            ->route('admin.settings.mail.custom')
+            ->with('status', __('Custom email sent to :email.', ['email' => $address]));
+    }
+
     public function updateMail(
         SaveMailSettingsRequest $request,
         MailSettings $mailSettings,
@@ -422,6 +497,7 @@ class SettingsController extends Controller
         $locale = (string) $validated['locale'];
         $values = [
             'subject' => trim((string) $validated['subject']),
+            'header' => trim((string) $validated['header']),
             'heading' => trim((string) $validated['heading']),
             'body' => trim((string) $validated['body']),
             'action_text' => trim((string) ($validated['action_text'] ?? '')),
@@ -597,6 +673,7 @@ class SettingsController extends Controller
     {
         return [
             'subject' => (string) ($values['subject'] ?? ''),
+            'header' => (string) ($values['header'] ?? ''),
             'heading' => (string) ($values['heading'] ?? ''),
             'body' => (string) ($values['body'] ?? ''),
             'action_text' => (string) ($values['action_text'] ?? ''),
@@ -639,6 +716,47 @@ class SettingsController extends Controller
             'chronicle' => isset($validated['server_chronicle']) ? (string) $validated['server_chronicle'] : null,
             'mode' => isset($validated['server_mode']) ? (string) $validated['server_mode'] : null,
         ];
+    }
+
+    private function customMailExample(): string
+    {
+        $siteName = e(site_name());
+        $locale = e(app()->getLocale());
+        $heading = e(__('Custom email heading'));
+        $body = e(__('Replace this text with your message.'));
+        $button = e(__('Open website'));
+        $url = e(rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/'));
+
+        return <<<HTML
+<!doctype html>
+<html lang="{$locale}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$heading}</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;color:#111827;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f4f6;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;">
+                    <tr>
+                        <td style="padding:22px 28px;background:#111827;color:#ffffff;font-size:20px;font-weight:700;">{$siteName}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:34px 28px;">
+                            <h1 style="margin:0 0 18px;font-size:26px;line-height:1.25;">{$heading}</h1>
+                            <p style="margin:0 0 24px;font-size:16px;line-height:1.65;">{$body}</p>
+                            <a href="{$url}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:7px;font-weight:700;">{$button}</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
     }
 
     private function placeholder(string $title, string $description): View
