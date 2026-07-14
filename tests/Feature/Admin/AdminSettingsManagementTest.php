@@ -46,8 +46,8 @@ class AdminSettingsManagementTest extends TestCase
             ->get('/admin/settings')
             ->assertOk()
             ->assertSee('Основные')
-            ->assertSee('Игровой сервер')
-            ->assertSee('Логин сервер')
+            ->assertSee('Игровые серверы')
+            ->assertSee('Логин-серверы')
             ->assertSee('© 2026 L2Forge-CMS')
             ->assertSee('Сохранить настройки');
     }
@@ -183,15 +183,17 @@ class AdminSettingsManagementTest extends TestCase
         $this->assertDatabaseMissing('cms_settings', ['key' => 'site.logo']);
     }
 
-    public function test_login_server_tab_is_visible_as_placeholder(): void
+    public function test_login_server_tab_opens_connection_management(): void
     {
         $admin = $this->createAdmin();
 
         $this->actingAs($admin, 'admin')
             ->get('/admin/settings/login-server')
             ->assertOk()
-            ->assertSee('Логин сервер')
-            ->assertSee('Раздел находится в разработке');
+            ->assertSee('Логин-серверы')
+            ->assertSee('Добавить LoginServer')
+            ->assertSee('L2J Mobius')
+            ->assertSee('RUSaCis');
     }
 
     private function createAdmin(): Admin

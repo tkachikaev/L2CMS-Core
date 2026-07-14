@@ -3,9 +3,11 @@
 namespace Tests\Feature\Admin;
 
 use App\Http\Requests\Admin\CleanupSecurityLogsRequest;
+use App\Http\Requests\Admin\SaveGameServerConnectionRequest;
 use App\Http\Requests\Admin\SaveGameServerSettingsRequest;
 use App\Http\Requests\Admin\SaveGeneralSettingsRequest;
 use App\Http\Requests\Admin\SaveLanguageSettingsRequest;
+use App\Http\Requests\Admin\SaveLoginServerRequest;
 use App\Http\Requests\Admin\SaveMailSettingsRequest;
 use App\Http\Requests\Admin\SaveMailTemplateRequest;
 use App\Http\Requests\Admin\SaveNewsRequest;
@@ -51,6 +53,8 @@ class AdminFormRequestAuthorizationTest extends TestCase
         return [
             'security log cleanup' => [CleanupSecurityLogsRequest::class],
             'game server settings' => [SaveGameServerSettingsRequest::class],
+            'game server connection' => [SaveGameServerConnectionRequest::class],
+            'login server settings' => [SaveLoginServerRequest::class],
             'general settings' => [SaveGeneralSettingsRequest::class],
             'language settings' => [SaveLanguageSettingsRequest::class],
             'mail settings' => [SaveMailSettingsRequest::class],

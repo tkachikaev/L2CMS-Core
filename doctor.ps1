@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Continue'
+﻿$ErrorActionPreference = 'Continue'
 
 $scriptFile = $PSCommandPath
 if ([string]::IsNullOrWhiteSpace($scriptFile)) {
@@ -110,7 +110,7 @@ if ($phpCommand) {
     try { $versionOk = ([Version]$phpVersionText -ge [Version]'8.3.0') } catch {}
     Test-ItemStatus 'PHP version' $versionOk $phpVersionText
 
-    $requiredExtensions = @('ctype', 'dom', 'fileinfo', 'mbstring', 'openssl', 'pdo', 'pdo_sqlite', 'tokenizer', 'xml')
+    $requiredExtensions = @('ctype', 'dom', 'fileinfo', 'mbstring', 'openssl', 'pdo', 'pdo_sqlite', 'pdo_mysql', 'tokenizer', 'xml')
     $loadedExtensions = & php -r "echo implode(PHP_EOL, get_loaded_extensions());"
     foreach ($extension in $requiredExtensions) {
         Test-ItemStatus "PHP extension $extension" ($loadedExtensions -contains $extension) $(if ($loadedExtensions -contains $extension) { 'loaded' } else { 'missing' })

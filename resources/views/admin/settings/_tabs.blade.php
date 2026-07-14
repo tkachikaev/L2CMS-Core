@@ -3,10 +3,10 @@
         {{ __('General') }}
     </a>
     <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.game-server')]) href="{{ route('admin.settings.game-server') }}">
-        {{ __('Game server') }}
+        {{ __('Game servers') }}
     </a>
     <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.login-server')]) href="{{ route('admin.settings.login-server') }}">
-        {{ __('Login Server') }}
+        {{ __('LoginServers') }}
     </a>
     <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.registration')]) href="{{ route('admin.settings.registration') }}">
         {{ __('Registration') }}

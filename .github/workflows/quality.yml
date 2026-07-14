@@ -21,7 +21,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: dom, fileinfo, mbstring, pdo_sqlite, xml
+          extensions: dom, fileinfo, mbstring, pdo_mysql, pdo_sqlite, xml
           coverage: none
           tools: composer:v2
 

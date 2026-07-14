@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$SkipTests
 )
 
@@ -81,6 +81,7 @@ $requiredExtensions = @(
     'openssl',
     'pdo',
     'pdo_sqlite',
+    'pdo_mysql',
     'tokenizer',
     'xml'
 )

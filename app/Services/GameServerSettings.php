@@ -24,7 +24,18 @@ final class GameServerSettings
      *     show_rates: bool,
      *     show_chronicle: bool,
      *     show_mode: bool,
-     *     translations: array<string,string>
+     *     translations: array<string,string>,
+     *     login_server_id:int|null,
+     *     login_server_name:string|null,
+     *     driver:string|null,
+     *     use_login_server_connection:bool,
+     *     database_host:string,
+     *     database_port:int|null,
+     *     database_name:string,
+     *     database_username:string,
+     *     database_charset:string,
+     *     database_password_saved:bool,
+     *     connection_configured:bool
      * }>
      */
     public function all(?string $locale = null): array
@@ -35,7 +46,7 @@ final class GameServerSettings
 
         try {
             return GameServer::query()
-                ->with('translations')
+                ->with(['translations', 'loginServer'])
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get()
@@ -121,6 +132,17 @@ final class GameServerSettings
             'show_chronicle' => $chronicle !== '',
             'show_mode' => $this->modeIsVisible($mode),
             'translations' => $translations,
+            'login_server_id' => $server->login_server_id,
+            'login_server_name' => $server->loginServer?->name,
+            'driver' => $server->driver,
+            'use_login_server_connection' => (bool) $server->use_login_server_connection,
+            'database_host' => trim((string) $server->database_host),
+            'database_port' => $server->database_port,
+            'database_name' => trim((string) $server->database_name),
+            'database_username' => trim((string) $server->database_username),
+            'database_charset' => trim((string) $server->database_charset),
+            'database_password_saved' => $server->hasDatabasePassword(),
+            'connection_configured' => $server->connectionConfigured(),
         ];
     }
 

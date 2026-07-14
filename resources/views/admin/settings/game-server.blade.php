@@ -94,7 +94,10 @@
                     </div>
                 </form>
 
-                @include('admin.settings._game-server-connection', ['fieldPrefix' => $fieldPrefix])
+                @include('admin.settings._game-server-connection', [
+                    'fieldPrefix' => $fieldPrefix,
+                    'server' => $server,
+                ])
             </article>
         @endforeach
     </div>
@@ -124,4 +127,5 @@
 @push('scripts')
 <script src="{{ asset('assets/admin/js/game-server-actions.js') }}" defer></script>
 <script src="{{ asset('assets/admin/js/localization.js') }}" defer></script>
+<script src="{{ asset('assets/admin/js/server-connections.js') }}?v={{ \App\Support\L2Forge::version() }}" defer></script>
 @endpush

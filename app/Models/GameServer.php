@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Services\Localization\LanguageManager;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -16,6 +18,16 @@ use Throwable;
  * @property string|null $chronicle
  * @property string|null $mode
  * @property int $sort_order
+ * @property int|null $login_server_id
+ * @property string|null $driver
+ * @property bool $use_login_server_connection
+ * @property string|null $database_host
+ * @property int|null $database_port
+ * @property string|null $database_name
+ * @property string|null $database_username
+ * @property string|null $database_password
+ * @property string|null $database_charset
+ * @property-read LoginServer|null $loginServer
  * @property-read Collection<int, GameServerTranslation> $translations
  */
 class GameServer extends Model
@@ -26,13 +38,69 @@ class GameServer extends Model
         'chronicle',
         'mode',
         'sort_order',
+        'login_server_id',
+        'driver',
+        'use_login_server_connection',
+        'database_host',
+        'database_port',
+        'database_name',
+        'database_username',
+        'database_password',
+        'database_charset',
+    ];
+
+    protected $hidden = [
+        'database_password',
     ];
 
     protected function casts(): array
     {
         return [
             'sort_order' => 'integer',
+            'login_server_id' => 'integer',
+            'use_login_server_connection' => 'boolean',
+            'database_port' => 'integer',
+            'database_password' => 'encrypted',
         ];
+    }
+
+    /** @return BelongsTo<LoginServer, $this> */
+    public function loginServer(): BelongsTo
+    {
+        return $this->belongsTo(LoginServer::class);
+    }
+
+    public function databasePassword(): ?string
+    {
+        try {
+            return is_string($this->database_password) ? $this->database_password : null;
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
+    public function hasDatabasePassword(): bool
+    {
+        $value = $this->getRawOriginal('database_password');
+
+        return is_string($value) && $value !== '';
+    }
+
+    public function connectionConfigured(): bool
+    {
+        if ($this->driver === null || $this->login_server_id === null) {
+            return false;
+        }
+
+        if ($this->use_login_server_connection) {
+            return true;
+        }
+
+        return trim((string) $this->database_host) !== ''
+            && $this->database_port !== null
+            && trim((string) $this->database_name) !== ''
+            && trim((string) $this->database_username) !== ''
+            && trim((string) $this->database_charset) !== '';
     }
 
     /** @return HasMany<GameServerTranslation, $this> */

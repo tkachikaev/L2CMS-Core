@@ -6,6 +6,7 @@
 - [Авторизация администраторов](ADMIN_AUTH.md)
 - [Управление администраторами](ADMINISTRATORS.md)
 - [Настройки сайта](SETTINGS.md)
+- [Подключения LoginServer и GameServer](SERVER_CONNECTIONS.md)
 - [Языки и переводы](LANGUAGES.md)
 - [Пользователи сайта](USERS.md)
 - [Почтовая система](MAIL.md)

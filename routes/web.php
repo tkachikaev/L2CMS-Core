@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\Auth\TwoFactorChallengeController as AdminTwoFactorChallengeController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\GameServerConnectionController as AdminGameServerConnectionController;
+use App\Http\Controllers\Admin\LoginServerController as AdminLoginServerController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -207,7 +209,18 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::post('/settings/game-server', [AdminSettingsController::class, 'storeGameServer'])->name('settings.game-server.store');
         Route::put('/settings/game-server/{gameServer}', [AdminSettingsController::class, 'updateGameServer'])->name('settings.game-server.update');
         Route::delete('/settings/game-server/{gameServer}', [AdminSettingsController::class, 'destroyGameServer'])->name('settings.game-server.destroy');
-        Route::get('/settings/login-server', [AdminSettingsController::class, 'loginServer'])->name('settings.login-server');
+        Route::post('/settings/game-server/{gameServer}/connection', [AdminGameServerConnectionController::class, 'update'])
+            ->middleware('throttle:10,1')
+            ->name('settings.game-server.connection');
+        Route::get('/settings/login-server', [AdminLoginServerController::class, 'index'])->name('settings.login-server');
+        Route::post('/settings/login-server', [AdminLoginServerController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('settings.login-server.store');
+        Route::post('/settings/login-server/{loginServer}', [AdminLoginServerController::class, 'update'])
+            ->middleware('throttle:10,1')
+            ->name('settings.login-server.update');
+        Route::delete('/settings/login-server/{loginServer}', [AdminLoginServerController::class, 'destroy'])
+            ->name('settings.login-server.destroy');
         Route::get('/settings/registration', [AdminSettingsController::class, 'registration'])->name('settings.registration');
         Route::put('/settings/registration', [AdminSettingsController::class, 'updateRegistration'])->name('settings.registration.update');
         Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');

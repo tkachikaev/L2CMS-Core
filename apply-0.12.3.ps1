@@ -14,33 +14,21 @@ if (-not (Test-Path '.env')) {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete 0.11.15 patch with file replacement enabled.'
+    throw 'VERSION is missing. Re-extract the complete 0.12.3 patch with file replacement enabled.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
-if ($cmsVersion -ne '0.11.15') {
+if ($cmsVersion -ne '0.12.3') {
     throw "Unexpected patch version: $cmsVersion"
 }
 
 Write-Host "L2Forge CMS $cmsVersion update"
-Write-Host 'Aligning administrator 2FA status labels with the tested interface.'
+Write-Host 'Fixing Laravel Pint formatting in the settings controller.'
 Write-Host ''
 
 Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -ne 'apply-0.11.15.ps1' } |
+    Where-Object { $_.Name -ne 'apply-0.12.3.ps1' } |
     Remove-Item -Force -ErrorAction SilentlyContinue
-
-$obsoleteFiles = @(
-    'create-demo-content.php'
-)
-
-foreach ($obsoleteFile in $obsoleteFiles) {
-    $obsoletePath = Join-Path $PSScriptRoot $obsoleteFile
-    if (Test-Path -LiteralPath $obsoletePath -PathType Leaf) {
-        Remove-Item -LiteralPath $obsoletePath -Force
-        Write-Host "Removed obsolete file: $obsoleteFile"
-    }
-}
 
 & "$PSScriptRoot\update.ps1" -SkipTests:$SkipTests
 

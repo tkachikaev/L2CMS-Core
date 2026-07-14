@@ -199,6 +199,7 @@ final class SystemInformation
             'openssl',
             'pdo',
             'pdo_sqlite',
+            'pdo_mysql',
             'tokenizer',
             'xml',
         ];

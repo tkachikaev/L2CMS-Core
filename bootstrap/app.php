@@ -28,5 +28,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Central exception handling will be expanded as the CMS grows.
+        $exceptions->dontFlash('database_password');
     })->create();

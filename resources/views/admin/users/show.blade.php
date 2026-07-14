@@ -53,7 +53,7 @@
                 <form method="POST" action="{{ route('admin.users.password-reset',$user) }}">@csrf<button class="button button-secondary" type="submit" @disabled(!$mailReady)>{{ __('Send password reset') }}</button></form>
             </div>
         </section>
-        <section class="form-card form-card-muted user-game-placeholder"><h2>{{ __('Game data') }}</h2><p>{{ __('Login Server integration, game accounts and characters are not connected in this version. They will be added separately and will not be mixed with CMS accounts.') }}</p></section>
+        <section class="form-card form-card-muted user-game-placeholder"><h2>{{ __('Game data') }}</h2><p>{{ __('LoginServer connections are configured separately. Game accounts and characters are not linked to CMS users yet.') }}</p></section>
     </aside>
 </div>
 @endsection
