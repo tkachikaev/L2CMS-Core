@@ -131,7 +131,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
 
         Route::get('/pages', [AdminPageController::class, 'index'])->name('pages.index');
         Route::get('/pages/create', [AdminPageController::class, 'create'])->name('pages.create');
-        Route::post('/pages/preview', [AdminPageController::class, 'preview'])
+        Route::match(['post', 'put'], '/pages/preview', [AdminPageController::class, 'preview'])
             ->middleware('throttle:20,1')
             ->name('pages.preview');
         Route::post('/pages', [AdminPageController::class, 'store'])->name('pages.store');

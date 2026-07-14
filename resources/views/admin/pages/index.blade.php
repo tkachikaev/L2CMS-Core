@@ -61,20 +61,25 @@
     @endif
 @endif
 
-<dialog class="confirm-dialog" data-page-delete-dialog>
-    <form method="POST" data-page-delete-form>
-        @csrf
-        @method('DELETE')
-        <div class="confirm-dialog-body">
-            <h2>{{ __('Delete page?') }}</h2>
-            <p>{{ __('The selected page and all its translations will be permanently deleted.') }}</p>
-            <strong data-page-delete-title></strong>
+<dialog class="confirm-dialog" data-page-delete-dialog aria-labelledby="delete-page-title">
+    <div class="confirm-dialog-card">
+        <div class="confirm-dialog-copy">
+            <span class="confirm-dialog-mark" aria-hidden="true">!</span>
+            <div>
+                <h2 id="delete-page-title">{{ __('Delete page?') }}</h2>
+                <p>{{ __('The selected page and all its translations will be permanently deleted.') }}</p>
+                <strong class="confirm-dialog-target" data-page-delete-title></strong>
+            </div>
         </div>
         <div class="confirm-dialog-actions">
             <button class="button button-secondary" type="button" data-page-delete-cancel>{{ __('Cancel') }}</button>
-            <button class="button button-danger" type="submit">{{ __('Yes, delete') }}</button>
+            <form method="POST" action="" data-page-delete-form>
+                @csrf
+                @method('DELETE')
+                <button class="button button-danger" type="submit">{{ __('Yes, delete') }}</button>
+            </form>
         </div>
-    </form>
+    </div>
 </dialog>
 @endsection
 @push('scripts')

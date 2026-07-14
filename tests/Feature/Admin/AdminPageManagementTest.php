@@ -121,6 +121,65 @@ class AdminPageManagementTest extends TestCase
         ]);
     }
 
+    public function test_administrator_can_preview_unsaved_page_from_create_and_edit_forms(): void
+    {
+        $admin = $this->createAdmin();
+        $payload = [
+            'translations' => [
+                'ru' => [
+                    'title' => 'Предпросмотр правил',
+                    'slug' => 'preview-rules',
+                    'body' => '<p>Текст <strong>предпросмотра</strong>.</p>',
+                    'seo_title' => 'SEO предпросмотра',
+                    'seo_description' => 'Описание предпросмотра.',
+                ],
+                'en' => ['title' => '', 'slug' => '', 'body' => '', 'seo_title' => '', 'seo_description' => ''],
+            ],
+            'preview_locale' => 'ru',
+            'is_published' => '0',
+            'show_in_header' => '0',
+            'show_in_footer' => '1',
+            'sort_order' => '100',
+        ];
+
+        $this->actingAs($admin, 'admin')
+            ->post('/admin/pages/preview', $payload)
+            ->assertOk()
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
+            ->assertSee('Предпросмотр страницы')
+            ->assertSee('Предпросмотр правил')
+            ->assertSee('<strong>предпросмотра</strong>', false);
+
+        // Edit forms contain a hidden _method=PUT field. The preview route must
+        // accept that method too, even if browser JavaScript is stale or disabled.
+        $this->actingAs($admin, 'admin')
+            ->put('/admin/pages/preview', $payload)
+            ->assertOk()
+            ->assertSee('Предпросмотр правил')
+            ->assertSee('<strong>предпросмотра</strong>', false);
+
+        $this->assertDatabaseCount('pages', 0);
+        $this->assertDatabaseCount('page_translations', 0);
+    }
+
+    public function test_page_forms_use_styled_delete_dialog_and_clean_footer_checkbox_layout(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/pages')
+            ->assertOk()
+            ->assertSee('confirm-dialog-card', false)
+            ->assertSee('confirm-dialog-copy', false)
+            ->assertSee('confirm-dialog-mark', false);
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/pages/create')
+            ->assertOk()
+            ->assertSee('switch-row switch-row-spaced', false)
+            ->assertDontSee('switch-row form-group compact', false);
+    }
+
     public function test_draft_page_is_not_public_and_is_not_shown_in_navigation(): void
     {
         $admin = $this->createAdmin();

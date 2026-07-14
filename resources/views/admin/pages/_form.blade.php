@@ -56,7 +56,7 @@
             </label>
 
             <input type="hidden" name="show_in_footer" value="0">
-            <label class="switch-row form-group compact" for="show_in_footer">
+            <label class="switch-row switch-row-spaced" for="show_in_footer">
                 <input id="show_in_footer" name="show_in_footer" type="checkbox" value="1" @checked((bool) old('show_in_footer', $pageItem->show_in_footer))>
                 <span>
                     <strong>{{ __('Show in footer') }}</strong>

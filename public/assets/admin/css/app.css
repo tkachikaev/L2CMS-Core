@@ -249,6 +249,7 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 .switch-row span, .switch-row strong, .switch-row small { display: block; }
 .switch-row strong { color: #374151; }
 .switch-row small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.switch-row-spaced { margin-top: 20px; }
 .editor-actions { display: flex; justify-content: flex-end; gap: 9px; padding: 16px 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 
 
@@ -439,6 +440,7 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 }
 .confirm-dialog h2 { margin: 0; font-size: 20px; }
 .confirm-dialog p { margin: 8px 0 0; color: var(--muted); }
+.confirm-dialog-target { display: block; margin-top: 10px; color: #111827; overflow-wrap: anywhere; }
 .confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
 .confirm-dialog-actions form { margin: 0; }
 
