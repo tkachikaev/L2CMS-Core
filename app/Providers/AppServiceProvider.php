@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\AdminLoginService;
+use App\Services\AdminTwoFactorAuthentication;
 use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
 use App\Services\Localization\LanguageManager;
@@ -28,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(AdminLoginService::class);
+        $this->app->singleton(AdminTwoFactorAuthentication::class);
         $this->app->singleton(AuditLogger::class);
         $this->app->singleton(GameServerSettings::class);
         $this->app->singleton(MailSettings::class);
@@ -79,6 +83,22 @@ class AppServiceProvider extends ServiceProvider
             return [
                 Limit::perMinute($settings['login_ip_per_minute'])->by($key.':minute'),
                 Limit::perHour($settings['login_ip_per_hour'])->by($key.':hour'),
+            ];
+        });
+
+        RateLimiter::for('admin-two-factor-challenge', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $challenge = $request->session()->get('admin_two_factor_challenge');
+            $adminId = is_array($challenge) && isset($challenge['admin_id'])
+                ? (string) $challenge['admin_id']
+                : 'unknown';
+            $key = 'admin-two-factor:'.hash('sha256', $adminId.'|'.$ip);
+            $perMinute = max(1, (int) config('cms.admin.two_factor_max_attempts_per_minute', 5));
+            $perHour = max($perMinute, (int) config('cms.admin.two_factor_max_attempts_per_hour', 20));
+
+            return [
+                Limit::perMinute($perMinute)->by($key.':minute'),
+                Limit::perHour($perHour)->by($key.':hour'),
             ];
         });
     }

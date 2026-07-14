@@ -27,6 +27,17 @@ class AdminAuthenticationTest extends TestCase
             ->assertSee('login-brand-copy', false);
     }
 
+    public function test_new_administrator_has_initial_session_version_in_memory(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->assertSame(1, $admin->session_version);
+
+        $this->actingAs($admin, 'admin')
+            ->get('/admin')
+            ->assertOk();
+    }
+
     public function test_active_admin_can_login(): void
     {
         $admin = $this->createAdmin();

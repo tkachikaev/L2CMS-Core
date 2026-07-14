@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
+use App\Services\AdminTwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -155,6 +156,112 @@ class AdministratorManagementTest extends TestCase
             ->assertSessionHas('status', 'Учётная запись администратора отключена.');
 
         $this->assertGuest('admin');
+    }
+
+    public function test_administrator_list_and_details_show_two_factor_status(): void
+    {
+        $current = $this->createAdmin();
+        $service = app(AdminTwoFactorAuthentication::class);
+        $second = $this->createAdmin([
+            'name' => 'Protected Admin',
+            'email' => 'protected@example.com',
+        ]);
+        $second->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => [],
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($current, 'admin')
+            ->get('/admin/administrators')
+            ->assertOk()
+            ->assertSee('2FA')
+            ->assertSee('Protected Admin')
+            ->assertSee('Включена');
+
+        $this->actingAs($current, 'admin')
+            ->get('/admin/administrators/'.$second->id.'/edit')
+            ->assertOk()
+            ->assertSee('Двухфакторная аутентификация')
+            ->assertSee('Сбросить 2FA');
+    }
+
+    public function test_administrator_can_reset_another_administrators_two_factor(): void
+    {
+        $current = $this->createAdmin();
+        $service = app(AdminTwoFactorAuthentication::class);
+        $target = $this->createAdmin([
+            'name' => 'Protected Admin',
+            'email' => 'protected@example.com',
+        ]);
+        $target->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => $service->hashRecoveryCodes(['ABCDE-12345']),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+        $oldVersion = $target->session_version;
+
+        $this->actingAs($current, 'admin')
+            ->delete('/admin/administrators/'.$target->id.'/two-factor', [
+                'current_password' => 'CorrectPassword123',
+            ])->assertRedirect();
+
+        $target->refresh();
+        $this->assertFalse($target->twoFactorEnabled());
+        $this->assertNull($target->two_factor_recovery_codes);
+        $this->assertSame($oldVersion + 1, $target->session_version);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'administrator.2fa_reset',
+            'target_id' => (string) $target->id,
+        ]);
+
+        $this->actingAs($target, 'admin')
+            ->withSession(['admin_session_version' => $oldVersion])
+            ->get('/admin')
+            ->assertRedirect(route('admin.login'));
+    }
+
+    public function test_wrong_password_cannot_reset_another_administrators_two_factor(): void
+    {
+        $current = $this->createAdmin();
+        $service = app(AdminTwoFactorAuthentication::class);
+        $target = $this->createAdmin([
+            'email' => 'protected@example.com',
+        ]);
+        $target->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => [],
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($current, 'admin')
+            ->delete('/admin/administrators/'.$target->id.'/two-factor', [
+                'current_password' => 'WrongPassword123',
+            ])->assertSessionHasErrors('current_password');
+
+        $this->assertTrue($target->fresh()->twoFactorEnabled());
+    }
+
+    public function test_console_command_can_disable_two_factor(): void
+    {
+        $service = app(AdminTwoFactorAuthentication::class);
+        $admin = $this->createAdmin();
+        $admin->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => [],
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->artisan('l2forge:admin-2fa:disable', [
+            'email' => $admin->email,
+            '--force' => true,
+        ])->assertSuccessful();
+
+        $this->assertFalse($admin->fresh()->twoFactorEnabled());
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'administrator.2fa_reset_console',
+            'actor_type' => 'system',
+        ]);
     }
 
     private function createAdmin(array $attributes = []): Admin

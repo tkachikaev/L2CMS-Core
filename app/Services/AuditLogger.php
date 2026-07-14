@@ -30,6 +30,10 @@ class AuditLogger
         'database_password',
         'db_password',
         'private_key',
+        'recovery_code',
+        'authentication_code',
+        'totp',
+        'otp',
     ];
 
     /**

@@ -34,6 +34,31 @@
             </section>
         </form>
         <section class="form-card administrator-form-card administrator-status-card">
+            <div class="administrator-security-heading">
+                <h2>{{ __('Two-factor authentication') }}</h2>
+                <span @class(['status-badge','status-badge-success' => $administrator->twoFactorEnabled(),'status-badge-muted' => ! $administrator->twoFactorEnabled()])>{{ $administrator->twoFactorEnabled() ? __('Two-factor status enabled') : __('Two-factor status disabled') }}</span>
+            </div>
+            @if ($administrator->twoFactorEnabled())
+                <p>{{ __('Connected: :date', ['date' => $administrator->two_factor_confirmed_at?->format('d.m.Y H:i') ?? '—']) }}</p>
+                @if ($isCurrentAdmin)
+                    <a class="button button-secondary" href="{{ route('admin.account.security') }}">{{ __('Manage account security') }}</a>
+                @else
+                    <p>{{ __('Resetting 2FA removes the secret and recovery codes and revokes active sessions.') }}</p>
+                    <form method="POST" action="{{ route('admin.administrators.two-factor.destroy', $administrator) }}">
+                        @csrf
+                        @method('DELETE')
+                        <div class="form-group"><label for="two_factor_current_password">{{ __('Your current password') }}</label><input id="two_factor_current_password" name="current_password" type="password" maxlength="4096" autocomplete="current-password" required></div>
+                        <button class="button button-danger administrator-password-button" type="submit">{{ __('Reset 2FA') }}</button>
+                    </form>
+                @endif
+            @else
+                <p>{{ __('This administrator has not enabled two-factor authentication.') }}</p>
+                @if ($isCurrentAdmin)
+                    <a class="button button-primary" href="{{ route('admin.account.security') }}">{{ __('Enable 2FA') }}</a>
+                @endif
+            @endif
+        </section>
+        <section class="form-card administrator-form-card administrator-status-card">
             <h2>{{ __('Account status') }}</h2>
             @if ($administrator->is_active)
                 @if ($isCurrentAdmin)

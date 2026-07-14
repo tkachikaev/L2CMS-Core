@@ -48,6 +48,8 @@ return [
         'login_ip_max_attempts_per_minute' => (int) env('ADMIN_LOGIN_IP_MAX_ATTEMPTS_PER_MINUTE', 10),
         'login_ip_max_attempts_per_hour' => (int) env('ADMIN_LOGIN_IP_MAX_ATTEMPTS_PER_HOUR', 100),
         'login_log_retention_days' => (int) env('ADMIN_LOGIN_LOG_RETENTION_DAYS', 30),
+        'two_factor_max_attempts_per_minute' => (int) env('ADMIN_2FA_MAX_ATTEMPTS_PER_MINUTE', 5),
+        'two_factor_max_attempts_per_hour' => (int) env('ADMIN_2FA_MAX_ATTEMPTS_PER_HOUR', 20),
     ],
 
     'audit' => [

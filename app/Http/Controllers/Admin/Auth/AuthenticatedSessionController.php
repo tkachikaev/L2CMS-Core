@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Admin\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
-use App\Models\AdminLoginLog;
+use App\Services\AdminLoginService;
 use App\Services\AuditLogger;
 use App\Services\SecuritySettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -17,8 +18,14 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create(): View
+    private const TWO_FACTOR_CHALLENGE_KEY = 'admin_two_factor_challenge';
+
+    public function create(Request $request): View|RedirectResponse
     {
+        if ($request->session()->has(self::TWO_FACTOR_CHALLENGE_KEY)) {
+            return redirect()->route('admin.two-factor.challenge');
+        }
+
         return view('admin.auth.login');
     }
 
@@ -26,6 +33,7 @@ class AuthenticatedSessionController extends Controller
         Request $request,
         AuditLogger $auditLogger,
         SecuritySettings $securitySettings,
+        AdminLoginService $loginService,
     ): RedirectResponse {
         $validated = $request->validate([
             'email' => ['required', 'string', 'email', 'max:255'],
@@ -33,7 +41,7 @@ class AuthenticatedSessionController extends Controller
             'remember' => ['nullable', 'boolean'],
         ]);
 
-        $email = Str::lower(trim($validated['email']));
+        $email = Str::lower(trim((string) $validated['email']));
         $throttleKey = $this->throttleKey($email, $request->ip());
         $security = $securitySettings->values();
         $maxAttempts = $security['login_max_attempts'];
@@ -47,28 +55,16 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        $credentials = [
-            'email' => $email,
-            'password' => $validated['password'],
-            'is_active' => true,
-        ];
+        $admin = Admin::query()->where('email', $email)->first();
+        $passwordIsValid = $admin !== null
+            && Hash::check((string) $validated['password'], $admin->password);
 
-        if (! Auth::guard('admin')->attempt($credentials, (bool) ($validated['remember'] ?? false))) {
+        if ($admin === null || ! $passwordIsValid || ! $admin->is_active) {
             RateLimiter::hit($throttleKey, $decaySeconds);
-
-            $admin = Admin::query()->where('email', $email)->first();
-            $reason = $admin && ! $admin->is_active ? 'inactive' : 'invalid_credentials';
-            $this->writeLoginLog($request, $email, false, $reason, $admin);
-
-            if ($admin !== null) {
-                $auditLogger->failed(
-                    category: 'admin',
-                    action: 'auth.login_failed',
-                    actor: $admin,
-                    target: __('Control panel'),
-                    details: ['reason' => $reason],
-                );
-            }
+            $reason = $admin !== null && ! $admin->is_active && $passwordIsValid
+                ? 'inactive'
+                : 'invalid_credentials';
+            $loginService->failed($request, $email, $reason, $admin, $auditLogger);
 
             throw ValidationException::withMessages([
                 'email' => __('Invalid email address or password.'),
@@ -76,23 +72,21 @@ class AuthenticatedSessionController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
-        $request->session()->regenerate();
+        $remember = (bool) ($validated['remember'] ?? false);
 
-        /** @var Admin $admin */
-        $admin = Auth::guard('admin')->user();
-        $admin->forceFill([
-            'last_login_at' => now(),
-            'last_login_ip' => $request->ip(),
-            'locale' => app()->getLocale(),
-        ])->save();
+        if ($admin->twoFactorEnabled()) {
+            $request->session()->regenerate();
+            $request->session()->put(self::TWO_FACTOR_CHALLENGE_KEY, [
+                'admin_id' => (int) $admin->getKey(),
+                'email' => $admin->email,
+                'remember' => $remember,
+                'expires_at' => now()->addMinutes(10)->timestamp,
+            ]);
 
-        $this->writeLoginLog($request, $email, true, null, $admin);
-        $auditLogger->success(
-            category: 'admin',
-            action: 'auth.login',
-            actor: $admin,
-            target: __('Control panel'),
-        );
+            return redirect()->route('admin.two-factor.challenge');
+        }
+
+        $loginService->complete($admin, $request, $remember, $auditLogger);
 
         return redirect()->intended(route('admin.dashboard'));
     }
@@ -122,22 +116,5 @@ class AuthenticatedSessionController extends Controller
     private function throttleKey(string $email, ?string $ip): string
     {
         return 'admin-login:'.hash('sha256', $email.'|'.($ip ?? 'unknown'));
-    }
-
-    private function writeLoginLog(
-        Request $request,
-        string $email,
-        bool $successful,
-        ?string $failureReason,
-        ?Admin $admin = null,
-    ): void {
-        AdminLoginLog::query()->create([
-            'admin_id' => $admin?->id,
-            'email' => $email,
-            'ip_address' => $request->ip(),
-            'user_agent' => Str::limit((string) $request->userAgent(), 512, ''),
-            'successful' => $successful,
-            'failure_reason' => $failureReason,
-        ]);
     }
 }

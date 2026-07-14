@@ -19,15 +19,31 @@ class RequireAdminAuthentication
         }
 
         if (! $administrator->is_active) {
-            $guard->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            return $this->logoutAndRedirect($request, __('The administrator account was disabled.'));
+        }
 
-            return redirect()
-                ->route('admin.login')
-                ->with('status', __('The administrator account was disabled.'));
+        $sessionVersion = $request->session()->get('admin_session_version');
+
+        if ($sessionVersion === null && $guard->viaRemember()) {
+            $sessionVersion = $administrator->session_version;
+            $request->session()->put('admin_session_version', $sessionVersion);
+        }
+
+        if ($sessionVersion === null || (int) $sessionVersion !== $administrator->session_version) {
+            return $this->logoutAndRedirect($request, __('The administrator session was revoked. Sign in again.'));
         }
 
         return $next($request);
+    }
+
+    private function logoutAndRedirect(Request $request, string $message): Response
+    {
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('admin.login')
+            ->with('status', $message);
     }
 }

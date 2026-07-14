@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountSecurityController as AdminAccountSecurityController;
 use App\Http\Controllers\Admin\AdministratorController as AdminAdministratorController;
+use App\Http\Controllers\Admin\AdministratorTwoFactorController as AdminAdministratorTwoFactorController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
+use App\Http\Controllers\Admin\Auth\TwoFactorChallengeController as AdminTwoFactorChallengeController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
@@ -113,11 +116,33 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::post('/login', [AdminSessionController::class, 'store'])
             ->middleware('throttle:admin-login-ip')
             ->name('login.store');
+
+        Route::get('/two-factor-challenge', [AdminTwoFactorChallengeController::class, 'create'])
+            ->name('two-factor.challenge');
+        Route::post('/two-factor-challenge', [AdminTwoFactorChallengeController::class, 'store'])
+            ->middleware('throttle:admin-two-factor-challenge')
+            ->name('two-factor.challenge.store');
+        Route::post('/two-factor-challenge/cancel', [AdminTwoFactorChallengeController::class, 'destroy'])
+            ->name('two-factor.challenge.cancel');
     });
 
     Route::middleware('admin.auth')->group(function (): void {
         Route::get('', AdminDashboardController::class)->name('dashboard');
         Route::redirect('/dashboard', '/admin');
+
+        Route::get('/account/security', [AdminAccountSecurityController::class, 'show'])->name('account.security');
+        Route::post('/account/security/two-factor/setup', [AdminAccountSecurityController::class, 'begin'])
+            ->middleware('throttle:5,1')
+            ->name('account.two-factor.setup');
+        Route::post('/account/security/two-factor/confirm', [AdminAccountSecurityController::class, 'confirm'])
+            ->middleware('throttle:5,1')
+            ->name('account.two-factor.confirm');
+        Route::post('/account/security/two-factor/recovery-codes', [AdminAccountSecurityController::class, 'regenerateRecoveryCodes'])
+            ->middleware('throttle:3,1')
+            ->name('account.two-factor.recovery-codes');
+        Route::delete('/account/security/two-factor', [AdminAccountSecurityController::class, 'disable'])
+            ->middleware('throttle:3,1')
+            ->name('account.two-factor.disable');
 
         Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
         Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
@@ -169,6 +194,9 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
             ->middleware('throttle:5,1')
             ->name('administrators.password');
         Route::patch('/administrators/{administrator}/status', [AdminAdministratorController::class, 'updateStatus'])->name('administrators.status');
+        Route::delete('/administrators/{administrator}/two-factor', [AdminAdministratorTwoFactorController::class, 'destroy'])
+            ->middleware('throttle:3,1')
+            ->name('administrators.two-factor.destroy');
 
         Route::get('/logs', [AdminAuditLogController::class, 'index'])->name('logs.index');
         Route::get('/logs/{auditLog}', [AdminAuditLogController::class, 'show'])->name('logs.show');

@@ -30,14 +30,29 @@
 
             <div class="admin-user">
                 @include('admin.partials.language-switcher')
-                <div>
-                    <strong>{{ auth('admin')->user()->name }}</strong>
-                    <span>{{ auth('admin')->user()->email }}</span>
-                </div>
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button class="button button-secondary" type="submit">{{ __('Sign out') }}</button>
-                </form>
+                <details class="admin-account-menu">
+                    <summary>
+                        <span class="admin-account-avatar">{{ mb_strtoupper(mb_substr(auth('admin')->user()->name, 0, 1)) }}</span>
+                        <span class="admin-account-copy">
+                            <strong>{{ auth('admin')->user()->name }}</strong>
+                            <small>{{ auth('admin')->user()->email }}</small>
+                        </span>
+                        <span class="admin-account-chevron" aria-hidden="true">⌄</span>
+                    </summary>
+                    <div class="admin-account-dropdown">
+                        <a href="{{ route('admin.administrators.edit', auth('admin')->user()) }}">{{ __('My profile') }}</a>
+                        <a href="{{ route('admin.account.security') }}">
+                            {{ __('Account security') }}
+                            <span @class(['account-menu-state', 'enabled' => auth('admin')->user()->twoFactorEnabled()])>
+                                {{ auth('admin')->user()->twoFactorEnabled() ? __('2FA enabled') : __('2FA disabled') }}
+                            </span>
+                        </a>
+                        <form method="POST" action="{{ route('admin.logout') }}">
+                            @csrf
+                            <button type="submit">{{ __('Sign out') }}</button>
+                        </form>
+                    </div>
+                </details>
             </div>
         </header>
 

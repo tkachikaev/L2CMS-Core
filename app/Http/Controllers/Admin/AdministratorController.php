@@ -154,7 +154,13 @@ class AdministratorController extends Controller
         $administrator->forceFill([
             'password' => Hash::make($validated['password']),
             'remember_token' => Str::random(60),
+            'session_version' => $administrator->session_version + 1,
         ])->save();
+
+        if ($isCurrentAdmin) {
+            $request->session()->regenerate();
+            $request->session()->put('admin_session_version', $administrator->session_version);
+        }
 
         $auditLogger->success(
             category: 'admin',
@@ -209,7 +215,15 @@ class AdministratorController extends Controller
                 }
             }
 
-            $lockedAdministrator->forceFill(['is_active' => $newStatus])->save();
+            $lockedAdministrator->forceFill([
+                'is_active' => $newStatus,
+                'session_version' => $newStatus
+                    ? $lockedAdministrator->session_version
+                    : $lockedAdministrator->session_version + 1,
+                'remember_token' => $newStatus
+                    ? $lockedAdministrator->remember_token
+                    : Str::random(60),
+            ])->save();
         });
 
         $administrator->refresh();

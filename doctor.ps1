@@ -128,6 +128,16 @@ $storageViewsPath = Get-ProjectPath -RelativePath 'storage\framework\views'
 $reservedAdminPath = Get-ProjectPath -RelativePath 'public\admin'
 
 Test-ItemStatus '.env file' (Test-Path -LiteralPath $envPath -PathType Leaf) $(if (Test-Path -LiteralPath $envPath -PathType Leaf) { 'present' } else { 'missing' })
+
+$appKeyConfigured = $false
+if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+    $appKeyLine = Get-Content -LiteralPath $envPath | Where-Object { $_ -match '^\s*APP_KEY\s*=' } | Select-Object -First 1
+    if ($null -ne $appKeyLine) {
+        $appKeyValue = (($appKeyLine -split '=', 2)[1]).Trim().Trim([char]34).Trim([char]39)
+        $appKeyConfigured = -not [string]::IsNullOrWhiteSpace($appKeyValue)
+    }
+}
+Test-ItemStatus 'APP_KEY' $appKeyConfigured $(if ($appKeyConfigured) { 'configured; keep a secure backup because encrypted 2FA secrets depend on it' } else { 'missing; run php artisan key:generate before enabling 2FA' })
 Test-ItemStatus 'Composer dependencies' (Test-Path -LiteralPath $autoloadPath -PathType Leaf) $(if (Test-Path -LiteralPath $autoloadPath -PathType Leaf) { 'installed' } else { 'run .\setup.ps1' })
 Test-ItemStatus 'SQLite database' (Test-Path -LiteralPath $databasePath -PathType Leaf) $(if (Test-Path -LiteralPath $databasePath -PathType Leaf) { 'present' } else { 'missing' })
 Test-ItemStatus 'Bootstrap cache directory' (Test-Path -LiteralPath $bootstrapCachePath -PathType Container) $(if (Test-Path -LiteralPath $bootstrapCachePath -PathType Container) { 'present' } else { 'missing' })

@@ -56,8 +56,10 @@ class AuditLogTest extends TestCase
             target: 'Почта',
             details: [
                 'smtp_password' => 'SecretPassword123',
+                'totp' => '123456',
                 'nested' => [
                     'reset_token' => 'TopSecretToken',
+                    'recovery_code' => 'ABCDE-12345',
                     'host' => 'smtp.example.com',
                 ],
             ],
@@ -68,10 +70,14 @@ class AuditLogTest extends TestCase
         $encoded = json_encode($details, JSON_UNESCAPED_UNICODE);
 
         $this->assertSame('[REDACTED]', $details['smtp_password']);
+        $this->assertSame('[REDACTED]', $details['totp']);
         $this->assertSame('[REDACTED]', $details['nested']['reset_token']);
+        $this->assertSame('[REDACTED]', $details['nested']['recovery_code']);
         $this->assertSame('smtp.example.com', $details['nested']['host']);
         $this->assertStringNotContainsString('SecretPassword123', (string) $encoded);
         $this->assertStringNotContainsString('TopSecretToken', (string) $encoded);
+        $this->assertStringNotContainsString('123456', (string) $encoded);
+        $this->assertStringNotContainsString('ABCDE-12345', (string) $encoded);
     }
 
     public function test_settings_and_public_login_actions_are_written_to_audit_log(): void

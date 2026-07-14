@@ -14,7 +14,21 @@ class RedirectAuthenticatedAdmin
         $guard = Auth::guard('admin');
         $administrator = $guard->user();
 
-        if ($administrator !== null && ! $administrator->is_active) {
+        if ($administrator === null) {
+            return $next($request);
+        }
+
+        $sessionVersion = $request->session()->get('admin_session_version');
+
+        if ($sessionVersion === null && $guard->viaRemember()) {
+            $sessionVersion = $administrator->session_version;
+            $request->session()->put('admin_session_version', $sessionVersion);
+        }
+
+        if (! $administrator->is_active
+            || $sessionVersion === null
+            || (int) $sessionVersion !== $administrator->session_version
+        ) {
             $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -22,10 +36,6 @@ class RedirectAuthenticatedAdmin
             return $next($request);
         }
 
-        if ($administrator !== null) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return $next($request);
+        return redirect()->route('admin.dashboard');
     }
 }
