@@ -10,9 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class SetApplicationLocale
 {
-    public function __construct(private readonly LanguageManager $languages)
-    {
-    }
+    public function __construct(private readonly LanguageManager $languages) {}
 
     public function handle(Request $request, Closure $next): Response
     {

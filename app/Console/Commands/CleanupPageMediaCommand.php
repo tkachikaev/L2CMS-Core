@@ -47,6 +47,7 @@ class CleanupPageMediaCommand extends Command
 
             if ($modifiedAt === false) {
                 $kept++;
+
                 continue;
             }
 
@@ -54,6 +55,7 @@ class CleanupPageMediaCommand extends Command
 
             if ($normalized === null || ! $isOldEnough || $storage->isReferenced($normalized)) {
                 $kept++;
+
                 continue;
             }
 
@@ -61,6 +63,7 @@ class CleanupPageMediaCommand extends Command
 
             if ($dryRun) {
                 $removed++;
+
                 continue;
             }
 

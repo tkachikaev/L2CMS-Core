@@ -88,7 +88,7 @@ final class NewsImageStorage
         preg_match_all(self::CONTENT_PATH_PATTERN, $html, $matches);
 
         $paths = [];
-        foreach ($matches[1] ?? [] as $path) {
+        foreach ($matches[1] as $path) {
             $normalized = $this->normalizeNewsPath($path);
             if ($normalized !== null && str_starts_with($normalized, 'news/content/')) {
                 $paths[strtolower($normalized)] = $normalized;

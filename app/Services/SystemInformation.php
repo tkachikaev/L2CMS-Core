@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\L2Forge;
+use Composer\Composer;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
 use PDO;
@@ -13,8 +14,7 @@ final class SystemInformation
     public function __construct(
         private readonly DatabaseManager $database,
         private readonly MailSettings $mailSettings,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -113,7 +113,7 @@ final class SystemInformation
     }
 
     /**
-     * @param array<string, string|bool|null> $database
+     * @param  array<string, string|bool|null>  $database
      * @return array<int, array{label: string, state: string, status: string, details: string}>
      */
     private function componentInformation(array $database): array
@@ -227,8 +227,8 @@ final class SystemInformation
 
     private function composerVersion(): ?string
     {
-        if (class_exists(\Composer\Composer::class)) {
-            return \Composer\Composer::VERSION;
+        if (class_exists(Composer::class)) {
+            return Composer::VERSION;
         }
 
         if (! function_exists('shell_exec')) {
@@ -340,7 +340,7 @@ final class SystemInformation
     }
 
     /**
-     * @param array<string, mixed> $information
+     * @param  array<string, mixed>  $information
      */
     private function buildReport(array $information): string
     {

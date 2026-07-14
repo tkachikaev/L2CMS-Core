@@ -35,7 +35,7 @@ final class CmsSettings
     }
 
     /**
-     * @param array<string, string|null> $defaults
+     * @param  array<string, string|null>  $defaults
      * @return array<string, string|null>
      */
     public function getMany(array $defaults): array

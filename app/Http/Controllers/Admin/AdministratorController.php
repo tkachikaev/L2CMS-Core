@@ -277,8 +277,8 @@ class AdministratorController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $before
-     * @param array<int, string> $fields
+     * @param  array<string, mixed>  $before
+     * @param  array<int, string>  $fields
      * @return array<string, array{old: mixed, new: mixed}>
      */
     private function changedValues(array $before, Admin $administrator, array $fields): array

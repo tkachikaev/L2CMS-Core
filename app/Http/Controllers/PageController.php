@@ -10,7 +10,7 @@ use Illuminate\View\View;
 
 final class PageController
 {
-    public function show(Page $page, LocalizedContentResolver $resolver): View|RedirectResponse
+    public function show(Page $page, LocalizedContentResolver $resolver): RedirectResponse
     {
         abort_unless($page->isLive(), 404);
 
@@ -36,6 +36,7 @@ final class PageController
         $matchedTranslation = $resolver->findPageTranslation($locale, $slug);
         abort_if($matchedTranslation === null, 404);
 
+        /** @var Page $page */
         $page = $matchedTranslation->page()->with('translations')->firstOrFail();
         abort_unless($page->isLive(), 404);
 

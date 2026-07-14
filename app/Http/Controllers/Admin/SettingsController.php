@@ -36,9 +36,7 @@ use Throwable;
 
 class SettingsController extends Controller
 {
-    public function __construct(private readonly AuditLogger $auditLogger)
-    {
-    }
+    public function __construct(private readonly AuditLogger $auditLogger) {}
 
     public function general(SiteSettings $siteSettings): View
     {
@@ -624,8 +622,8 @@ class SettingsController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $before
-     * @param array<string, mixed> $after
+     * @param  array<string, mixed>  $before
+     * @param  array<string, mixed>  $after
      * @return array<string, array{old: mixed, new: mixed}>
      */
     private function auditChanges(array $before, array $after): array
@@ -696,7 +694,7 @@ class SettingsController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      * @return array{name: string, rates: string|null, chronicle: string|null, mode: string|null}
      */
     private function gameServerValues(array $validated): array

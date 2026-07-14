@@ -37,7 +37,6 @@ return [
         ],
     ],
 
-
     'registration' => [
         'enabled' => (bool) env('REGISTRATION_ENABLED', false),
         'email_verification_required' => (bool) env('REGISTRATION_EMAIL_VERIFICATION', true),

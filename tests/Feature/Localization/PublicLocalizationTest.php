@@ -175,7 +175,6 @@ class PublicLocalizationTest extends TestCase
             ->assertRedirect(route('localized.pages.show', ['locale' => 'ru', 'slug' => 'politika']))
             ->assertStatus(302);
 
-
         $this->get('/ru/pages/politika')
             ->assertOk()
             ->assertSee('<link rel="alternate" hreflang="ru" href="'.url('/ru/pages/politika').'">', false)
@@ -223,7 +222,6 @@ class PublicLocalizationTest extends TestCase
             ->assertSee('<link rel="alternate" hreflang="ru" href="'.url('/ru/news/novost-servera').'">', false)
             ->assertSee('<link rel="alternate" hreflang="en" href="'.url('/en/news/server-news').'">', false)
             ->assertSee('<link rel="alternate" hreflang="x-default" href="'.url('/ru/news/novost-servera').'">', false);
-
 
         $russianOnly = News::query()->create([
             'title' => 'Только русский',

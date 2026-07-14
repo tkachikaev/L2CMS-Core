@@ -15,8 +15,7 @@ class CustomHtmlMail extends Mailable
     public function __construct(
         public readonly string $mailSubject,
         public readonly string $htmlContent,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

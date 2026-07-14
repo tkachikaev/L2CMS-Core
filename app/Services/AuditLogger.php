@@ -33,7 +33,7 @@ class AuditLogger
     ];
 
     /**
-     * @param array<string, mixed> $details
+     * @param  array<string, mixed>  $details
      */
     public function success(
         string $category,
@@ -47,7 +47,7 @@ class AuditLogger
     }
 
     /**
-     * @param array<string, mixed> $details
+     * @param  array<string, mixed>  $details
      */
     public function failed(
         string $category,
@@ -61,7 +61,7 @@ class AuditLogger
     }
 
     /**
-     * @param array<string, mixed> $details
+     * @param  array<string, mixed>  $details
      */
     public function system(
         string $category,
@@ -74,7 +74,7 @@ class AuditLogger
     }
 
     /**
-     * @param array<string, mixed> $details
+     * @param  array<string, mixed>  $details
      */
     public function write(
         string $category,

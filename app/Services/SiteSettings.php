@@ -8,19 +8,24 @@ use App\Services\Settings\SettingsImageStorage;
 final class SiteSettings
 {
     public const KEY_NAME = 'site.name';
+
     public const KEY_DESCRIPTION = 'site.description';
+
     public const KEY_LOGO = 'site.logo';
+
     public const KEY_FAVICON = 'site.favicon';
+
     public const KEY_TIMEZONE = 'site.timezone';
+
     public const KEY_ADMIN_EMAIL = 'site.admin_email';
+
     public const KEY_FOOTER_TEXT = 'site.footer_text';
 
     public function __construct(
         private readonly CmsSettings $settings,
         private readonly SettingsImageStorage $images,
         private readonly LanguageManager $languages,
-    ) {
-    }
+    ) {}
 
     /** @return array{name: string, description: string, logo: string|null, logo_url: string|null, favicon: string|null, favicon_url: string|null, timezone: string, admin_email: string, footer_text: string, locale:string} */
     public function values(?string $locale = null): array
@@ -142,8 +147,8 @@ final class SiteSettings
     }
 
     /**
-     * @param array{name: string, description: string, logo: string|null, favicon: string|null, timezone: string, admin_email: string, footer_text: string} $values
-     * @param array<string, array{name?:string,description?:string,footer_text?:string}> $translations
+     * @param  array{name: string, description: string, logo: string|null, favicon: string|null, timezone: string, admin_email: string, footer_text: string}  $values
+     * @param  array<string, array{name?:string,description?:string,footer_text?:string}>  $translations
      */
     public function update(array $values, array $translations = []): void
     {
@@ -287,7 +292,6 @@ final class SiteSettings
 
         return $required ? $this->nonEmptyString($fallback, $this->defaults()['name']) : $fallback;
     }
-
 
     private function legacyOrLocalizedDefault(?string $legacy, string $localizedDefault): string
     {

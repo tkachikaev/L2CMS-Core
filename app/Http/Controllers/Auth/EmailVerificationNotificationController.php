@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
@@ -19,11 +20,17 @@ class EmailVerificationNotificationController extends Controller
         MailSettings $mailSettings,
         AuditLogger $auditLogger,
     ): RedirectResponse {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(401);
+        }
+
         if (! $registrationSettings->emailVerificationRequired()) {
             return redirect()->to(public_route('account'));
         }
 
-        if ($request->user()?->hasVerifiedEmail()) {
+        if ($user->hasVerifiedEmail()) {
             return redirect()->to(public_route('account'));
         }
 
@@ -34,17 +41,17 @@ class EmailVerificationNotificationController extends Controller
         }
 
         try {
-            $request->user()?->sendEmailVerificationNotification();
+            $user->sendEmailVerificationNotification();
         } catch (Throwable $exception) {
             Log::warning('Unable to resend email verification notification.', [
-                'user_id' => $request->user()?->id,
+                'user_id' => $user->id,
                 'exception' => $exception::class,
             ]);
             $auditLogger->failed(
                 category: 'mail',
                 action: 'mail.verification_failed',
-                actor: $request->user(),
-                target: $request->user()?->email ?? __('User email'),
+                actor: $user,
+                target: $user->email,
                 details: ['exception_class' => $exception::class],
             );
 
@@ -56,8 +63,8 @@ class EmailVerificationNotificationController extends Controller
         $auditLogger->success(
             category: 'mail',
             action: 'mail.verification_sent',
-            actor: $request->user(),
-            target: $request->user()?->email ?? __('User email'),
+            actor: $user,
+            target: $user->email,
             details: ['resend' => true],
         );
 

@@ -9,9 +9,7 @@ use App\Models\PageTranslation;
 
 final class LocalizedContentResolver
 {
-    public function __construct(private readonly LanguageManager $languages)
-    {
-    }
+    public function __construct(private readonly LanguageManager $languages) {}
 
     public function findPageTranslation(string $locale, string $slug): ?PageTranslation
     {

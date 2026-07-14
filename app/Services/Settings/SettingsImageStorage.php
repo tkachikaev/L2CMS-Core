@@ -60,7 +60,7 @@ final class SettingsImageStorage
         }
 
         $size = @getimagesize($path);
-        if (! is_array($size) || ! isset($size[0], $size[1])) {
+        if (! is_array($size)) {
             return __('The file is not a valid image.');
         }
 
@@ -119,7 +119,7 @@ final class SettingsImageStorage
             return null;
         }
 
-        if ($kind !== null && ($matches[1] ?? null) !== $kind) {
+        if ($kind !== null && $matches[1] !== $kind) {
             return null;
         }
 

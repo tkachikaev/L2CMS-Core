@@ -153,7 +153,7 @@ class MailTemplateSettingsTest extends TestCase
             'password' => Hash::make('Password123'),
         ]);
 
-        $verification = (new VerifyEmailNotification())->toMail($user);
+        $verification = (new VerifyEmailNotification)->toMail($user);
         $reset = (new ResetPasswordNotification('example-token'))->toMail($user);
 
         $verificationData = $verification->toArray();

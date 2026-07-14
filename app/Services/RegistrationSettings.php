@@ -5,11 +5,10 @@ namespace App\Services;
 final class RegistrationSettings
 {
     public const KEY_ENABLED = 'registration.enabled';
+
     public const KEY_REQUIRE_EMAIL_VERIFICATION = 'registration.email_verification_required';
 
-    public function __construct(private readonly CmsSettings $settings)
-    {
-    }
+    public function __construct(private readonly CmsSettings $settings) {}
 
     /** @return array{enabled: bool, email_verification_required: bool} */
     public function values(): array

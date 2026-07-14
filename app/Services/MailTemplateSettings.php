@@ -10,7 +10,9 @@ use InvalidArgumentException;
 final class MailTemplateSettings
 {
     public const EMAIL_VERIFICATION = 'email_verification';
+
     public const PASSWORD_RESET = 'password_reset';
+
     public const PASSWORD_CHANGED = 'password_changed';
 
     /** @var array<int, string> */
@@ -26,8 +28,7 @@ final class MailTemplateSettings
     public function __construct(
         private readonly CmsSettings $settings,
         private readonly LanguageManager $languages,
-    ) {
-    }
+    ) {}
 
     /** @return array<string, array<string, mixed>> */
     public function navigation(?string $locale = null): array
@@ -110,7 +111,7 @@ final class MailTemplateSettings
                 }
             }
 
-            $values[$field] = is_string($value) ? $value : $default;
+            $values[$field] = $value;
 
             if ($this->settings->get($settingKey) !== null) {
                 $customized = true;
@@ -142,12 +143,12 @@ final class MailTemplateSettings
         $settings = [];
 
         foreach (self::EDITABLE_FIELDS as $field) {
-            $settings[$this->settingKey($key, $locale, $field)] = (string) ($values[$field] ?? '');
+            $settings[$this->settingKey($key, $locale, $field)] = (string) $values[$field];
         }
 
         if ($locale === $this->languages->default()) {
             foreach (self::EDITABLE_FIELDS as $field) {
-                $settings[$this->legacySettingKey($key, $field)] = (string) ($values[$field] ?? '');
+                $settings[$this->legacySettingKey($key, $field)] = (string) $values[$field];
             }
         }
 
@@ -180,7 +181,7 @@ final class MailTemplateSettings
             $content = (string) ($values[$field] ?? '');
             preg_match_all('/\{\{([^{}]+)\}\}/u', $content, $matches);
 
-            foreach ($matches[1] ?? [] as $match) {
+            foreach ($matches[1] as $match) {
                 $variable = trim((string) $match);
 
                 if ($variable !== '' && ! isset($allowed[$variable])) {
@@ -269,10 +270,10 @@ final class MailTemplateSettings
         $locale = $this->normalizeLocale($locale ?? (string) ($user->locale ?? ''));
         $mail = app(MailSettings::class)->values();
         $site = app(SiteSettings::class)->values($locale);
-        $supportEmail = trim((string) ($mail['admin_email'] ?: ($site['admin_email'] ?? '')));
+        $supportEmail = trim((string) ($mail['admin_email'] ?: $site['admin_email']));
 
         if ($supportEmail === '') {
-            $supportEmail = trim((string) ($mail['from_address'] ?? ''));
+            $supportEmail = trim((string) $mail['from_address']);
         }
 
         if ($supportEmail === '') {
@@ -306,7 +307,6 @@ final class MailTemplateSettings
             'support_email' => 'support@example.com',
         ];
     }
-
 
     public function translatedDuration(string $locale): string
     {
@@ -374,11 +374,11 @@ final class MailTemplateSettings
         return (string) preg_replace_callback(
             '/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/iu',
             static function (array $matches) use ($variables): string {
-                $name = strtolower((string) ($matches[1] ?? ''));
+                $name = strtolower((string) $matches[1]);
 
                 return array_key_exists($name, $variables)
                     ? (string) $variables[$name]
-                    : (string) ($matches[0] ?? '');
+                    : (string) $matches[0];
             },
             $value,
         );
@@ -397,7 +397,6 @@ final class MailTemplateSettings
 
         return array_values(array_filter(array_map('trim', $blocks), static fn (string $block): bool => $block !== ''));
     }
-
 
     /** @param array<string, scalar> $replace */
     private function translateForLocale(string $key, string $locale, array $replace = []): string

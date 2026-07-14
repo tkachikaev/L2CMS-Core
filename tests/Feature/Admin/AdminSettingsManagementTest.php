@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
+use App\Models\CmsSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
@@ -212,7 +213,7 @@ class AdminSettingsManagementTest extends TestCase
 
     private function setting(string $key): ?string
     {
-        return \App\Models\CmsSetting::query()->where('key', $key)->value('value');
+        return CmsSetting::query()->where('key', $key)->value('value');
     }
 
     private function absoluteUploadPath(string $path): string

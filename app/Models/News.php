@@ -10,9 +10,21 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
+/**
+ * @property int $id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $excerpt
+ * @property string $body
+ * @property string|null $image
+ * @property Carbon|null $published_at
+ * @property bool $is_published
+ * @property-read Collection<int, NewsTranslation> $translations
+ */
 class News extends Model
 {
     use SoftDeletes;
@@ -35,11 +47,16 @@ class News extends Model
         ];
     }
 
+    /** @return HasMany<NewsTranslation, $this> */
     public function translations(): HasMany
     {
         return $this->hasMany(NewsTranslation::class);
     }
 
+    /**
+     * @param  Builder<News>  $query
+     * @return Builder<News>
+     */
     public function scopePublished(Builder $query): Builder
     {
         return $query
@@ -61,7 +78,7 @@ class News extends Model
             return 'draft';
         }
 
-        if ($this->published_at?->isFuture()) {
+        if ($this->published_at->isFuture()) {
             return 'scheduled';
         }
 
@@ -107,22 +124,30 @@ class News extends Model
 
     public function titleFor(?string $locale = null, bool $withFallback = true): string
     {
-        return trim((string) ($this->translation($locale, $withFallback)?->title ?? $this->title));
+        $translation = $this->translation($locale, $withFallback);
+
+        return trim((string) ($translation !== null ? $translation->title : $this->title));
     }
 
     public function slugFor(?string $locale = null, bool $withFallback = true): string
     {
-        return trim((string) ($this->translation($locale, $withFallback)?->slug ?? $this->slug));
+        $translation = $this->translation($locale, $withFallback);
+
+        return trim((string) ($translation !== null ? $translation->slug : $this->slug));
     }
 
     public function excerptFor(?string $locale = null, bool $withFallback = true): string
     {
-        return trim((string) ($this->translation($locale, $withFallback)?->excerpt ?? $this->excerpt));
+        $translation = $this->translation($locale, $withFallback);
+
+        return trim((string) ($translation !== null ? $translation->excerpt : $this->excerpt));
     }
 
     public function bodyFor(?string $locale = null, bool $withFallback = true): string
     {
-        return (string) ($this->translation($locale, $withFallback)?->body ?? $this->body);
+        $translation = $this->translation($locale, $withFallback);
+
+        return (string) ($translation !== null ? $translation->body : $this->body);
     }
 
     public function hasTranslation(string $locale): bool

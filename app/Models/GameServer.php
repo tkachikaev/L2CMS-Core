@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string|null $rates
+ * @property string|null $chronicle
+ * @property string|null $mode
+ * @property int $sort_order
+ * @property-read Collection<int, GameServerTranslation> $translations
+ */
 class GameServer extends Model
 {
     protected $fillable = [
@@ -26,6 +35,7 @@ class GameServer extends Model
         ];
     }
 
+    /** @return HasMany<GameServerTranslation, $this> */
     public function translations(): HasMany
     {
         return $this->hasMany(GameServerTranslation::class);

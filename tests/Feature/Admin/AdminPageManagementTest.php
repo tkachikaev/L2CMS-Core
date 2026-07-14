@@ -348,7 +348,6 @@ PHP);
         }
     }
 
-
     public function test_administrator_can_upload_an_image_for_page_content(): void
     {
         $admin = $this->createAdmin();
@@ -409,7 +408,6 @@ PHP);
         $this->assertFileExists($this->absoluteUploadPath($referencedPath));
         $this->assertFileDoesNotExist($this->absoluteUploadPath($orphanPath));
     }
-
 
     private function absoluteUploadPath(string $path): string
     {

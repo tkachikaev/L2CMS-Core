@@ -78,7 +78,7 @@ class NewPasswordController extends Controller
 
         if ($changedUser instanceof User && $mailSettings->isReady()) {
             try {
-                $changedUser->notify(new PasswordChangedNotification());
+                $changedUser->notify(new PasswordChangedNotification);
                 $auditLogger->success(
                     category: 'mail',
                     action: 'mail.password_changed_sent',

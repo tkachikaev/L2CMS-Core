@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GameServer;
+use App\Models\GameServerTranslation;
 use App\Services\Localization\LanguageManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -11,9 +12,7 @@ use Throwable;
 
 final class GameServerSettings
 {
-    public function __construct(private readonly LanguageManager $languages)
-    {
-    }
+    public function __construct(private readonly LanguageManager $languages) {}
 
     /**
      * @return array<int, array{
@@ -108,7 +107,7 @@ final class GameServerSettings
             $translations[$code] = $server->nameFor($code, false);
             if ($translations[$code] === trim((string) $server->name) && $code !== $this->languages->default()) {
                 $own = $server->translations->firstWhere('locale', $code);
-                $translations[$code] = $own ? trim((string) $own->name) : '';
+                $translations[$code] = $own instanceof GameServerTranslation ? trim((string) $own->name) : '';
             }
         }
 
@@ -154,6 +153,7 @@ final class GameServerSettings
 
             if ($name === '') {
                 $server->translations()->where('locale', $locale)->delete();
+
                 continue;
             }
 

@@ -7,6 +7,7 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
+use RuntimeException;
 
 final class NewsHtmlSanitizer
 {
@@ -43,7 +44,7 @@ final class NewsHtmlSanitizer
     public function sanitize(string $html): string
     {
         if (! class_exists(DOMDocument::class)) {
-            throw new \RuntimeException('The PHP DOM extension is required to sanitize news HTML.');
+            throw new RuntimeException('The PHP DOM extension is required to sanitize news HTML.');
         }
 
         $html = trim($html);
@@ -108,6 +109,7 @@ final class NewsHtmlSanitizer
         foreach ($children as $child) {
             if ($child instanceof DOMComment) {
                 $parent->removeChild($child);
+
                 continue;
             }
 
@@ -119,6 +121,7 @@ final class NewsHtmlSanitizer
 
             if (in_array($tag, self::DROP_WITH_CONTENT, true)) {
                 $parent->removeChild($child);
+
                 continue;
             }
 
@@ -126,6 +129,7 @@ final class NewsHtmlSanitizer
 
             if (! in_array($tag, self::ALLOWED_ELEMENTS, true)) {
                 $this->unwrap($child);
+
                 continue;
             }
 
@@ -185,6 +189,7 @@ final class NewsHtmlSanitizer
             $src = $this->sanitizeImageSource($element->getAttribute('src'));
             if ($src === null) {
                 $element->parentNode?->removeChild($element);
+
                 return;
             }
 

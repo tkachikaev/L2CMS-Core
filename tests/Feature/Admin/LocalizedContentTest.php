@@ -114,7 +114,7 @@ class LocalizedContentTest extends TestCase
             'locale' => 'en',
         ]);
 
-        $message = (new VerifyEmailNotification())->toMail($user)->toArray();
+        $message = (new VerifyEmailNotification)->toMail($user)->toArray();
 
         $this->assertStringContainsString('Verify', (string) $message['subject']);
         $this->assertSame('Verify your email', $message['greeting']);

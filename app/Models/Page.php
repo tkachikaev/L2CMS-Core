@@ -12,6 +12,15 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
+/**
+ * @property int $id
+ * @property string $slug
+ * @property bool $is_published
+ * @property bool $show_in_header
+ * @property bool $show_in_footer
+ * @property int $sort_order
+ * @property-read Collection<int, PageTranslation> $translations
+ */
 class Page extends Model
 {
     use SoftDeletes;
@@ -34,16 +43,25 @@ class Page extends Model
         ];
     }
 
+    /** @return HasMany<PageTranslation, $this> */
     public function translations(): HasMany
     {
         return $this->hasMany(PageTranslation::class);
     }
 
+    /**
+     * @param  Builder<Page>  $query
+     * @return Builder<Page>
+     */
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true);
     }
 
+    /**
+     * @param  Builder<Page>  $query
+     * @return Builder<Page>
+     */
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('id');
@@ -89,29 +107,43 @@ class Page extends Model
 
     public function titleFor(?string $locale = null, bool $withFallback = true): string
     {
-        return trim((string) ($this->translation($locale, $withFallback)?->title ?? $this->slug));
+        $translation = $this->translation($locale, $withFallback);
+
+        return trim((string) ($translation !== null ? $translation->title : $this->slug));
     }
 
     public function slugFor(?string $locale = null, bool $withFallback = true): string
     {
-        return trim((string) ($this->translation($locale, $withFallback)?->slug ?? $this->slug));
+        $translation = $this->translation($locale, $withFallback);
+
+        return trim((string) ($translation !== null ? $translation->slug : $this->slug));
     }
 
     public function bodyFor(?string $locale = null, bool $withFallback = true): string
     {
-        return (string) ($this->translation($locale, $withFallback)?->body ?? '');
+        $translation = $this->translation($locale, $withFallback);
+
+        return $translation !== null ? (string) $translation->body : '';
     }
 
     public function seoTitleFor(?string $locale = null): string
     {
         $translation = $this->translation($locale);
 
-        return trim((string) ($translation?->seo_title ?: $translation?->title ?: $this->slug));
+        if ($translation === null) {
+            return trim($this->slug);
+        }
+
+        return trim((string) ($translation->seo_title ?: $translation->title ?: $this->slug));
     }
 
     public function seoDescriptionFor(?string $locale = null): string
     {
-        return trim((string) ($this->translation($locale)?->seo_description ?? ''));
+        $translation = $this->translation($locale);
+
+        return $translation !== null
+            ? trim((string) $translation->seo_description)
+            : '';
     }
 
     public function hasTranslation(string $locale): bool

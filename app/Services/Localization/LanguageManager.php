@@ -4,19 +4,20 @@ namespace App\Services\Localization;
 
 use App\Services\CmsSettings;
 use Illuminate\Support\Facades\File;
+use InvalidArgumentException;
 
 final class LanguageManager
 {
     public const KEY_ENABLED = 'localization.enabled';
+
     public const KEY_DEFAULT = 'localization.default';
+
     public const KEY_FALLBACK = 'localization.fallback';
 
     /** @var array<string, array<string, mixed>>|null */
     private ?array $installedCache = null;
 
-    public function __construct(private readonly CmsSettings $settings)
-    {
-    }
+    public function __construct(private readonly CmsSettings $settings) {}
 
     /** @return array<string, array{code:string,name:string,native_name:string,direction:string,fallback:string,author:string,built_in:bool,coverage:int}> */
     public function installed(): array
@@ -98,10 +99,8 @@ final class LanguageManager
         }
 
         if ($enabled === []) {
-            $firstCode = array_key_first($installed);
-            if ($firstCode !== null) {
-                $enabled[$firstCode] = $installed[$firstCode];
-            }
+            $firstCode = (string) array_key_first($installed);
+            $enabled[$firstCode] = $installed[$firstCode];
         }
 
         return $enabled;
@@ -194,18 +193,18 @@ final class LanguageManager
 
         $normalized = array_values(array_unique($normalized));
         if ($normalized === []) {
-            throw new \InvalidArgumentException('At least one installed language must remain enabled.');
+            throw new InvalidArgumentException('At least one installed language must remain enabled.');
         }
 
         $default = $this->normalizeCode($default) ?? '';
         $fallback = $this->normalizeCode($fallback) ?? '';
 
         if (! in_array($default, $normalized, true)) {
-            throw new \InvalidArgumentException('The default language must be enabled.');
+            throw new InvalidArgumentException('The default language must be enabled.');
         }
 
         if (! in_array($fallback, $normalized, true)) {
-            throw new \InvalidArgumentException('The fallback language must be enabled.');
+            throw new InvalidArgumentException('The fallback language must be enabled.');
         }
 
         $this->settings->setMany([

@@ -14,8 +14,7 @@ class MailTemplateTestNotification extends Notification
     public function __construct(
         private readonly string $templateKey,
         private readonly ?string $templateLocale = null,
-    ) {
-    }
+    ) {}
 
     /** @return array<int, string> */
     public function via(object $notifiable): array

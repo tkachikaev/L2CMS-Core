@@ -50,6 +50,7 @@ class CleanupNewsMediaCommand extends Command
 
             if ($modifiedAt === false) {
                 $kept++;
+
                 continue;
             }
 
@@ -57,6 +58,7 @@ class CleanupNewsMediaCommand extends Command
 
             if ($normalized === null || ! $isOldEnough || $storage->isReferenced($normalized)) {
                 $kept++;
+
                 continue;
             }
 
@@ -64,6 +66,7 @@ class CleanupNewsMediaCommand extends Command
 
             if ($dryRun) {
                 $removed++;
+
                 continue;
             }
 

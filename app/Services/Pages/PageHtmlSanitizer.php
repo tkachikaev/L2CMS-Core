@@ -7,6 +7,7 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
+use RuntimeException;
 
 final class PageHtmlSanitizer
 {
@@ -29,13 +30,15 @@ final class PageHtmlSanitizer
     ];
 
     private const ALIGNABLE_ELEMENTS = ['p', 'h2', 'h3', 'h4', 'blockquote', 'figure'];
+
     private const COLORS = ['default', 'gold', 'red', 'green', 'blue', 'muted'];
+
     private const ALIGNMENTS = ['left', 'center', 'right'];
 
     public function sanitize(string $html): string
     {
         if (! class_exists(DOMDocument::class)) {
-            throw new \RuntimeException('The PHP DOM extension is required to sanitize page HTML.');
+            throw new RuntimeException('The PHP DOM extension is required to sanitize page HTML.');
         }
 
         $html = trim($html);
@@ -98,6 +101,7 @@ final class PageHtmlSanitizer
         foreach ($children as $child) {
             if ($child instanceof DOMComment) {
                 $parent->removeChild($child);
+
                 continue;
             }
 
@@ -108,6 +112,7 @@ final class PageHtmlSanitizer
             $tag = strtolower($child->tagName);
             if (in_array($tag, self::DROP_WITH_CONTENT, true)) {
                 $parent->removeChild($child);
+
                 continue;
             }
 
@@ -115,6 +120,7 @@ final class PageHtmlSanitizer
 
             if (! in_array($tag, self::ALLOWED_ELEMENTS, true)) {
                 $this->unwrap($child);
+
                 continue;
             }
 
@@ -174,6 +180,7 @@ final class PageHtmlSanitizer
             $src = $this->sanitizeImageSource($element->getAttribute('src'));
             if ($src === null) {
                 $element->parentNode?->removeChild($element);
+
                 return;
             }
 

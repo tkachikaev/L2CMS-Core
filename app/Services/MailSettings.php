@@ -10,18 +10,24 @@ use Throwable;
 final class MailSettings
 {
     public const KEY_HOST = 'mail.smtp_host';
+
     public const KEY_PORT = 'mail.smtp_port';
+
     public const KEY_ENCRYPTION = 'mail.encryption';
+
     public const KEY_USERNAME = 'mail.username';
+
     public const KEY_PASSWORD = 'mail.password_encrypted';
+
     public const KEY_FROM_ADDRESS = 'mail.from_address';
+
     public const KEY_FROM_NAME = 'mail.from_name';
+
     public const KEY_ADMIN_EMAIL = 'mail.admin_email';
+
     public const KEY_TESTED_AT = 'mail.tested_at';
 
-    public function __construct(private readonly CmsSettings $settings)
-    {
-    }
+    public function __construct(private readonly CmsSettings $settings) {}
 
     /**
      * @return array{
@@ -66,7 +72,6 @@ final class MailSettings
         $passwordSaved = $encryptedPassword !== '';
         $passwordValid = ! $passwordSaved || $this->canDecryptPassword($encryptedPassword);
         $configured = $host !== ''
-            && $port > 0
             && filter_var($fromAddress, FILTER_VALIDATE_EMAIL) !== false
             && $passwordValid;
 
@@ -87,7 +92,7 @@ final class MailSettings
     }
 
     /**
-     * @param array{
+     * @param  array{
      *     host: string,
      *     port: int,
      *     encryption: string,
@@ -96,7 +101,7 @@ final class MailSettings
      *     from_address: string,
      *     from_name: string,
      *     admin_email: string
-     * } $values
+     * }  $values
      */
     public function update(array $values): void
     {

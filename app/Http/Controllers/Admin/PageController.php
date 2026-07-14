@@ -26,8 +26,7 @@ final class PageController extends Controller
         private readonly PageImageStorage $images,
         private readonly AuditLogger $auditLogger,
         private readonly LanguageManager $languages,
-    ) {
-    }
+    ) {}
 
     public function index(): View
     {

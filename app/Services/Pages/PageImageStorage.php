@@ -17,6 +17,7 @@ final class PageImageStorage
     ];
 
     private const PAGE_PATH_PATTERN = '~^pages/content/\d{4}/\d{2}/[a-f0-9-]+\.(?:jpe?g|png|webp)$~i';
+
     private const CONTENT_PATH_PATTERN = '~(?:^|["\'])/uploads/(pages/content/\d{4}/\d{2}/[a-f0-9-]+\.(?:jpe?g|png|webp))(?:["\']|$)~i';
 
     public function storeContent(UploadedFile $file): string
@@ -75,7 +76,7 @@ final class PageImageStorage
         preg_match_all(self::CONTENT_PATH_PATTERN, $html, $matches);
         $paths = [];
 
-        foreach ($matches[1] ?? [] as $path) {
+        foreach ($matches[1] as $path) {
             $normalized = $this->normalizePath($path);
             if ($normalized !== null) {
                 $paths[strtolower($normalized)] = $normalized;

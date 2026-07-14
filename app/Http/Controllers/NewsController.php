@@ -54,6 +54,7 @@ final class NewsController
         $matchedTranslation = $resolver->findNewsTranslation($locale, $slug);
         abort_if($matchedTranslation === null, 404);
 
+        /** @var News $news */
         $news = $matchedTranslation->news()->with('translations')->firstOrFail();
         abort_unless($news->isLive(), 404);
 

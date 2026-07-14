@@ -27,8 +27,7 @@ class NewsController extends Controller
         private readonly NewsImageStorage $images,
         private readonly AuditLogger $auditLogger,
         private readonly LanguageManager $languages,
-    ) {
-    }
+    ) {}
 
     public function index(): View
     {

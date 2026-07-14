@@ -9,9 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequireConfiguredEmailVerification
 {
-    public function __construct(private readonly RegistrationSettings $settings)
-    {
-    }
+    public function __construct(private readonly RegistrationSettings $settings) {}
 
     public function handle(Request $request, Closure $next): Response
     {

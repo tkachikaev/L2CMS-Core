@@ -86,11 +86,13 @@ final class CustomMailHtmlSanitizer
 
                 if (in_array($tag, self::DROP_WITH_CONTENT, true) || $tag === 'base') {
                     $element->parentNode->removeChild($element);
+
                     continue;
                 }
 
                 if ($tag === 'meta' && strtolower(trim($element->getAttribute('http-equiv'))) === 'refresh') {
                     $element->parentNode->removeChild($element);
+
                     continue;
                 }
 
@@ -140,12 +142,14 @@ final class CustomMailHtmlSanitizer
 
             if (str_starts_with($lower, 'on') || in_array($lower, ['srcdoc', 'formaction', 'xlink:href'], true)) {
                 $element->removeAttribute($name);
+
                 continue;
             }
 
             if ($lower === 'style') {
                 $css = $this->sanitizeCss($element->getAttribute($name));
                 $css === '' ? $element->removeAttribute($name) : $element->setAttribute($name, $css);
+
                 continue;
             }
 

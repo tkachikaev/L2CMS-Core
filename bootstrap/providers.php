@@ -1,7 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\GameServiceProvider;
+use App\Providers\ThemeServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\ThemeServiceProvider::class,
-    App\Providers\GameServiceProvider::class,
+    AppServiceProvider::class,
+    ThemeServiceProvider::class,
+    GameServiceProvider::class,
 ];

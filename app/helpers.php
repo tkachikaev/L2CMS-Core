@@ -1,12 +1,16 @@
 <?php
 
+use App\Models\News;
+use App\Models\Page;
 use App\Services\GameServerSettings;
+use App\Services\Localization\LanguageManager;
+use App\Services\Localization\LocalizedContentResolver;
 use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
 use App\Services\SiteSettings;
 use App\Support\L2Forge;
 use App\Support\Themes\ThemeManager;
-
+use Illuminate\Support\Facades\Route;
 
 if (! function_exists('cms_version')) {
     function cms_version(): string
@@ -104,7 +108,19 @@ if (! function_exists('game_server_settings')) {
 }
 
 if (! function_exists('game_servers')) {
-    /** @return array<int, array<string, int|string|bool>> */
+    /**
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     rates: string,
+     *     chronicle: string,
+     *     mode: string,
+     *     show_rates: bool,
+     *     show_chronicle: bool,
+     *     show_mode: bool,
+     *     translations: array<string, string>
+     * }>
+     */
     function game_servers(): array
     {
         return app(GameServerSettings::class)->all();
@@ -112,9 +128,9 @@ if (! function_exists('game_servers')) {
 }
 
 if (! function_exists('language_manager')) {
-    function language_manager(): \App\Services\Localization\LanguageManager
+    function language_manager(): LanguageManager
     {
-        return app(\App\Services\Localization\LanguageManager::class);
+        return app(LanguageManager::class);
     }
 }
 
@@ -127,7 +143,7 @@ if (! function_exists('public_route')) {
             ? $routeLocale
             : null;
 
-        if ($locale !== null && \Illuminate\Support\Facades\Route::has('localized.'.$name)) {
+        if ($locale !== null && Route::has('localized.'.$name)) {
             return route('localized.'.$name, array_merge(['locale' => $locale], $parameters), $absolute);
         }
 
@@ -164,37 +180,38 @@ if (! function_exists('localized_current_url')) {
 
         if (in_array($segments[0] ?? null, ['pages', 'news'], true) && isset($segments[1])) {
             try {
+                $contentType = $segments[0];
                 $sourceSlug = rawurldecode((string) $segments[1]);
-                $resolver = app(\App\Services\Localization\LocalizedContentResolver::class);
+                $resolver = app(LocalizedContentResolver::class);
 
-                if (($segments[0] ?? null) === 'pages') {
+                if ($contentType === 'pages') {
                     $translation = $sourceLocale !== null
                         ? $resolver->findPageTranslation($sourceLocale, $sourceSlug)
                         : null;
-                    $page = $translation?->page
-                        ?? \App\Models\Page::query()->where('slug', $sourceSlug)->first();
+                    $page = $translation !== null ? $translation->page : null;
+                    $page ??= Page::query()->where('slug', $sourceSlug)->first();
 
-                    if ($page instanceof \App\Models\Page && $page->isLive()) {
+                    if ($page instanceof Page && $page->isLive()) {
                         $target = page_url($page, $locale);
 
                         return $target.($query !== '' ? '?'.$query : '');
                     }
                 }
 
-                if (($segments[0] ?? null) === 'news') {
+                if ($contentType === 'news') {
                     $translation = $sourceLocale !== null
                         ? $resolver->findNewsTranslation($sourceLocale, $sourceSlug)
                         : null;
-                    $news = $translation?->news
-                        ?? \App\Models\News::query()->where('slug', $sourceSlug)->first();
+                    $news = $translation !== null ? $translation->news : null;
+                    $news ??= News::query()->where('slug', $sourceSlug)->first();
 
-                    if ($news instanceof \App\Models\News && $news->isLive()) {
+                    if ($news instanceof News && $news->isLive()) {
                         $target = news_url($news, $locale);
 
                         return $target.($query !== '' ? '?'.$query : '');
                     }
                 }
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Fall back to the generic localized path during installation or migration.
             }
         }
@@ -216,13 +233,13 @@ if (! function_exists('locale_direction')) {
 }
 
 if (! function_exists('news_url')) {
-    function news_url(\App\Models\News $news, ?string $locale = null): string
+    function news_url(News $news, ?string $locale = null): string
     {
         $routeLocale = request()->route('locale');
         $locale ??= is_string($routeLocale) ? $routeLocale : app()->getLocale();
         $languages = language_manager();
         $locale = $languages->normalizeCode($locale) ?? $languages->default();
-        $translation = app(\App\Services\Localization\LocalizedContentResolver::class)
+        $translation = app(LocalizedContentResolver::class)
             ->newsTranslation($news, $locale);
 
         if ($translation !== null && $languages->isEnabled($translation->locale)) {
@@ -237,13 +254,13 @@ if (! function_exists('news_url')) {
 }
 
 if (! function_exists('page_url')) {
-    function page_url(\App\Models\Page $page, ?string $locale = null): string
+    function page_url(Page $page, ?string $locale = null): string
     {
         $routeLocale = request()->route('locale');
         $locale ??= is_string($routeLocale) ? $routeLocale : app()->getLocale();
         $languages = language_manager();
         $locale = $languages->normalizeCode($locale) ?? $languages->default();
-        $translation = app(\App\Services\Localization\LocalizedContentResolver::class)
+        $translation = app(LocalizedContentResolver::class)
             ->pageTranslation($page, $locale);
 
         if ($translation !== null && $languages->isEnabled($translation->locale)) {
@@ -256,4 +273,3 @@ if (! function_exists('page_url')) {
         return route('pages.show', ['page' => $page]);
     }
 }
-

@@ -14,9 +14,7 @@ use RuntimeException;
 
 class ThemeController extends Controller
 {
-    public function __construct(private readonly AuditLogger $auditLogger)
-    {
-    }
+    public function __construct(private readonly AuditLogger $auditLogger) {}
 
     public function index(ThemeManager $themes): View
     {

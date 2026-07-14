@@ -16,7 +16,7 @@ return new class extends Migration
             ->first();
 
         if ($duplicateLogin !== null) {
-            throw new \RuntimeException('Duplicate user logins were found. Rename duplicates before upgrading L2Forge CMS.');
+            throw new RuntimeException('Duplicate user logins were found. Rename duplicates before upgrading L2Forge CMS.');
         }
 
         $duplicateEmail = DB::table('users')
@@ -26,7 +26,7 @@ return new class extends Migration
             ->first();
 
         if ($duplicateEmail !== null) {
-            throw new \RuntimeException('Duplicate user emails were found. Rename duplicates before upgrading L2Forge CMS.');
+            throw new RuntimeException('Duplicate user emails were found. Rename duplicates before upgrading L2Forge CMS.');
         }
 
         DB::table('users')->orderBy('id')->get(['id', 'name', 'email'])->each(function (object $user): void {
