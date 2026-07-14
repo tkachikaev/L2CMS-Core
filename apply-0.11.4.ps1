@@ -14,20 +14,20 @@ if (-not (Test-Path '.env')) {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete 0.11.3 patch with file replacement enabled.'
+    throw 'VERSION is missing. Re-extract the complete 0.11.4 patch with file replacement enabled.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
-if ($cmsVersion -ne '0.11.3') {
+if ($cmsVersion -ne '0.11.4') {
     throw "Unexpected patch version: $cmsVersion"
 }
 
 Write-Host "L2Forge CMS $cmsVersion update"
-Write-Host 'Fixing unsaved multilingual page preview content.'
+Write-Host 'Hardening admin requests, localized content URLs and development quality checks.'
 Write-Host ''
 
 Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -ne 'apply-0.11.3.ps1' } |
+    Where-Object { $_.Name -ne 'apply-0.11.4.ps1' } |
     Remove-Item -Force -ErrorAction SilentlyContinue
 
 & "$PSScriptRoot\update.ps1" -SkipTests:$SkipTests

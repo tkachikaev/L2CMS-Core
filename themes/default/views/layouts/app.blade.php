@@ -10,6 +10,15 @@
     @elseif (site_description() !== '')
         <meta name="description" content="{{ site_description() }}">
     @endif
+    @if (! empty($canonicalUrl))
+        <link rel="canonical" href="{{ $canonicalUrl }}">
+    @endif
+    @foreach (($alternateUrls ?? []) as $alternateLocale => $alternateUrl)
+        <link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $alternateUrl }}">
+    @endforeach
+    @if (! empty($defaultAlternateUrl))
+        <link rel="alternate" hreflang="x-default" href="{{ $defaultAlternateUrl }}">
+    @endif
     @if (site_favicon_url())
         <link rel="icon" href="{{ site_favicon_url() }}">
     @endif

@@ -4,7 +4,6 @@ namespace App\Services\Mail;
 
 use DOMDocument;
 use DOMElement;
-use DOMNode;
 use DOMXPath;
 use RuntimeException;
 

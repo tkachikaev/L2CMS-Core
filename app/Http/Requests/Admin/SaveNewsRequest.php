@@ -3,16 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\Localization\LanguageManager;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class SaveNewsRequest extends FormRequest
+class SaveNewsRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     protected function prepareForValidation(): void
     {
         $translations = $this->input('translations');

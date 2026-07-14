@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Mail\CustomHtmlMail;
 use App\Models\Admin;
 use App\Models\CmsSetting;
 use App\Models\User;
-use App\Mail\CustomHtmlMail;
 use App\Notifications\MailTemplateTestNotification;
 use App\Notifications\PasswordChangedNotification;
 use App\Notifications\ResetPasswordNotification;

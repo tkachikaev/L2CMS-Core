@@ -3,17 +3,11 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\Localization\LanguageManager;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
-final class SaveLanguageSettingsRequest extends FormRequest
+final class SaveLanguageSettingsRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return auth('admin')->check();
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -26,7 +20,6 @@ final class SaveLanguageSettingsRequest extends FormRequest
             'fallback_locale' => ['required', 'string', Rule::in($installed)],
         ];
     }
-
 
     public function withValidator(Validator $validator): void
     {

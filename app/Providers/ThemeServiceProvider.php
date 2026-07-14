@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use App\Services\CmsSettings;
-use App\Support\Themes\ThemeManager;
 use App\Services\Pages\PageNavigation;
+use App\Support\Themes\ThemeManager;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 

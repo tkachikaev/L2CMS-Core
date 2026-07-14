@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
-use App\Models\NewsTranslation;
 use App\Services\Localization\LanguageManager;
+use App\Services\Localization\LocalizedContentResolver;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 final class NewsController
@@ -20,42 +21,61 @@ final class NewsController
         ]);
     }
 
-    public function show(News $news): View
+    public function show(News $news, LocalizedContentResolver $resolver): View|RedirectResponse
     {
         abort_unless($news->isLive(), 404);
-        $news->loadMissing('translations');
 
-        return view('theme::news.show', compact('news'));
-    }
+        $translation = $resolver->newsTranslation($news, app()->getLocale());
 
-    public function showLocalized(string $locale, string $slug, LanguageManager $languages): View
-    {
-        abort_unless($languages->isEnabled($locale), 404);
-        $locale = $languages->normalizeCode($locale) ?? $languages->default();
-        $candidates = array_values(array_unique([
-            $locale,
-            $languages->fallback(),
-            $languages->default(),
-            'ru',
-        ]));
-
-        $translation = null;
-        foreach ($candidates as $candidate) {
-            $translation = NewsTranslation::query()
-                ->where('locale', $candidate)
-                ->where('slug', $slug)
-                ->first();
-
-            if ($translation !== null) {
-                break;
-            }
+        if ($translation === null) {
+            return view('theme::news.show', [
+                'news' => $news,
+                'canonicalUrl' => route('news.show', ['news' => $news]),
+                'alternateUrls' => [],
+                'defaultAlternateUrl' => route('news.show', ['news' => $news]),
+            ]);
         }
 
-        abort_if($translation === null, 404);
+        return redirect()->route('localized.news.show', [
+            'locale' => $translation->locale,
+            'slug' => $translation->slug,
+        ], 302);
+    }
 
-        $news = $translation->news()->with('translations')->firstOrFail();
+    public function showLocalized(
+        string $locale,
+        string $slug,
+        LanguageManager $languages,
+        LocalizedContentResolver $resolver,
+    ): View|RedirectResponse {
+        abort_unless($languages->isEnabled($locale), 404);
+        $locale = $languages->normalizeCode($locale) ?? $languages->default();
+
+        $matchedTranslation = $resolver->findNewsTranslation($locale, $slug);
+        abort_if($matchedTranslation === null, 404);
+
+        $news = $matchedTranslation->news()->with('translations')->firstOrFail();
         abort_unless($news->isLive(), 404);
 
-        return view('theme::news.show', compact('news'));
+        $translation = $resolver->newsTranslation($news, $locale);
+        abort_if($translation === null, 404);
+
+        $canonicalParameters = [
+            'locale' => $translation->locale,
+            'slug' => $translation->slug,
+        ];
+
+        if ($locale !== $translation->locale || $slug !== $translation->slug) {
+            return redirect()->route(
+                'localized.news.show',
+                $canonicalParameters,
+                $locale === $translation->locale ? 301 : 302,
+            );
+        }
+
+        return view('theme::news.show', array_merge(
+            ['news' => $news],
+            $resolver->newsMetadata($news, $translation),
+        ));
     }
 }

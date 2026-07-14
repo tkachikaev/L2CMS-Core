@@ -87,6 +87,12 @@ class AdminPageManagementTest extends TestCase
         ]);
 
         $this->get('/pages/pravila-servera')
+            ->assertRedirect(route('localized.pages.show', [
+                'locale' => 'ru',
+                'slug' => 'pravila-servera',
+            ]));
+
+        $this->get('/ru/pages/pravila-servera')
             ->assertOk()
             ->assertSee('Правила сервера')
             ->assertSee('<strong>правила</strong>', false)
@@ -257,7 +263,12 @@ class AdminPageManagementTest extends TestCase
             'sort_order' => 5,
         ]);
         $this->get('/pages/contacts')->assertNotFound();
-        $this->get('/pages/our-contacts')->assertOk()->assertSee('Наши контакты');
+        $this->get('/pages/our-contacts')
+            ->assertRedirect(route('localized.pages.show', [
+                'locale' => 'ru',
+                'slug' => 'our-contacts',
+            ]));
+        $this->get('/ru/pages/our-contacts')->assertOk()->assertSee('Наши контакты');
 
         $this->actingAs($admin, 'admin')
             ->delete('/admin/pages/'.$page->id)

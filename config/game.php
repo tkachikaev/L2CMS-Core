@@ -1,4 +1,5 @@
 <?php
+
 return [
     'adapter' => env('GAME_ADAPTER', 'mock'),
     'server' => [

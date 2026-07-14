@@ -3,7 +3,6 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
-use App\Models\AuditLog;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;

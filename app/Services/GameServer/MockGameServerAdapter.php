@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\GameServer;
 
 use App\Contracts\GameServerAdapter;
@@ -21,6 +22,13 @@ final class MockGameServerAdapter implements GameServerAdapter
         ], 0, $limit);
     }
 
-    public function charactersForAccount(string $accountName): array { return []; }
-    public function accountExists(string $accountName): bool { return false; }
+    public function charactersForAccount(string $accountName): array
+    {
+        return [];
+    }
+
+    public function accountExists(string $accountName): bool
+    {
+        return false;
+    }
 }

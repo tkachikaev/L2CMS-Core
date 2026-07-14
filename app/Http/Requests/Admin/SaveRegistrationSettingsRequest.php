@@ -3,16 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\MailSettings;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class SaveRegistrationSettingsRequest extends FormRequest
+class SaveRegistrationSettingsRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return $this->user('admin') !== null;
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {

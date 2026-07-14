@@ -2,8 +2,8 @@
 
 use App\Http\Middleware\AdminSecurityHeaders;
 use App\Http\Middleware\RedirectAuthenticatedAdmin;
-use App\Http\Middleware\RequireAdminAuthentication;
 use App\Http\Middleware\RequireActiveSiteUser;
+use App\Http\Middleware\RequireAdminAuthentication;
 use App\Http\Middleware\RequireConfiguredEmailVerification;
 use App\Http\Middleware\SetApplicationLocale;
 use Illuminate\Foundation\Application;

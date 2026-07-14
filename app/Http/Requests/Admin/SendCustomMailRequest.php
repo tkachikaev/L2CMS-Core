@@ -3,16 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\Mail\CustomMailHtmlSanitizer;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class SendCustomMailRequest extends FormRequest
+class SendCustomMailRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return $this->user('admin') !== null;
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {

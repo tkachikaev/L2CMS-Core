@@ -162,41 +162,37 @@ if (! function_exists('localized_current_url')) {
             $query = '';
         }
 
-        if (($segments[0] ?? null) === 'pages' && isset($segments[1])) {
+        if (in_array($segments[0] ?? null, ['pages', 'news'], true) && isset($segments[1])) {
             try {
                 $sourceSlug = rawurldecode((string) $segments[1]);
-                if ($sourceLocale !== null) {
-                    $sourceCandidates = array_values(array_unique(array_filter([
-                        $sourceLocale,
-                        $languages->fallback(),
-                        $languages->default(),
-                        'ru',
-                    ])));
-                    $translation = null;
+                $resolver = app(\App\Services\Localization\LocalizedContentResolver::class);
 
-                    foreach ($sourceCandidates as $candidate) {
-                        $translation = \App\Models\PageTranslation::query()
-                            ->where('locale', $candidate)
-                            ->where('slug', $sourceSlug)
-                            ->first();
+                if (($segments[0] ?? null) === 'pages') {
+                    $translation = $sourceLocale !== null
+                        ? $resolver->findPageTranslation($sourceLocale, $sourceSlug)
+                        : null;
+                    $page = $translation?->page
+                        ?? \App\Models\Page::query()->where('slug', $sourceSlug)->first();
 
-                        if ($translation !== null) {
-                            break;
-                        }
+                    if ($page instanceof \App\Models\Page && $page->isLive()) {
+                        $target = page_url($page, $locale);
+
+                        return $target.($query !== '' ? '?'.$query : '');
                     }
-
-                    $page = $translation?->page;
-                } else {
-                    $page = \App\Models\Page::query()->where('slug', $sourceSlug)->first();
                 }
 
-                if ($page instanceof \App\Models\Page && $page->isLive()) {
-                    $target = route('localized.pages.show', [
-                        'locale' => $locale,
-                        'slug' => $page->slugFor($locale),
-                    ]);
+                if (($segments[0] ?? null) === 'news') {
+                    $translation = $sourceLocale !== null
+                        ? $resolver->findNewsTranslation($sourceLocale, $sourceSlug)
+                        : null;
+                    $news = $translation?->news
+                        ?? \App\Models\News::query()->where('slug', $sourceSlug)->first();
 
-                    return $target.($query !== '' ? '?'.$query : '');
+                    if ($news instanceof \App\Models\News && $news->isLive()) {
+                        $target = news_url($news, $locale);
+
+                        return $target.($query !== '' ? '?'.$query : '');
+                    }
                 }
             } catch (\Throwable) {
                 // Fall back to the generic localized path during installation or migration.
@@ -223,12 +219,16 @@ if (! function_exists('news_url')) {
     function news_url(\App\Models\News $news, ?string $locale = null): string
     {
         $routeLocale = request()->route('locale');
-        $locale ??= is_string($routeLocale) ? $routeLocale : null;
+        $locale ??= is_string($routeLocale) ? $routeLocale : app()->getLocale();
+        $languages = language_manager();
+        $locale = $languages->normalizeCode($locale) ?? $languages->default();
+        $translation = app(\App\Services\Localization\LocalizedContentResolver::class)
+            ->newsTranslation($news, $locale);
 
-        if ($locale !== null && language_manager()->isEnabled($locale)) {
+        if ($translation !== null && $languages->isEnabled($translation->locale)) {
             return route('localized.news.show', [
-                'locale' => $locale,
-                'slug' => $news->slugFor($locale),
+                'locale' => $translation->locale,
+                'slug' => $translation->slug,
             ]);
         }
 
@@ -236,20 +236,24 @@ if (! function_exists('news_url')) {
     }
 }
 
-
 if (! function_exists('page_url')) {
     function page_url(\App\Models\Page $page, ?string $locale = null): string
     {
         $routeLocale = request()->route('locale');
-        $locale ??= is_string($routeLocale) ? $routeLocale : null;
+        $locale ??= is_string($routeLocale) ? $routeLocale : app()->getLocale();
+        $languages = language_manager();
+        $locale = $languages->normalizeCode($locale) ?? $languages->default();
+        $translation = app(\App\Services\Localization\LocalizedContentResolver::class)
+            ->pageTranslation($page, $locale);
 
-        if ($locale !== null && language_manager()->isEnabled($locale)) {
+        if ($translation !== null && $languages->isEnabled($translation->locale)) {
             return route('localized.pages.show', [
-                'locale' => $locale,
-                'slug' => $page->slugFor($locale),
+                'locale' => $translation->locale,
+                'slug' => $translation->slug,
             ]);
         }
 
         return route('pages.show', ['page' => $page]);
     }
 }
+

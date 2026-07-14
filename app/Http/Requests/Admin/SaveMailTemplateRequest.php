@@ -4,16 +4,10 @@ namespace App\Http\Requests\Admin;
 
 use App\Services\Localization\LanguageManager;
 use App\Services\MailTemplateSettings;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class SaveMailTemplateRequest extends FormRequest
+class SaveMailTemplateRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return $this->user('admin') !== null;
-    }
-
     protected function prepareForValidation(): void
     {
         $this->merge([

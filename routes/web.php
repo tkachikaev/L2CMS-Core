@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\AdministratorController as AdminAdministratorController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
@@ -20,9 +20,9 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Localization\LocaleController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
-use App\Http\Controllers\Localization\LocaleController;
 use Illuminate\Support\Facades\Route;
 
 $registerPublicRoutes = static function (bool $localized = false): void {

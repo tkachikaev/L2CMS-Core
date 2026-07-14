@@ -3,15 +3,9 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\Localization\LanguageManager;
-use Illuminate\Foundation\Http\FormRequest;
 
-class SaveGameServerSettingsRequest extends FormRequest
+class SaveGameServerSettingsRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return auth('admin')->check();
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {

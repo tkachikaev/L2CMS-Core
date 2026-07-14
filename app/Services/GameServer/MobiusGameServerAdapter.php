@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\GameServer;
 
 use App\Contracts\GameServerAdapter;
@@ -12,7 +13,7 @@ final class MobiusGameServerAdapter implements GameServerAdapter
     {
         $portOnline = $this->portIsOpen(
             (string) config('game.server.host'),
-            (int) config('game.server.port')
+            (int) config('game.server.port'),
         );
 
         try {
@@ -48,6 +49,7 @@ final class MobiusGameServerAdapter implements GameServerAdapter
                 ->all();
         } catch (Throwable $exception) {
             $this->reportGameDatabaseFailure('topCharacters', $exception);
+
             return [];
         }
     }
@@ -65,6 +67,7 @@ final class MobiusGameServerAdapter implements GameServerAdapter
                 ->all();
         } catch (Throwable $exception) {
             $this->reportGameDatabaseFailure('charactersForAccount', $exception);
+
             return [];
         }
     }
@@ -78,6 +81,7 @@ final class MobiusGameServerAdapter implements GameServerAdapter
                 ->exists();
         } catch (Throwable $exception) {
             $this->reportGameDatabaseFailure('accountExists', $exception);
+
             return false;
         }
     }
@@ -87,11 +91,12 @@ final class MobiusGameServerAdapter implements GameServerAdapter
         $timeout = (float) config('game.server.timeout', 1.5);
         $socket = @fsockopen($host, $port, $errorCode, $errorMessage, $timeout);
 
-        if (!is_resource($socket)) {
+        if (! is_resource($socket)) {
             return false;
         }
 
         fclose($socket);
+
         return true;
     }
 

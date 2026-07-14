@@ -4,9 +4,10 @@ namespace App\Providers;
 
 use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
+use App\Services\Localization\LanguageManager;
+use App\Services\Localization\LocalizedContentResolver;
 use App\Services\MailSettings;
 use App\Services\MailTemplateSettings;
-use App\Services\Localization\LanguageManager;
 use App\Services\News\NewsHtmlSanitizer;
 use App\Services\News\NewsImageStorage;
 use App\Services\Pages\PageHtmlSanitizer;
@@ -27,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(MailSettings::class);
         $this->app->singleton(MailTemplateSettings::class);
         $this->app->singleton(LanguageManager::class);
+        $this->app->singleton(LocalizedContentResolver::class);
         $this->app->singleton(NewsHtmlSanitizer::class);
         $this->app->singleton(NewsImageStorage::class);
         $this->app->singleton(PageHtmlSanitizer::class);

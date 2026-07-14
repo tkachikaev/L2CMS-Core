@@ -3,16 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\Localization\LanguageManager;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class SendMailTemplateTestRequest extends FormRequest
+class SendMailTemplateTestRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return $this->user('admin') !== null;
-    }
-
     protected function prepareForValidation(): void
     {
         $this->merge([

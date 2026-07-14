@@ -99,4 +99,6 @@ A unique URL slug is generated when the item is created. It remains unchanged wh
 /en/news/english-news
 ```
 
-При отсутствии перевода CMS показывает резервный вариант. Тема должна использовать `titleFor()`, `excerptFor()`, `safeBodyHtml()` и `news_url()`, а не читать старые поля модели напрямую.
+При отсутствии перевода CMS перенаправляет посетителя на URL фактической резервной локали. Если в адресе текущего языка передан slug другого перевода, выполняется постоянный редирект на правильный slug. Публичная страница публикует `canonical`, `hreflang` и `x-default` только для существующих переводов.
+
+Тема должна использовать `titleFor()`, `excerptFor()`, `safeBodyHtml()` и `news_url()`, а не читать старые поля модели напрямую.

@@ -3,48 +3,61 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
-use App\Models\PageTranslation;
 use App\Services\Localization\LanguageManager;
+use App\Services\Localization\LocalizedContentResolver;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 final class PageController
 {
-    public function show(Page $page): View
+    public function show(Page $page, LocalizedContentResolver $resolver): View|RedirectResponse
     {
         abort_unless($page->isLive(), 404);
-        $page->loadMissing('translations');
 
-        return view('theme::pages.show', compact('page'));
-    }
-
-    public function showLocalized(string $locale, string $slug, LanguageManager $languages): View
-    {
-        abort_unless($languages->isEnabled($locale), 404);
-        $locale = $languages->normalizeCode($locale) ?? $languages->default();
-        $candidates = array_values(array_unique([
-            $locale,
-            $languages->fallback(),
-            $languages->default(),
-            'ru',
-        ]));
-
-        $translation = null;
-        foreach ($candidates as $candidate) {
-            $translation = PageTranslation::query()
-                ->where('locale', $candidate)
-                ->where('slug', $slug)
-                ->first();
-
-            if ($translation !== null) {
-                break;
-            }
-        }
+        $translation = $resolver->pageTranslation($page, app()->getLocale());
 
         abort_if($translation === null, 404);
 
-        $page = $translation->page()->with('translations')->firstOrFail();
+        return redirect()->route('localized.pages.show', [
+            'locale' => $translation->locale,
+            'slug' => $translation->slug,
+        ], 302);
+    }
+
+    public function showLocalized(
+        string $locale,
+        string $slug,
+        LanguageManager $languages,
+        LocalizedContentResolver $resolver,
+    ): View|RedirectResponse {
+        abort_unless($languages->isEnabled($locale), 404);
+        $locale = $languages->normalizeCode($locale) ?? $languages->default();
+
+        $matchedTranslation = $resolver->findPageTranslation($locale, $slug);
+        abort_if($matchedTranslation === null, 404);
+
+        $page = $matchedTranslation->page()->with('translations')->firstOrFail();
         abort_unless($page->isLive(), 404);
 
-        return view('theme::pages.show', compact('page'));
+        $translation = $resolver->pageTranslation($page, $locale);
+        abort_if($translation === null, 404);
+
+        $canonicalParameters = [
+            'locale' => $translation->locale,
+            'slug' => $translation->slug,
+        ];
+
+        if ($locale !== $translation->locale || $slug !== $translation->slug) {
+            return redirect()->route(
+                'localized.pages.show',
+                $canonicalParameters,
+                $locale === $translation->locale ? 301 : 302,
+            );
+        }
+
+        return view('theme::pages.show', array_merge(
+            ['page' => $page],
+            $resolver->pageMetadata($page, $translation),
+        ));
     }
 }

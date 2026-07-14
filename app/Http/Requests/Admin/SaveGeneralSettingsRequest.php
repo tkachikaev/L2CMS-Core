@@ -5,17 +5,11 @@ namespace App\Http\Requests\Admin;
 use App\Services\Localization\LanguageManager;
 use App\Services\Settings\SettingsImageStorage;
 use Closure;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
-class SaveGeneralSettingsRequest extends FormRequest
+class SaveGeneralSettingsRequest extends AdminFormRequest
 {
-    public function authorize(): bool
-    {
-        return auth('admin')->check();
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {

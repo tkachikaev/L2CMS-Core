@@ -153,7 +153,15 @@ class AdminNewsManagementTest extends TestCase
         $this->assertMatchesRegularExpression('~^news/covers/\d{4}/\d{2}/[a-f0-9-]+\.png$~', $news->image);
         $this->assertFileExists($this->absoluteUploadPath($news->image));
 
+        $translation = $news->translations()->where('locale', 'ru')->firstOrFail();
+
         $this->get('/news/'.$news->slug)
+            ->assertRedirect(route('localized.news.show', [
+                'locale' => $translation->locale,
+                'slug' => $translation->slug,
+            ]));
+
+        $this->get('/ru/news/'.$translation->slug)
             ->assertOk()
             ->assertSee('/uploads/'.$news->image, false);
     }
@@ -221,7 +229,15 @@ class AdminNewsManagementTest extends TestCase
             'is_published' => true,
         ]);
 
+        $translation = $news->fresh()->translations()->where('locale', 'ru')->firstOrFail();
+
         $this->get('/news/chernovik')
+            ->assertRedirect(route('localized.news.show', [
+                'locale' => $translation->locale,
+                'slug' => $translation->slug,
+            ]));
+
+        $this->get('/ru/news/'.$translation->slug)
             ->assertOk()
             ->assertSee('Готовая новость')
             ->assertSee('<strong>текст</strong>', false);
