@@ -106,6 +106,13 @@ class AdminPageManagementTest extends TestCase
 
         $this->get('/')
             ->assertOk()
+            ->assertSee('Server rules');
+
+        $this->get('/language/ru?return='.urlencode('/'))
+            ->assertRedirect(route('localized.home', ['locale' => 'ru']));
+
+        $this->get('/ru')
+            ->assertOk()
             ->assertSee('Правила сервера');
 
         $this->assertDatabaseHas('audit_logs', [
@@ -276,9 +283,15 @@ PHP);
     {
         $admin = $this->createAdmin();
 
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZkVQAAAAASUVORK5CYII=',
+            true,
+        );
+        $this->assertIsString($png);
+
         $response = $this->actingAs($admin, 'admin')
             ->post('/admin/pages/images', [
-                'image' => UploadedFile::fake()->image('page.png', 320, 180),
+                'image' => UploadedFile::fake()->createWithContent('page.png', $png),
             ], ['Accept' => 'application/json']);
 
         $response->assertCreated()
