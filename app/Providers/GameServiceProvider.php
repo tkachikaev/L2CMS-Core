@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Contracts\ExternalDatabaseConnectionTester;
+use App\Contracts\GameAccountGateway;
 use App\Contracts\GameServerAdapter;
+use App\Services\GameAccounts\ExternalGameAccountGateway;
 use App\Services\GameServer\MobiusGameServerAdapter;
 use App\Services\GameServer\MockGameServerAdapter;
 use App\Services\Servers\MySqlExternalDatabaseConnectionTester;
@@ -15,6 +17,7 @@ class GameServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ExternalDatabaseConnectionTester::class, MySqlExternalDatabaseConnectionTester::class);
+        $this->app->singleton(GameAccountGateway::class, ExternalGameAccountGateway::class);
 
         $this->app->singleton(GameServerAdapter::class, function () {
             return match (config('game.adapter')) {

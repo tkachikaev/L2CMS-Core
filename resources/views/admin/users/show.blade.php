@@ -53,7 +53,18 @@
                 <form method="POST" action="{{ route('admin.users.password-reset',$user) }}">@csrf<button class="button button-secondary" type="submit" @disabled(!$mailReady)>{{ __('Send password reset') }}</button></form>
             </div>
         </section>
-        <section class="form-card form-card-muted user-game-placeholder"><h2>{{ __('Game data') }}</h2><p>{{ __('LoginServer connections are configured separately. Game accounts and characters are not linked to CMS users yet.') }}</p></section>
+        <section class="form-card user-action-card user-game-accounts-card">
+            <div class="user-game-accounts-heading"><h2>{{ __('Game data') }}</h2><span class="status-badge status-badge-muted">{{ $user->gameAccounts->count() }}</span></div>
+            @if($user->gameAccounts->isEmpty())
+                <p>{{ __('The user has no linked game accounts yet.') }}</p>
+            @else
+                <div class="user-game-accounts-list">
+                    @foreach($user->gameAccounts as $gameAccount)
+                        <div><strong>{{ $gameAccount->game_login }}</strong><span>{{ $gameAccount->registrationGameServer?->nameFor() ?? $gameAccount->loginServer->name }}</span></div>
+                    @endforeach
+                </div>
+            @endif
+        </section>
     </aside>
 </div>
 @endsection

@@ -48,6 +48,12 @@ class LoginServer extends Model
         return $this->hasMany(GameServer::class);
     }
 
+    /** @return HasMany<UserGameAccount, $this> */
+    public function userGameAccounts(): HasMany
+    {
+        return $this->hasMany(UserGameAccount::class);
+    }
+
     public function databasePassword(): ?string
     {
         try {

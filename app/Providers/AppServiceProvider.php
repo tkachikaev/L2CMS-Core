@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\AdminLoginService;
 use App\Services\AdminTwoFactorAuthentication;
 use App\Services\AuditLogger;
+use App\Services\GameAccountSettings;
 use App\Services\GameServerSettings;
 use App\Services\Localization\LanguageManager;
 use App\Services\Localization\LocalizedContentResolver;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AdminLoginService::class);
         $this->app->singleton(AdminTwoFactorAuthentication::class);
         $this->app->singleton(AuditLogger::class);
+        $this->app->singleton(GameAccountSettings::class);
         $this->app->singleton(GameServerSettings::class);
         $this->app->singleton(MailSettings::class);
         $this->app->singleton(MailTemplateSettings::class);
@@ -100,6 +102,18 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute($perMinute)->by($key.':minute'),
                 Limit::perHour($perHour)->by($key.':hour'),
             ];
+        });
+
+        RateLimiter::for('game-account-create', static function (Request $request): Limit {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+
+            return Limit::perMinutes(10, 3)->by('game-account-create:'.$userId);
+        });
+
+        RateLimiter::for('game-account-password', static function (Request $request): Limit {
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+
+            return Limit::perHour(5)->by('game-account-password:'.$userId);
         });
     }
 }

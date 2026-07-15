@@ -8,7 +8,9 @@ use App\Models\LoginServer;
 use App\Services\AuditLogger;
 use App\Services\Servers\ServerConnectionTester;
 use App\Services\Servers\ServerDriverRegistry;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class LoginServerController extends Controller
@@ -18,7 +20,7 @@ class LoginServerController extends Controller
     public function index(ServerDriverRegistry $drivers): View
     {
         return view('admin.settings.login-server', [
-            'servers' => LoginServer::query()->withCount('gameServers')->orderBy('id')->get(),
+            'servers' => LoginServer::query()->withCount(['gameServers', 'userGameAccounts'])->orderBy('id')->get(),
             'drivers' => $drivers->loginDrivers(),
             'report' => session('database_connection_report'),
         ]);
@@ -98,26 +100,56 @@ class LoginServerController extends Controller
 
     public function destroy(LoginServer $loginServer): RedirectResponse
     {
-        if ($loginServer->gameServers()->exists()) {
-            return back()->withErrors([
-                'login_server' => __('The LoginServer is used by one or more game servers and cannot be deleted.'),
-            ]);
+        try {
+            /** @var array{name:string,values:array<string,mixed>}|null $deleted */
+            $deleted = DB::transaction(function () use ($loginServer): ?array {
+                $lockedServer = LoginServer::query()
+                    ->lockForUpdate()
+                    ->findOrFail($loginServer->id);
+
+                if ($lockedServer->gameServers()->exists() || $lockedServer->userGameAccounts()->exists()) {
+                    return null;
+                }
+
+                $result = [
+                    'name' => $lockedServer->name,
+                    'values' => $this->auditValues($lockedServer),
+                ];
+                $lockedServer->delete();
+
+                return $result;
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isIntegrityConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            $deleted = null;
         }
 
-        $values = $this->auditValues($loginServer);
-        $name = $loginServer->name;
-        $loginServer->delete();
+        if ($deleted === null) {
+            return back()->withErrors([
+                'login_server' => __('The LoginServer is used by game servers or player accounts and cannot be deleted.'),
+            ]);
+        }
 
         $this->auditLogger->success(
             category: 'admin',
             action: 'login_server.deleted',
-            target: $name,
-            details: ['values' => $values],
+            target: $deleted['name'],
+            details: ['values' => $deleted['values']],
         );
 
         return redirect()
             ->route('admin.settings.login-server')
-            ->with('status', __('LoginServer :name deleted.', ['name' => $name]));
+            ->with('status', __('LoginServer :name deleted.', ['name' => $deleted['name']]));
+    }
+
+    private function isIntegrityConstraintViolation(QueryException $exception): bool
+    {
+        $code = (string) $exception->getCode();
+
+        return str_starts_with($code, '23') || in_array($code, ['19', '1451'], true);
     }
 
     /** @param array<string,mixed> $validated @return array<string,mixed> */

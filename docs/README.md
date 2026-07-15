@@ -9,6 +9,7 @@
 - [Подключения LoginServer и GameServer](SERVER_CONNECTIONS.md)
 - [Языки и переводы](LANGUAGES.md)
 - [Пользователи сайта](USERS.md)
+- [Личный кабинет игрока](PLAYER_ACCOUNT.md)
 - [Почтовая система](MAIL.md)
 - [Новости](NEWS.md)
 - [Страницы сайта](PAGES.md)

@@ -41,7 +41,7 @@ final class MySqlExternalDatabaseConnectionTester implements ExternalDatabaseCon
             'strict' => true,
             'engine' => null,
             'options' => [
-                PDO::ATTR_TIMEOUT => 3,
+                PDO::ATTR_TIMEOUT => max(1, min(30, (int) config('cms.external_database.connect_timeout_seconds', 3))),
             ],
         ];
 

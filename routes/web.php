@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Account\GameAccountController;
+use App\Http\Controllers\Account\GameAccountPasswordController;
 use App\Http\Controllers\Admin\AccountSecurityController as AdminAccountSecurityController;
 use App\Http\Controllers\Admin\AdministratorController as AdminAdministratorController;
 use App\Http\Controllers\Admin\AdministratorTwoFactorController as AdminAdministratorTwoFactorController;
@@ -7,6 +9,7 @@ use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController as AdminSessionController;
 use App\Http\Controllers\Admin\Auth\TwoFactorChallengeController as AdminTwoFactorChallengeController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\GameAccountSettingsController as AdminGameAccountSettingsController;
 use App\Http\Controllers\Admin\GameServerConnectionController as AdminGameServerConnectionController;
 use App\Http\Controllers\Admin\LoginServerController as AdminLoginServerController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
@@ -87,9 +90,21 @@ $registerPublicRoutes = static function (bool $localized = false): void {
             ->middleware('throttle:6,1')
             ->name($namePrefix.'verification.send');
 
-        Route::get('/account', AccountController::class)
-            ->middleware('site.verified')
-            ->name($namePrefix.'account');
+        Route::middleware('site.verified')->group(function () use ($namePrefix): void {
+            Route::get('/account', AccountController::class)->name($namePrefix.'account');
+            Route::get('/account/game-accounts/create', [GameAccountController::class, 'create'])
+                ->name($namePrefix.'game-accounts.create');
+            Route::post('/account/game-accounts', [GameAccountController::class, 'store'])
+                ->middleware('throttle:game-account-create')
+                ->name($namePrefix.'game-accounts.store');
+            Route::get('/account/game-accounts/{gameAccount}', [GameAccountController::class, 'show'])
+                ->whereNumber('gameAccount')
+                ->name($namePrefix.'game-accounts.show');
+            Route::put('/account/game-accounts/{gameAccount}/password', [GameAccountPasswordController::class, 'update'])
+                ->whereNumber('gameAccount')
+                ->middleware('throttle:game-account-password')
+                ->name($namePrefix.'game-accounts.password');
+        });
         Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name($namePrefix.'logout');
     });
 };
@@ -223,6 +238,10 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
             ->name('settings.login-server.destroy');
         Route::get('/settings/registration', [AdminSettingsController::class, 'registration'])->name('settings.registration');
         Route::put('/settings/registration', [AdminSettingsController::class, 'updateRegistration'])->name('settings.registration.update');
+        Route::get('/settings/game-accounts', [AdminGameAccountSettingsController::class, 'index'])
+            ->name('settings.game-accounts');
+        Route::put('/settings/game-accounts', [AdminGameAccountSettingsController::class, 'update'])
+            ->name('settings.game-accounts.update');
         Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
         Route::put('/settings/mail', [AdminSettingsController::class, 'updateMail'])->name('settings.mail.update');
         Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])

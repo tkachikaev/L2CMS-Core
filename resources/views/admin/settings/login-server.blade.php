@@ -85,12 +85,12 @@
                     <div>
                         <span class="settings-server-number">{{ __('LoginServer :number', ['number' => $loop->iteration]) }}</span>
                         <h2>{{ $server->name }}</h2>
-                        <small>{{ trans_choice(':count game server|:count game servers', $server->game_servers_count, ['count' => $server->game_servers_count]) }}</small>
+                        <small>{{ trans_choice(':count game server|:count game servers', $server->game_servers_count, ['count' => $server->game_servers_count]) }} · {{ trans_choice(':count player account|:count player accounts', $server->user_game_accounts_count, ['count' => $server->user_game_accounts_count]) }}</small>
                     </div>
                     <form method="POST" action="{{ route('admin.settings.login-server.destroy', $server) }}">
                         @csrf
                         @method('DELETE')
-                        <button class="button button-danger" type="submit" @disabled($server->game_servers_count > 0)>{{ __('Delete') }}</button>
+                        <button class="button button-danger" type="submit" @disabled($server->game_servers_count > 0 || $server->user_game_accounts_count > 0)>{{ __('Delete') }}</button>
                     </form>
                 </div>
 

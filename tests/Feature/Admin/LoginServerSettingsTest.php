@@ -7,6 +7,8 @@ use App\Models\Admin;
 use App\Models\AuditLog;
 use App\Models\GameServer;
 use App\Models\LoginServer;
+use App\Models\User;
+use App\Models\UserGameAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\Fakes\FakeExternalDatabaseConnectionTester;
@@ -203,6 +205,31 @@ class LoginServerSettingsTest extends TestCase
         $loginServer = LoginServer::query()->create($this->modelValues());
         $gameServer = GameServer::query()->firstOrFail();
         $gameServer->update(['login_server_id' => $loginServer->id]);
+
+        $this->actingAs($this->createAdmin(), 'admin')
+            ->delete(route('admin.settings.login-server.destroy', $loginServer))
+            ->assertSessionHasErrors('login_server');
+
+        $this->assertDatabaseHas('login_servers', ['id' => $loginServer->id]);
+    }
+
+    public function test_login_server_used_by_player_account_cannot_be_deleted(): void
+    {
+        $loginServer = LoginServer::query()->create($this->modelValues());
+        $user = User::query()->create([
+            'name' => 'Player',
+            'email' => 'player@example.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('CorrectPassword123'),
+        ]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => null,
+            'game_login' => 'player01',
+            'normalized_login' => 'player01',
+            'created_via_cms' => true,
+        ]);
 
         $this->actingAs($this->createAdmin(), 'admin')
             ->delete(route('admin.settings.login-server.destroy', $loginServer))

@@ -11,6 +11,9 @@
     <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.registration')]) href="{{ route('admin.settings.registration') }}">
         {{ __('Registration') }}
     </a>
+    <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.game-accounts')]) href="{{ route('admin.settings.game-accounts') }}">
+        {{ __('Game accounts') }}
+    </a>
     <a @class(['settings-tab', 'active' => request()->routeIs('admin.settings.mail*')]) href="{{ route('admin.settings.mail') }}">
         {{ __('Mail') }}
     </a>

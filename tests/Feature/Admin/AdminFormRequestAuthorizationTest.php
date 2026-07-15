@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Http\Requests\Admin\CleanupSecurityLogsRequest;
+use App\Http\Requests\Admin\SaveGameAccountSettingsRequest;
 use App\Http\Requests\Admin\SaveGameServerConnectionRequest;
 use App\Http\Requests\Admin\SaveGameServerSettingsRequest;
 use App\Http\Requests\Admin\SaveGeneralSettingsRequest;
@@ -52,6 +53,7 @@ class AdminFormRequestAuthorizationTest extends TestCase
     {
         return [
             'security log cleanup' => [CleanupSecurityLogsRequest::class],
+            'game account settings' => [SaveGameAccountSettingsRequest::class],
             'game server settings' => [SaveGameServerSettingsRequest::class],
             'game server connection' => [SaveGameServerConnectionRequest::class],
             'login server settings' => [SaveLoginServerRequest::class],

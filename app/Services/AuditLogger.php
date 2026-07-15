@@ -168,7 +168,7 @@ class AuditLogger
 
     private function modelName(Model $model): string
     {
-        foreach (['title', 'name', 'email', 'slug'] as $attribute) {
+        foreach (['title', 'name', 'email', 'slug', 'game_login'] as $attribute) {
             $value = $model->getAttribute($attribute);
 
             if (is_scalar($value) && trim((string) $value) !== '') {

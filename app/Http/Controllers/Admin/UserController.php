@@ -63,6 +63,8 @@ class UserController extends Controller
 
     public function show(User $user, MailSettings $mailSettings): View
     {
+        $user->load(['gameAccounts.loginServer', 'gameAccounts.registrationGameServer.translations']);
+
         $activity = AuditLog::query()
             ->where(function ($query) use ($user): void {
                 $query

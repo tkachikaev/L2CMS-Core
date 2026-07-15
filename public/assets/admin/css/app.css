@@ -1868,3 +1868,5 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
     .database-test-check small,
     .database-test-check code { grid-column: 2; }
 }
+
+.user-game-accounts-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.user-game-accounts-heading h2{margin:0}.user-game-accounts-list{display:grid;gap:8px;margin-top:14px}.user-game-accounts-list>div{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--admin-border,#2b3440);border-radius:8px}.user-game-accounts-list span{color:var(--admin-muted,#8d98a8);text-align:right}
