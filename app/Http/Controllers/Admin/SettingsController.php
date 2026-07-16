@@ -14,7 +14,6 @@ use App\Http\Requests\Admin\SendMailTemplateTestRequest;
 use App\Http\Requests\Admin\SendTestMailRequest;
 use App\Mail\CustomHtmlMail;
 use App\Models\GameServer;
-use App\Models\LoginServer;
 use App\Notifications\MailTemplateTestNotification;
 use App\Services\AuditLogger;
 use App\Services\GameServerSettings;
@@ -23,7 +22,6 @@ use App\Services\Mail\CustomMailHtmlSanitizer;
 use App\Services\MailSettings;
 use App\Services\MailTemplateSettings;
 use App\Services\RegistrationSettings;
-use App\Services\Servers\ServerDriverRegistry;
 use App\Services\Settings\SettingsImageStorage;
 use App\Services\SiteSettings;
 use App\Services\SystemInformation;
@@ -128,18 +126,9 @@ class SettingsController extends Controller
             ->with('status', __('General settings saved.'));
     }
 
-    public function gameServer(
-        GameServerSettings $gameServerSettings,
-        ServerDriverRegistry $drivers,
-    ): View {
-        return view('admin.settings.game-server', [
-            'servers' => $gameServerSettings->all(),
-            'loginServers' => LoginServer::query()->orderBy('name')->orderBy('id')->get(),
-            'gameDrivers' => $drivers->gameDrivers(),
-            'languages' => app(LanguageManager::class)->enabled(),
-            'defaultLocale' => app(LanguageManager::class)->default(),
-            'report' => session('database_connection_report'),
-        ]);
+    public function gameServer(): View
+    {
+        return view('admin.settings.game-server');
     }
 
     public function storeGameServer(

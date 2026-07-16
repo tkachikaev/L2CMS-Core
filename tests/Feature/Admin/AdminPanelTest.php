@@ -30,6 +30,13 @@ class AdminPanelTest extends TestCase
             ->assertSee('Журнал действий')
             ->assertSee('class="admin-account-avatar" aria-hidden="true"><span>M</span>', false)
             ->assertSee('assets/admin/css/app.css');
+
+        $adminCss = file_get_contents(public_path('assets/admin/css/app.css'));
+        $this->assertIsString($adminCss);
+        $this->assertStringContainsString(
+            '.admin-account-avatar > span { display: grid; place-items: center; width: 100%; height: 100%; line-height: 1; transform: translateY(1px); }',
+            $adminCss,
+        );
     }
 
     public function test_settings_are_grouped_in_the_sidebar_without_global_tabs(): void
@@ -53,7 +60,7 @@ class AdminPanelTest extends TestCase
                 'Themes',
                 'Servers',
                 'Game servers',
-                'LoginServers',
+                'Login Servers',
                 'Game accounts',
                 'Users',
                 'Registration',

@@ -55,7 +55,7 @@
             @if (session('warning'))
                 <div class="account-notice warning" role="alert">{{ session('warning') }}</div>
             @endif
-            @if ($errors->any())
+            @if ($errors->any() && ! trim($__env->yieldContent('inline-validation-errors')))
                 <div class="account-notice error" role="alert">
                     @foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach
                 </div>

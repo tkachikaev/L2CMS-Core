@@ -1,0 +1,218 @@
+<?php
+
+namespace Tests\Feature\Admin;
+
+use App\Contracts\ExternalDatabaseConnectionTester;
+use App\Livewire\Admin\GameServerManager;
+use App\Livewire\Admin\LoginServerManager;
+use App\Models\Admin;
+use App\Models\GameServer;
+use App\Models\LoginServer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
+use Tests\Fakes\FakeExternalDatabaseConnectionTester;
+use Tests\TestCase;
+
+class ReactiveServerManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_login_connection_is_checked_inside_the_livewire_drawer_without_saving(): void
+    {
+        $fake = new FakeExternalDatabaseConnectionTester;
+        $this->app->instance(ExternalDatabaseConnectionTester::class, $fake);
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(LoginServerManager::class)
+            ->call('create')
+            ->set('name', 'Primary Login')
+            ->set('driver', 'l2j_mobius')
+            ->set('databaseHost', '127.0.0.1')
+            ->set('databasePort', '3306')
+            ->set('databaseName', 'l2jmobiusinterlude')
+            ->set('databaseUsername', 'l2forge')
+            ->set('databasePassword', 'SecretLoginPassword')
+            ->set('databaseCharset', 'utf8mb4')
+            ->call('testConnection')
+            ->assertSet('drawerOpen', true)
+            ->assertSet('connectionReport.connected', true)
+            ->assertSee('Подключение к базе данных установлено.');
+
+        $this->assertDatabaseCount('login_servers', 0);
+        $this->assertSame('l2jmobiusinterlude', $fake->connection['database'] ?? null);
+    }
+
+    public function test_saved_login_server_is_checked_on_the_card_without_opening_the_drawer(): void
+    {
+        $fake = new FakeExternalDatabaseConnectionTester;
+        $this->app->instance(ExternalDatabaseConnectionTester::class, $fake);
+        $server = LoginServer::query()->create($this->loginServerValues());
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(LoginServerManager::class)
+            ->call('testStored', $server->id)
+            ->assertSet('drawerOpen', false)
+            ->assertSet("cardTestResults.{$server->id}.state", 'success')
+            ->assertSee('Подключение к базе данных установлено.');
+
+        $this->assertSame('l2jmobiusinterlude', $fake->connection['database'] ?? null);
+    }
+
+    public function test_failed_login_server_card_test_changes_badge_to_not_configured(): void
+    {
+        $fake = new FakeExternalDatabaseConnectionTester;
+        $fake->report['connected'] = false;
+        $fake->report['compatible'] = null;
+        $fake->report['error'] = 'Connection refused';
+        $this->app->instance(ExternalDatabaseConnectionTester::class, $fake);
+        $server = LoginServer::query()->create($this->loginServerValues());
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(LoginServerManager::class)
+            ->call('testStored', $server->id)
+            ->assertSet("cardTestResults.{$server->id}.state", 'failed')
+            ->assertSee('Не настроено')
+            ->assertSee('Не удалось подключиться к базе данных.');
+    }
+
+    public function test_login_server_can_be_created_from_the_livewire_drawer(): void
+    {
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(LoginServerManager::class)
+            ->call('create')
+            ->set('name', 'Primary Login')
+            ->set('driver', 'l2j_mobius')
+            ->set('databaseHost', '127.0.0.1')
+            ->set('databasePort', '3306')
+            ->set('databaseName', 'l2jmobiusinterlude')
+            ->set('databaseUsername', 'l2forge')
+            ->set('databasePassword', 'SecretLoginPassword')
+            ->set('databaseCharset', 'utf8mb4')
+            ->call('save')
+            ->assertSet('drawerOpen', true)
+            ->assertSet('editingId', fn (?int $id): bool => $id !== null)
+            ->assertSee('LoginServer добавлен.');
+
+        $server = LoginServer::query()->firstOrFail();
+
+        $this->assertSame('Primary Login', $server->name);
+        $this->assertSame('SecretLoginPassword', $server->databasePassword());
+        $this->assertNotSame('SecretLoginPassword', $server->getRawOriginal('database_password'));
+    }
+
+    public function test_game_connection_is_checked_inside_the_livewire_drawer_without_saving(): void
+    {
+        $fake = new FakeExternalDatabaseConnectionTester;
+        $this->app->instance(ExternalDatabaseConnectionTester::class, $fake);
+        $loginServer = LoginServer::query()->create($this->loginServerValues());
+        $gameServer = GameServer::query()->firstOrFail();
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(GameServerManager::class)
+            ->call('edit', $gameServer->id)
+            ->set('connectionEnabled', true)
+            ->set('loginServerId', (string) $loginServer->id)
+            ->set('driver', 'l2j_mobius_ct0_interlude')
+            ->set('useLoginServerConnection', true)
+            ->call('testConnection')
+            ->assertSet('drawerOpen', true)
+            ->assertSet('connectionReport.connected', true)
+            ->assertSee('Подключение к базе данных установлено.');
+
+        $this->assertNull($gameServer->fresh()->driver);
+        $this->assertSame('l2jmobiusinterlude', $fake->connection['database'] ?? null);
+        $this->assertSame('characters', $fake->requirements[0]['table'] ?? null);
+    }
+
+    public function test_saved_game_server_is_checked_on_the_card_without_opening_the_drawer(): void
+    {
+        $fake = new FakeExternalDatabaseConnectionTester;
+        $fake->report['connected'] = false;
+        $fake->report['compatible'] = null;
+        $fake->report['error'] = 'Connection refused';
+        $this->app->instance(ExternalDatabaseConnectionTester::class, $fake);
+        $loginServer = LoginServer::query()->create($this->loginServerValues());
+        $gameServer = GameServer::query()->firstOrFail();
+        $gameServer->update([
+            'login_server_id' => $loginServer->id,
+            'driver' => 'l2j_mobius_ct0_interlude',
+            'use_login_server_connection' => true,
+        ]);
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(GameServerManager::class)
+            ->call('testStored', $gameServer->id)
+            ->assertSet('drawerOpen', false)
+            ->assertSet("cardTestResults.{$gameServer->id}.state", 'failed')
+            ->assertSee('Не настроено')
+            ->assertSee('Не удалось подключиться к базе данных.');
+    }
+
+    public function test_game_server_can_be_saved_from_the_livewire_drawer(): void
+    {
+        $loginServer = LoginServer::query()->create($this->loginServerValues());
+        $gameServer = GameServer::query()->firstOrFail();
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(GameServerManager::class)
+            ->call('edit', $gameServer->id)
+            ->set('translations.ru', 'Interlude x5')
+            ->set('serverRates', 'x5')
+            ->set('serverChronicle', 'Interlude')
+            ->set('serverMode', 'PvP')
+            ->set('connectionEnabled', true)
+            ->set('loginServerId', (string) $loginServer->id)
+            ->set('driver', 'l2j_mobius_ct0_interlude')
+            ->set('useLoginServerConnection', true)
+            ->call('save')
+            ->assertSet('drawerOpen', true)
+            ->assertSee('Настройки игрового сервера сохранены.');
+
+        $gameServer->refresh();
+
+        $this->assertSame('Interlude x5', $gameServer->name);
+        $this->assertSame('x5', $gameServer->rates);
+        $this->assertSame($loginServer->id, $gameServer->login_server_id);
+        $this->assertSame('l2j_mobius_ct0_interlude', $gameServer->driver);
+        $this->assertTrue($gameServer->use_login_server_connection);
+    }
+
+    public function test_server_drawers_close_on_backdrop_pointer_press_instead_of_click_release(): void
+    {
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        foreach (['/admin/settings/login-server', '/admin/settings/game-server'] as $uri) {
+            $this->get($uri)
+                ->assertOk()
+                ->assertSee('wire:pointerdown.self="closeDrawer"', false)
+                ->assertDontSee('wire:click.self="closeDrawer"', false);
+        }
+    }
+
+    /** @return array<string,mixed> */
+    private function loginServerValues(): array
+    {
+        return [
+            'name' => 'Primary Login',
+            'driver' => 'l2j_mobius',
+            'database_host' => '127.0.0.1',
+            'database_port' => 3306,
+            'database_name' => 'l2jmobiusinterlude',
+            'database_username' => 'l2forge',
+            'database_password' => 'SecretLoginPassword',
+            'database_charset' => 'utf8mb4',
+        ];
+    }
+
+    private function createAdmin(): Admin
+    {
+        return Admin::query()->create([
+            'name' => 'Main Admin',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('CorrectPassword123'),
+            'is_active' => true,
+        ]);
+    }
+}

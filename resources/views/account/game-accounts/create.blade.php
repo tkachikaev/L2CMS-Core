@@ -1,5 +1,6 @@
 @extends('account.layouts.app')
 @section('title', __('Create game account'))
+@section('inline-validation-errors', '1')
 @section('content')
 <div class="account-page-heading">
     <a href="{{ public_route('account') }}">← {{ __('My accounts') }}</a>
@@ -12,26 +13,44 @@
     @csrf
     <label>
         <span>{{ __('Game server') }}</span>
-        <select name="game_server_id" required>
-            <option value="">{{ __('Select a game server') }}</option>
-            @foreach ($gameServers as $server)
-                <option value="{{ $server->id }}" @selected((int) old('game_server_id') === $server->id)>
-                    {{ $server->nameFor() }}@if($server->rates) — {{ $server->rates }}@endif
-                </option>
-            @endforeach
-        </select>
-        <small>{{ __('The selected world determines the LoginServer where the account will be created.') }}</small>
+        <div class="account-field-control">
+            <select name="game_server_id" required @class(['account-field-invalid' => $errors->has('game_server_id')]) aria-describedby="game-server-help @error('game_server_id') game-server-error @enderror">
+                <option value="">{{ __('Select a game server') }}</option>
+                @foreach ($gameServers as $server)
+                    <option value="{{ $server->id }}" @selected((int) old('game_server_id') === $server->id)>
+                        {{ $server->nameFor() }}@if($server->rates) — {{ $server->rates }}@endif
+                    </option>
+                @endforeach
+            </select>
+            @error('game_server_id')<small class="account-field-error" id="game-server-error" role="alert">{{ $message }}</small>@enderror
+        </div>
+        <small id="game-server-help">{{ __('The selected world determines the LoginServer where the account will be created.') }}</small>
     </label>
 
     <label>
         <span>{{ __('Game login') }}</span>
-        <input type="text" name="game_login" value="{{ old('game_login') }}" autocomplete="username" required maxlength="{{ $settings['login_max'] }}">
-        <small>{{ __('Latin letters and digits, from :min to :max characters.', ['min' => $settings['login_min'], 'max' => $settings['login_max']]) }}</small>
+        <div class="account-field-control">
+            <input type="text" name="game_login" value="{{ old('game_login') }}" autocomplete="username" required maxlength="{{ $settings['login_max'] }}" @class(['account-field-invalid' => $errors->has('game_login')]) aria-describedby="game-login-help @error('game_login') game-login-error @enderror">
+            @error('game_login')<small class="account-field-error" id="game-login-error" role="alert">{{ $message }}</small>@enderror
+        </div>
+        <small id="game-login-help">{{ __('Latin letters and digits, from :min to :max characters.', ['min' => $settings['login_min'], 'max' => $settings['login_max']]) }}</small>
     </label>
 
     <div class="account-form-grid">
-        <label><span>{{ __('Game password') }}</span><input type="password" name="game_password" autocomplete="new-password" required maxlength="{{ $settings['password_max'] }}"></label>
-        <label><span>{{ __('Repeat game password') }}</span><input type="password" name="game_password_confirmation" autocomplete="new-password" required maxlength="{{ $settings['password_max'] }}"></label>
+        <label>
+            <span>{{ __('Game password') }}</span>
+            <div class="account-field-control">
+                <input type="password" name="game_password" autocomplete="new-password" required maxlength="{{ $settings['password_max'] }}" @class(['account-field-invalid' => $errors->has('game_password')]) @error('game_password') aria-describedby="game-password-error" @enderror>
+                @error('game_password')<small class="account-field-error" id="game-password-error" role="alert">{{ $message }}</small>@enderror
+            </div>
+        </label>
+        <label>
+            <span>{{ __('Repeat game password') }}</span>
+            <div class="account-field-control">
+                <input type="password" name="game_password_confirmation" autocomplete="new-password" required maxlength="{{ $settings['password_max'] }}" @class(['account-field-invalid' => $errors->has('game_password_confirmation')]) @error('game_password_confirmation') aria-describedby="game-password-confirmation-error" @enderror>
+                @error('game_password_confirmation')<small class="account-field-error" id="game-password-confirmation-error" role="alert">{{ $message }}</small>@enderror
+            </div>
+        </label>
     </div>
 
     <div class="account-form-note">

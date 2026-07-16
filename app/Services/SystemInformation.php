@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\L2Forge;
+use App\Support\PasswordHashing;
 use Composer\Composer;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
@@ -48,6 +49,7 @@ final class SystemInformation
                 'mail' => (string) config('mail.default'),
                 'logging' => (string) config('logging.default'),
             ],
+            'security' => $this->passwordHashInformation(),
             'database' => $database,
             'components' => $components,
             'extensions' => $extensions,
@@ -258,6 +260,18 @@ final class SystemInformation
         return null;
     }
 
+    /**
+     * @return array{driver: string, label: string, argon2id_supported: bool}
+     */
+    private function passwordHashInformation(): array
+    {
+        return [
+            'driver' => PasswordHashing::effectiveDriver(),
+            'label' => PasswordHashing::label(),
+            'argon2id_supported' => PasswordHashing::argon2idSupported(),
+        ];
+    }
+
     private function operatingSystem(): string
     {
         $release = trim((string) php_uname('r'));
@@ -348,6 +362,7 @@ final class SystemInformation
         $database = $information['database'];
         $environment = $information['environment'];
         $software = $information['software'];
+        $security = $information['security'];
 
         return implode(PHP_EOL, [
             __('L2Forge CMS: :value', ['value' => $information['cms']['version']]),
@@ -357,6 +372,7 @@ final class SystemInformation
             __('OS: :value', ['value' => $software['os']]),
             __('Architecture: :value', ['value' => $software['architecture']]),
             __('PHP SAPI: :value', ['value' => $software['sapi']]),
+            __('Password hash: :value', ['value' => $security['label']]),
             __('Database: :value', ['value' => $database['driver_label'].($database['version'] ? ' '.$database['version'] : '')]),
             __('Database connection: :value', ['value' => $database['connected'] ? 'OK' : 'ERROR']),
             'APP_ENV: '.$environment['name'],

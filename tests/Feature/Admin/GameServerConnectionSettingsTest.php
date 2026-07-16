@@ -3,12 +3,14 @@
 namespace Tests\Feature\Admin;
 
 use App\Contracts\ExternalDatabaseConnectionTester;
+use App\Livewire\Admin\GameServerManager;
 use App\Models\Admin;
 use App\Models\AuditLog;
 use App\Models\GameServer;
 use App\Models\LoginServer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\Fakes\FakeExternalDatabaseConnectionTester;
 use Tests\TestCase;
 
@@ -28,10 +30,14 @@ class GameServerConnectionSettingsTest extends TestCase
     {
         LoginServer::query()->create($this->loginServerValues());
 
-        $this->actingAs($this->createAdmin(), 'admin')
-            ->get('/admin/settings/game-server')
-            ->assertOk()
-            ->assertSee('Подключение к базе GameServer')
+        $admin = $this->createAdmin();
+        $gameServer = GameServer::query()->firstOrFail();
+        $this->actingAs($admin, 'admin');
+
+        Livewire::test(GameServerManager::class)
+            ->call('edit', $gameServer->id)
+            ->set('connectionEnabled', true)
+            ->assertSee('Подключение к базе данных')
             ->assertSee('L2J Mobius — CT0 Interlude')
             ->assertSee('RUSaCis')
             ->assertSee('Использовать параметры базы выбранного LoginServer');

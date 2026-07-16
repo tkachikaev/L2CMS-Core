@@ -18,7 +18,7 @@ Password requirements:
 - uppercase and lowercase letters;
 - at least one number.
 
-The password is stored using the configured Laravel hasher. L2Forge CMS defaults to Argon2id.
+The password is stored using the configured Laravel hasher. The default `auto` mode prefers Argon2id and falls back to bcrypt only when the active PHP build does not provide Argon2id.
 
 ## Routes
 

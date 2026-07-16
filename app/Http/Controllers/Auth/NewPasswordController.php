@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\PasswordChangedNotification;
+use App\Rules\PasswordWithinHasherLimit;
 use App\Services\AuditLogger;
 use App\Services\MailSettings;
 use Illuminate\Auth\Events\PasswordReset;
@@ -38,7 +39,7 @@ class NewPasswordController extends Controller
         $validated = $request->validate([
             'token' => ['required', 'string'],
             'email' => ['required', 'email:rfc', 'max:255'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers(), new PasswordWithinHasherLimit],
         ], [
             'email.required' => __('Enter an email address.'),
             'email.email' => __('The email address is invalid.'),

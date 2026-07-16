@@ -19,7 +19,19 @@ class CreateGameAccountRequest extends FormRequest
         return [
             'game_server_id' => ['required', 'integer', 'exists:game_servers,id'],
             'game_login' => ['required', 'string'],
-            'game_password' => ['required', 'string', 'confirmed'],
+            'game_password' => ['required', 'string'],
+            'game_password_confirmation' => ['required', 'string', 'same:game_password'],
+        ];
+    }
+
+    /** @return array<string,string> */
+    public function attributes(): array
+    {
+        return [
+            'game_server_id' => __('Game server'),
+            'game_login' => __('Game login'),
+            'game_password' => __('Game password'),
+            'game_password_confirmation' => __('Repeat game password'),
         ];
     }
 

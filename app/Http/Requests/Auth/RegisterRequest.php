@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Rules\PasswordWithinHasherLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -27,7 +28,7 @@ class RegisterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:3', 'max:32', 'alpha_dash:ascii', 'unique:users,name'],
             'email' => ['required', 'string', 'lowercase', 'email:rfc', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers(), new PasswordWithinHasherLimit],
         ];
     }
 

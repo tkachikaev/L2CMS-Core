@@ -1,0 +1,265 @@
+<div class="server-manager">
+    @if($status)
+        <div class="notice notice-success" role="status">{{ $status }}</div>
+    @endif
+
+    <div class="server-manager-toolbar">
+        <div>
+            <span>{{ __('Game server count') }}</span>
+            <strong>{{ count($servers) }}</strong>
+        </div>
+        <button class="button button-primary" type="button" wire:click="create">+ {{ __('Add game server') }}</button>
+    </div>
+
+    @if($servers === [])
+        <div class="empty-state">
+            <div class="empty-state-mark" aria-hidden="true">S</div>
+            <h2>{{ __('No game servers added') }}</h2>
+            <p>{{ __('Add the first game world. The server block is hidden in the default theme while the list is empty.') }}</p>
+        </div>
+    @else
+        <div class="server-card-grid">
+            @foreach($servers as $server)
+                @php
+                    $driver = $server['driver'] !== null ? ($gameDrivers[$server['driver']] ?? null) : null;
+                    $cardTestResult = $cardTestResults[$server['id']] ?? null;
+                    $cardConfigured = $server['connection_configured']
+                        && (! is_array($cardTestResult) || $cardTestResult['state'] === 'success');
+                    $endpoint = $server['use_login_server_connection']
+                        ? $server['login_server_name']
+                        : trim($server['database_host'].':'.($server['database_port'] ?? '').' / '.$server['database_name'], ' /');
+                @endphp
+                <article class="server-summary-card" wire:key="game-server-{{ $server['id'] }}">
+                    <div class="server-summary-head">
+                        <div class="server-summary-icon" aria-hidden="true">G</div>
+                        <div class="server-summary-title">
+                            <h2>{{ $server['name'] }}</h2>
+                            <p>
+                                @foreach(array_filter([$server['rates'], $server['chronicle'], $server['mode']]) as $meta)
+                                    @if(!$loop->first) · @endif{{ $meta }}
+                                @endforeach
+                            </p>
+                        </div>
+                        <span @class(['status-badge', 'status-badge-success' => $cardConfigured, 'status-badge-muted' => ! $cardConfigured])>
+                            {{ $cardConfigured ? __('Configured') : __('Not configured') }}
+                        </span>
+                    </div>
+
+                    <dl class="server-summary-meta">
+                        <div>
+                            <dt>{{ __('Login server') }}</dt>
+                            <dd>{{ $server['login_server_name'] ?: __('Not selected') }}</dd>
+                        </div>
+                        <div>
+                            <dt>{{ __('GameServer driver') }}</dt>
+                            <dd>{{ $driver['label'] ?? __('Not selected') }}</dd>
+                        </div>
+                        @if($server['connection_configured'])
+                            <div>
+                                <dt>{{ __('Database') }}</dt>
+                                <dd>{{ $endpoint ?: __('Inherited from login server') }}</dd>
+                            </div>
+                        @endif
+                        @if($server['database_password_saved'])
+                            <div>
+                                <dt>{{ __('Password') }}</dt>
+                                <dd>{{ __('A database password is saved.') }}</dd>
+                            </div>
+                        @endif
+                    </dl>
+
+                    @if(is_array($cardTestResult))
+                        <div @class(['server-card-test-result', 'success' => $cardTestResult['state'] === 'success', 'failed' => $cardTestResult['state'] !== 'success']) role="status">
+                            <span aria-hidden="true"></span>
+                            <strong>{{ $cardTestResult['message'] }}</strong>
+                        </div>
+                    @endif
+
+                    <div class="server-summary-actions">
+                        <button class="button button-secondary" type="button" wire:click="testStored({{ $server['id'] }})" wire:loading.attr="disabled" wire:target="testStored({{ $server['id'] }})" @disabled(!$server['connection_configured'])>
+                            <span wire:loading.remove wire:target="testStored({{ $server['id'] }})">{{ __('Test connection') }}</span>
+                            <span wire:loading wire:target="testStored({{ $server['id'] }})">{{ __('Checking…') }}</span>
+                        </button>
+                        <button class="button button-primary" type="button" wire:click="edit({{ $server['id'] }})">{{ __('Configure') }}</button>
+                        <details class="server-card-menu">
+                            <summary aria-label="{{ __('More actions') }}">⋯</summary>
+                            <button type="button" wire:click="confirmDelete({{ $server['id'] }})">{{ __('Delete') }}</button>
+                        </details>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+    @endif
+
+    <div @class(['server-drawer-backdrop', 'open' => $drawerOpen]) @if(!$drawerOpen) hidden @endif wire:cloak wire:pointerdown.self="closeDrawer">
+        <section class="server-drawer server-drawer-wide" role="dialog" aria-modal="true" aria-labelledby="game-server-drawer-title">
+            <header class="server-drawer-header">
+                <div>
+                    <span>{{ $editingId === null ? __('New game server') : __('Game server settings') }}</span>
+                    <h2 id="game-server-drawer-title">{{ $editingId === null ? __('Add game server') : ($translations[$defaultLocale] ?? __('Game server')) }}</h2>
+                </div>
+                <button class="server-drawer-close" type="button" wire:click="closeDrawer" aria-label="{{ __('Close') }}">×</button>
+            </header>
+
+            <div class="server-drawer-body">
+                <section class="server-drawer-section">
+                    <div class="server-drawer-section-title">
+                        <h3>{{ __('General') }}</h3>
+                        <p>{{ __('Public name and characteristics of the game world.') }}</p>
+                    </div>
+
+                    <div class="server-language-grid">
+                        @foreach($languages as $code => $language)
+                            <div class="form-group">
+                                <label for="live_game_name_{{ $code }}">
+                                    {{ __('Server name') }} — {{ $language['native_name'] }}
+                                    @if($code === $defaultLocale)<span class="compact-default-badge">{{ __('Default locale marker') }}</span>@endif
+                                </label>
+                                <input id="live_game_name_{{ $code }}" type="text" maxlength="100" wire:model="translations.{{ $code }}" @if($code === $defaultLocale) required @endif>
+                                @error('translations.'.$code)<small class="field-error">{{ $message }}</small>@enderror
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="server-form-grid server-form-grid-three">
+                        <div class="form-group">
+                            <label for="live_game_rates">{{ __('Server rates') }}</label>
+                            <input id="live_game_rates" type="text" maxlength="100" wire:model="serverRates" placeholder="x5">
+                            @error('serverRates')<small class="field-error">{{ $message }}</small>@enderror
+                        </div>
+                        <div class="form-group">
+                            <label for="live_game_chronicle">{{ __('Chronicle') }}</label>
+                            <input id="live_game_chronicle" type="text" maxlength="100" wire:model="serverChronicle" placeholder="Interlude">
+                            @error('serverChronicle')<small class="field-error">{{ $message }}</small>@enderror
+                        </div>
+                        <div class="form-group">
+                            <label for="live_game_mode">{{ __('Mode') }}</label>
+                            <input id="live_game_mode" type="text" maxlength="100" wire:model="serverMode" placeholder="PvP, PvE, Craft">
+                            @error('serverMode')<small class="field-error">{{ $message }}</small>@enderror
+                        </div>
+                    </div>
+                </section>
+
+                <section class="server-drawer-section">
+                    <label class="server-connection-enable">
+                        <span>
+                            <strong>{{ __('Database connection') }}</strong>
+                            <small>{{ __('Connect this game world to an external GameServer database.') }}</small>
+                        </span>
+                        <span class="switch-control">
+                            <input type="checkbox" wire:model.live="connectionEnabled">
+                            <span></span>
+                        </span>
+                    </label>
+
+                    @if($connectionEnabled)
+                        @if($loginServers->isEmpty())
+                            <div class="settings-disabled-notice">
+                                {{ __('Create a login server first, then return here to configure the game server database.') }}
+                                <a href="{{ route('admin.settings.login-server') }}">{{ __('Open login servers') }}</a>
+                            </div>
+                        @else
+                            <div class="server-form-grid">
+                                <div class="form-group">
+                                    <label for="live_game_login_server">{{ __('Login server') }}</label>
+                                    <select id="live_game_login_server" wire:model="loginServerId" required>
+                                        <option value="">— {{ __('Select login server') }} —</option>
+                                        @foreach($loginServers as $loginServer)
+                                            <option value="{{ $loginServer->id }}">{{ $loginServer->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('loginServerId')<small class="field-error">{{ $message }}</small>@enderror
+                                </div>
+                                <div class="form-group">
+                                    <label for="live_game_driver">{{ __('GameServer driver') }}</label>
+                                    <select id="live_game_driver" wire:model="driver" required>
+                                        @foreach($gameDrivers as $key => $driverOption)
+                                            <option value="{{ $key }}">{{ $driverOption['label'] }}@if(!$driverOption['ready']) — {{ __('placeholder') }}@endif</option>
+                                        @endforeach
+                                    </select>
+                                    @error('driver')<small class="field-error">{{ $message }}</small>@enderror
+                                </div>
+                            </div>
+
+                            <label class="server-connection-toggle compact-toggle">
+                                <input type="checkbox" wire:model.live="useLoginServerConnection">
+                                <span>
+                                    <strong>{{ __('Use the selected LoginServer database parameters') }}</strong>
+                                    <small>{{ __('Host, port, database, user, password and charset will be taken from the LoginServer.') }}</small>
+                                </span>
+                            </label>
+
+                            @if(!$useLoginServerConnection)
+                                <div class="server-form-grid">
+                                    <div class="form-group">
+                                        <label for="live_game_host">{{ __('Database host') }}</label>
+                                        <input id="live_game_host" type="text" maxlength="255" wire:model="databaseHost">
+                                        @error('databaseHost')<small class="field-error">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="form-group server-form-port">
+                                        <label for="live_game_port">{{ __('Database port') }}</label>
+                                        <input id="live_game_port" type="number" min="1" max="65535" wire:model="databasePort">
+                                        @error('databasePort')<small class="field-error">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="live_game_database">{{ __('Database name') }}</label>
+                                        <input id="live_game_database" type="text" maxlength="64" wire:model="databaseName">
+                                        @error('databaseName')<small class="field-error">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="live_game_username">{{ __('Database username') }}</label>
+                                        <input id="live_game_username" type="text" maxlength="128" autocomplete="off" wire:model="databaseUsername">
+                                        @error('databaseUsername')<small class="field-error">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="live_game_password">{{ __('Database password') }}</label>
+                                        <input id="live_game_password" type="password" maxlength="1024" autocomplete="new-password" wire:model="databasePassword">
+                                        <small>{{ $editingId !== null ? __('Leave empty to keep the saved database password.') : __('The password is encrypted with APP_KEY before it is stored.') }}</small>
+                                        @error('databasePassword')<small class="field-error">{{ $message }}</small>@enderror
+                                    </div>
+                                    <div class="form-group server-form-charset">
+                                        <label for="live_game_charset">{{ __('Database charset') }}</label>
+                                        <select id="live_game_charset" wire:model="databaseCharset">
+                                            @foreach(['utf8mb4', 'utf8', 'latin1', 'cp1251'] as $charset)
+                                                <option value="{{ $charset }}">{{ $charset }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('databaseCharset')<small class="field-error">{{ $message }}</small>@enderror
+                                    </div>
+                                </div>
+                            @endif
+
+                            @include('livewire.admin._database-report', ['report' => $connectionReport])
+                        @endif
+                    @endif
+                </section>
+            </div>
+
+            <footer class="server-drawer-footer">
+                @if($connectionEnabled && !$loginServers->isEmpty())
+                    <button class="button button-secondary" type="button" wire:click="testConnection" wire:loading.attr="disabled" wire:target="testConnection">
+                        <span wire:loading.remove wire:target="testConnection">{{ __('Test connection') }}</span>
+                        <span wire:loading wire:target="testConnection">{{ __('Checking…') }}</span>
+                    </button>
+                @endif
+                <button class="button button-primary" type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save">
+                    <span wire:loading.remove wire:target="save">{{ __('Save changes') }}</span>
+                    <span wire:loading wire:target="save">{{ __('Saving…') }}</span>
+                </button>
+            </footer>
+        </section>
+    </div>
+
+    @if($confirmingDeleteId !== null)
+        <div class="server-confirm-backdrop" wire:cloak>
+            <div class="server-confirm-card" role="alertdialog" aria-modal="true">
+                <h2>{{ __('Delete game server?') }}</h2>
+                <p>{{ __('The server will be removed from settings and the public website. This action cannot be undone.') }}</p>
+                <div>
+                    <button class="button button-secondary" type="button" wire:click="cancelDelete">{{ __('Cancel') }}</button>
+                    <button class="button button-danger" type="button" wire:click="delete">{{ __('Delete') }}</button>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>

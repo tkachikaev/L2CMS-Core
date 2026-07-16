@@ -29,7 +29,7 @@ class LoginServerSettingsTest extends TestCase
         $this->actingAs($this->createAdmin(), 'admin')
             ->get('/admin/settings/login-server')
             ->assertOk()
-            ->assertSee('Логин-серверы')
+            ->assertSee('Логин серверы')
             ->assertSee('L2J Mobius')
             ->assertSee('RUSaCis')
             ->assertSee('заглушка')

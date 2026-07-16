@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'Continue'
+$ErrorActionPreference = 'Continue'
 
 $scriptFile = $PSCommandPath
 if ([string]::IsNullOrWhiteSpace($scriptFile)) {
@@ -168,6 +168,8 @@ $appUrl = Get-EnvValue -Path $envPath -Name 'APP_URL' -Default 'http://127.0.0.1
 $appForceHttps = ConvertTo-EnvBoolean (Get-EnvValue -Path $envPath -Name 'APP_FORCE_HTTPS' -Default 'false')
 $sessionSecureCookie = ConvertTo-EnvBoolean (Get-EnvValue -Path $envPath -Name 'SESSION_SECURE_COOKIE' -Default 'false')
 $logLevel = (Get-EnvValue -Path $envPath -Name 'LOG_LEVEL' -Default 'debug').ToLowerInvariant()
+$hashDriver = (Get-EnvValue -Path $envPath -Name 'HASH_DRIVER' -Default 'auto').ToLowerInvariant()
+$hashVerify = ConvertTo-EnvBoolean (Get-EnvValue -Path $envPath -Name 'HASH_VERIFY' -Default 'true')
 
 $phpCommand = Get-Command php -ErrorAction SilentlyContinue
 Test-ItemStatus 'PHP command' ($null -ne $phpCommand) $(if ($phpCommand) { $phpCommand.Source } else { 'not found in PATH' })
@@ -196,6 +198,49 @@ if ($phpCommand) {
     $loadedExtensions = & php -r "echo implode(PHP_EOL, get_loaded_extensions());"
     foreach ($extension in $requiredExtensions) {
         Test-ItemStatus "PHP extension $extension" ($loadedExtensions -contains $extension) $(if ($loadedExtensions -contains $extension) { 'loaded' } else { 'missing' })
+    }
+
+    $passwordAlgorithms = & php -r "echo implode(PHP_EOL, password_algos());"
+    $algorithmCommandOk = $LASTEXITCODE -eq 0
+    $effectiveHashDriver = $hashDriver
+
+    if ($hashDriver -eq 'auto') {
+        if ($algorithmCommandOk -and ($passwordAlgorithms -contains 'argon2id')) {
+            $effectiveHashDriver = 'argon2id'
+        } elseif ($algorithmCommandOk -and ($passwordAlgorithms -contains '2y')) {
+            $effectiveHashDriver = 'bcrypt'
+        } else {
+            $effectiveHashDriver = ''
+        }
+    }
+
+    $hashAlgorithm = switch ($effectiveHashDriver) {
+        'bcrypt' { '2y' }
+        'argon' { 'argon2i' }
+        'argon2id' { 'argon2id' }
+        default { $null }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($hashAlgorithm)) {
+        Test-ItemStatus 'Password hashing' $false "unsupported HASH_DRIVER=$hashDriver; use auto, bcrypt, argon or argon2id"
+    } else {
+        $hashSupported = $algorithmCommandOk -and ($passwordAlgorithms -contains $hashAlgorithm)
+        if ($hashDriver -eq 'auto' -and $effectiveHashDriver -eq 'bcrypt' -and $hashSupported) {
+            Write-WarningStatus 'Password hashing' 'auto selected bcrypt because this PHP executable does not provide argon2id; check php --ini and whether the sodium extension is loaded'
+        } else {
+            $hashDetails = if ($hashSupported) {
+                if ($hashDriver -eq 'auto') { "auto selected $effectiveHashDriver" } else { "$effectiveHashDriver is supported" }
+            } else {
+                "$effectiveHashDriver is unavailable in this PHP executable"
+            }
+            Test-ItemStatus 'Password hashing' $hashSupported $hashDetails
+        }
+    }
+
+    if (-not $hashVerify) {
+        Write-WarningStatus 'Hash algorithm verification' 'HASH_VERIFY=false allows mixed bcrypt/Argon hashes during migration; restore HASH_VERIFY=true after legacy hashes have been upgraded or reset'
+    } else {
+        Test-ItemStatus 'Hash algorithm verification' $true 'strict algorithm verification is enabled'
     }
 }
 

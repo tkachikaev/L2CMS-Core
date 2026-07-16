@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Rules\PasswordWithinHasherLimit;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -132,6 +133,7 @@ class AdministratorController extends Controller
                     'string',
                     'confirmed',
                     Password::min(12)->letters()->mixedCase()->numbers(),
+                    new PasswordWithinHasherLimit,
                     'max:4096',
                 ],
             ],
@@ -273,6 +275,7 @@ class AdministratorController extends Controller
                 'string',
                 'confirmed',
                 Password::min(12)->letters()->mixedCase()->numbers(),
+                new PasswordWithinHasherLimit,
                 'max:4096',
             ];
         }

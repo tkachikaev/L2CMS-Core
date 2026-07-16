@@ -1,4 +1,4 @@
-﻿param(
+param(
     [switch]$SkipTests
 )
 
@@ -26,6 +26,72 @@ function Write-Utf8NoBom {
 
     $utf8 = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText((Resolve-Path $Path), $Content, $utf8)
+}
+
+function Set-EnvValue {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+
+    $content = [System.IO.File]::ReadAllText((Resolve-Path $Path))
+    $pattern = '(?m)^\s*' + [regex]::Escape($Name) + '\s*=.*$'
+    $replacement = "$Name=$Value"
+
+    if ([regex]::IsMatch($content, $pattern)) {
+        $content = [regex]::Replace($content, $pattern, $replacement)
+    } else {
+        $content = $content.TrimEnd([char[]]"`r`n") + [Environment]::NewLine + $replacement + [Environment]::NewLine
+    }
+
+    Write-Utf8NoBom -Path $Path -Content $content
+}
+
+function Get-PasswordAlgorithmName {
+    param([string]$Driver)
+
+    switch ($Driver.Trim().ToLowerInvariant()) {
+        'bcrypt' { return '2y' }
+        'argon' { return 'argon2i' }
+        'argon2id' { return 'argon2id' }
+        default { return $null }
+    }
+}
+
+function Test-PasswordHashDriver {
+    param([string]$Driver)
+
+    $algorithm = Get-PasswordAlgorithmName -Driver $Driver
+    if ([string]::IsNullOrWhiteSpace($algorithm)) {
+        return $false
+    }
+
+    $output = & php -r "echo in_array('$algorithm', password_algos(), true) ? '1' : '0';"
+    if ($LASTEXITCODE -ne 0) {
+        return $false
+    }
+
+    $result = ([string]$output).Trim()
+    return $result -eq '1'
+}
+
+function Resolve-PasswordHashDriver {
+    param([string]$Driver)
+
+    $requested = $Driver.Trim().ToLowerInvariant()
+    if ($requested -eq 'auto') {
+        if (Test-PasswordHashDriver -Driver 'argon2id') { return 'argon2id' }
+        if (Test-PasswordHashDriver -Driver 'bcrypt') { return 'bcrypt' }
+
+        return $null
+    }
+
+    if (Test-PasswordHashDriver -Driver $requested) {
+        return $requested
+    }
+
+    return $null
 }
 
 function Ensure-Directory {
@@ -190,6 +256,27 @@ if ($fixedEnvContent -ne $envContent) {
     Write-Host 'Updated legacy values in .env.'
 }
 
+$hashDriver = (Get-EnvValue -Path '.env' -Name 'HASH_DRIVER' -Default 'auto').ToLowerInvariant()
+$knownHashDrivers = @('auto', 'bcrypt', 'argon', 'argon2id')
+if ($knownHashDrivers -notcontains $hashDriver) {
+    throw "Unsupported HASH_DRIVER: $hashDriver. Use auto, bcrypt, argon or argon2id."
+}
+
+$effectiveHashDriver = Resolve-PasswordHashDriver -Driver $hashDriver
+if ([string]::IsNullOrWhiteSpace($effectiveHashDriver)) {
+    if ($hashDriver -eq 'argon' -or $hashDriver -eq 'argon2id') {
+        throw "HASH_DRIVER=$hashDriver is not supported by this PHP executable. Argon2 support is compiled into PHP or supplied by its sodium implementation; it is not a Composer package. Check: php -r `"print_r(password_algos());`", php --ini, and php -m | findstr /I sodium."
+    }
+
+    throw "No supported password hashing algorithm is available in this PHP executable."
+}
+
+if ($hashDriver -eq 'auto' -and $effectiveHashDriver -eq 'bcrypt') {
+    Write-Host '[WARN] Argon2id is unavailable in this PHP executable; HASH_DRIVER=auto selected bcrypt. Use a PHP build whose password_algos() contains argon2id to use Argon2id.' -ForegroundColor Yellow
+}
+
+Write-Host "Password hashing: $effectiveHashDriver (requested: $hashDriver)"
+
 $dbConnection = (Get-EnvValue -Path '.env' -Name 'DB_CONNECTION' -Default 'sqlite').ToLowerInvariant()
 if ($dbConnection -eq 'sqlite') {
     $configuredDatabasePath = Get-EnvValue -Path '.env' -Name 'DB_DATABASE' -Default 'database/database.sqlite'
@@ -201,7 +288,7 @@ if ($dbConnection -eq 'sqlite') {
 
     Ensure-Directory ([System.IO.Path]::GetDirectoryName($sqlitePath))
     if (-not (Test-Path -LiteralPath $sqlitePath -PathType Leaf)) {
-        New-Item -LiteralPath $sqlitePath -ItemType File -Force | Out-Null
+        New-Item -Path $sqlitePath -ItemType File -Force | Out-Null
         Write-Host "Created SQLite database file: $configuredDatabasePath"
     }
 }

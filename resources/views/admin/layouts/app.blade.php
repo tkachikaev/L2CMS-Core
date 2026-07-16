@@ -12,6 +12,7 @@
 </head>
 <body class="admin-body">
     @yield('body')
+    @stack('framework-scripts')
     <script src="{{ asset('assets/admin/js/navigation.js') }}?v={{ cms_version() }}" defer></script>
     @stack('scripts')
 </body>

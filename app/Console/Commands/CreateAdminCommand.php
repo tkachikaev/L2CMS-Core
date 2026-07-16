@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Admin;
+use App\Rules\PasswordWithinHasherLimit;
 use App\Services\Localization\LanguageManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -43,6 +44,7 @@ class CreateAdminCommand extends Command
                 'required',
                 'confirmed',
                 Password::min(12)->letters()->mixedCase()->numbers(),
+                new PasswordWithinHasherLimit,
             ],
         ]);
 

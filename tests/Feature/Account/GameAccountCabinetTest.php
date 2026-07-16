@@ -94,6 +94,63 @@ class GameAccountCabinetTest extends TestCase
             ->assertDontSee($loginServer->name);
     }
 
+    public function test_game_account_forms_render_floating_validation_errors_for_matching_fields(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+
+        $this->actingAs($user)->post('/account/game-accounts', [
+            'game_server_id' => '',
+            'game_login' => '',
+            'game_password' => 'NewStrong1',
+            'game_password_confirmation' => 'Different1',
+        ])->assertSessionHasErrors([
+            'game_server_id',
+            'game_login',
+            'game_password_confirmation',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/account/game-accounts/create')
+            ->assertOk()
+            ->assertSee('game-server-error', false)
+            ->assertSee('game-login-error', false)
+            ->assertSee('game-password-confirmation-error', false)
+            ->assertSee('class="account-field-control"', false)
+            ->assertSee('role="alert"', false)
+            ->assertDontSee('<div class="account-notice error"', false);
+
+        $account = UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'InlineErrors01',
+            'normalized_login' => 'inlineerrors01',
+        ]);
+
+        $this->actingAs($user)->put('/account/game-accounts/'.$account->id.'/password', [
+            'current_password' => '',
+            'game_password' => 'NewStrong1',
+            'game_password_confirmation' => 'Different1',
+        ])->assertSessionHasErrors([
+            'current_password',
+            'game_password_confirmation',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/account/game-accounts/'.$account->id)
+            ->assertOk()
+            ->assertSee('current-password-error', false)
+            ->assertSee('new-game-password-confirmation-error', false)
+            ->assertSee('class="account-field-control"', false)
+            ->assertSee('role="alert"', false)
+            ->assertDontSee('<div class="account-notice error"', false);
+
+        $accountCss = file_get_contents(public_path('assets/account/css/app.css'));
+        $this->assertIsString($accountCss);
+        $this->assertStringContainsString('.account-field-control>.account-field-error{position:absolute', $accountCss);
+    }
+
     public function test_player_can_create_a_mobius_account_from_a_selected_game_server(): void
     {
         $user = $this->user();

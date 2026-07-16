@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\AdminLoginLog;
 use App\Models\AuditLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -52,6 +53,33 @@ class AdminAuthenticationTest extends TestCase
             'admin_id' => $admin->id,
             'successful' => true,
         ]);
+    }
+
+    public function test_successful_admin_login_rehashes_a_legacy_bcrypt_password_to_argon2id(): void
+    {
+        if (! in_array('argon2id', password_algos(), true)) {
+            $this->markTestSkipped('Argon2id is unavailable in this PHP build.');
+        }
+
+        config()->set('hashing.driver', 'argon2id');
+        config()->set('hashing.argon.verify', false);
+        app('hash')->forgetDrivers();
+
+        $admin = $this->createAdmin();
+        $legacyHash = password_hash('CorrectPassword123', PASSWORD_BCRYPT, ['cost' => 4]);
+
+        DB::table('admins')
+            ->where('id', $admin->getKey())
+            ->update(['password' => $legacyHash]);
+
+        $this->assertSame('bcrypt', password_get_info($admin->fresh()->password)['algoName']);
+
+        $this->post('/admin/login', [
+            'email' => $admin->email,
+            'password' => 'CorrectPassword123',
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $this->assertSame('argon2id', password_get_info($admin->fresh()->password)['algoName']);
     }
 
     public function test_invalid_password_is_rejected_and_logged(): void

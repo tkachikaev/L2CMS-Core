@@ -72,6 +72,13 @@ class AuthenticatedSessionController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
+
+        if (config('hashing.rehash_on_login', true) && Hash::needsRehash($admin->password)) {
+            $admin->forceFill([
+                'password' => Hash::make((string) $validated['password']),
+            ])->save();
+        }
+
         $remember = (bool) ($validated['remember'] ?? false);
 
         if ($admin->twoFactorEnabled()) {

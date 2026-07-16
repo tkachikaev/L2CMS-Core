@@ -7,7 +7,6 @@ use App\Http\Requests\Admin\SaveLoginServerRequest;
 use App\Models\LoginServer;
 use App\Services\AuditLogger;
 use App\Services\Servers\ServerConnectionTester;
-use App\Services\Servers\ServerDriverRegistry;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -17,13 +16,9 @@ class LoginServerController extends Controller
 {
     public function __construct(private readonly AuditLogger $auditLogger) {}
 
-    public function index(ServerDriverRegistry $drivers): View
+    public function index(): View
     {
-        return view('admin.settings.login-server', [
-            'servers' => LoginServer::query()->withCount(['gameServers', 'userGameAccounts'])->orderBy('id')->get(),
-            'drivers' => $drivers->loginDrivers(),
-            'report' => session('database_connection_report'),
-        ]);
+        return view('admin.settings.login-server');
     }
 
     public function store(

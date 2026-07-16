@@ -44,8 +44,8 @@ class AdminGameServerSettingsTest extends TestCase
             ->assertSee('Рейты сервера')
             ->assertSee('Хроники')
             ->assertSee('Режим')
-            ->assertSee('Подключение к базе GameServer')
-            ->assertSee('Сначала создайте LoginServer');
+            ->assertSee('Подключение к базе данных')
+            ->assertSee('Настроить');
     }
 
     public function test_admin_can_update_server_and_leave_rates_and_chronicle_empty(): void

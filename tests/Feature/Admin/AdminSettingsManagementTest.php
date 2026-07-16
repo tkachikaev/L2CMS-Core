@@ -47,7 +47,7 @@ class AdminSettingsManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Основные')
             ->assertSee('Игровые серверы')
-            ->assertSee('Логин-серверы')
+            ->assertSee('Логин серверы')
             ->assertSee('© 2026 L2Forge-CMS')
             ->assertSee('translation-tab-label', false)
             ->assertSee('translation-tab-default', false)
@@ -192,8 +192,8 @@ class AdminSettingsManagementTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->get('/admin/settings/login-server')
             ->assertOk()
-            ->assertSee('Логин-серверы')
-            ->assertSee('Добавить LoginServer')
+            ->assertSee('Логин серверы')
+            ->assertSee('Добавить логин сервер')
             ->assertSee('L2J Mobius')
             ->assertSee('RUSaCis');
     }

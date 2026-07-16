@@ -46,7 +46,7 @@
                 <span>{{ __('Game servers') }}</span>
             </a>
             <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.settings.login-server*')]) href="{{ route('admin.settings.login-server') }}">
-                <span>{{ __('LoginServers') }}</span>
+                <span>{{ __('Login servers') }}</span>
             </a>
             <a @class(['admin-menu-item', 'active' => request()->routeIs('admin.settings.game-accounts*')]) href="{{ route('admin.settings.game-accounts') }}">
                 <span>{{ __('Game accounts') }}</span>

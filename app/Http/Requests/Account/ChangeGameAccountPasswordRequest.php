@@ -18,7 +18,18 @@ class ChangeGameAccountPasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string'],
-            'game_password' => ['required', 'string', 'confirmed'],
+            'game_password' => ['required', 'string'],
+            'game_password_confirmation' => ['required', 'string', 'same:game_password'],
+        ];
+    }
+
+    /** @return array<string,string> */
+    public function attributes(): array
+    {
+        return [
+            'current_password' => __('Current personal account password'),
+            'game_password' => __('New game password'),
+            'game_password_confirmation' => __('Repeat game password'),
         ];
     }
 
