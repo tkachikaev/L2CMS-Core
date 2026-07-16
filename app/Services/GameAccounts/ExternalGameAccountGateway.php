@@ -27,7 +27,7 @@ final class ExternalGameAccountGateway implements GameAccountGateway
 
     public function supportsLoginServer(LoginServer $loginServer): bool
     {
-        return $loginServer->driver === 'l2j_mobius';
+        return in_array($loginServer->driver, ['l2j_mobius', 'l2j_mobius_legacy'], true);
     }
 
     public function supportsGameServer(GameServer $gameServer): bool

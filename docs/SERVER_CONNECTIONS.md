@@ -25,7 +25,8 @@ database_charset
 
 Поддерживаемые драйверы:
 
-- `l2j_mobius` — рабочая проверка таблиц `accounts`, `account_data` и `accounts_ipauth`;
+- `l2j_mobius` — `L2J Mobius — Interlude и новее`; таблица `accounts` обязательна, `account_data` и `accounts_ipauth` проверяются как необязательные;
+- `l2j_mobius_legacy` — `L2J Mobius Legacy — C1/C4`; используется только таблица `accounts`;
 - `rusacis` — заглушка: соединение с MariaDB/MySQL проверяется, но таблицы сборки пока не анализируются.
 
 Один LoginServer может использоваться несколькими игровыми мирами. Удаление запрещено, пока на него ссылается хотя бы один GameServer или игровой аккаунт пользователя CMS. Удаление выполняется транзакционно с блокировкой записи и дополнительно защищено внешними ключами базы CMS.
@@ -70,7 +71,7 @@ Use LoginServer database connection
 
 Проверка ничего не создаёт и не изменяет во внешней базе.
 
-Для Mobius LoginServer обязательна таблица `accounts`. `account_data` и `accounts_ipauth` отмечаются как дополнительные возможности.
+Для современного Mobius LoginServer (`l2j_mobius`) обязательна таблица `accounts`. `account_data` и `accounts_ipauth` отмечаются как дополнительные таблицы. Legacy-драйвер (`l2j_mobius_legacy`) для C1/C4 проверяет только `accounts` и не требует присутствия остальных таблиц.
 
 Для Mobius CT0 Interlude GameServer обязательна таблица `characters`, включая колонку даты создания персонажа `createDate`. `account_gsdata` и `account_premium` считаются дополнительными.
 
@@ -124,7 +125,7 @@ game_server.connection_tested
 
 ## Текущие ограничения
 
-Личный кабинет поддерживает создание и просмотр аккаунтов Mobius CT0 Interlude, персонажей и смену пароля. Пока не реализованы:
+Операции LoginServer с таблицей `accounts` поддерживают оба драйвера Mobius: современный `l2j_mobius` и Legacy `l2j_mobius_legacy`. Просмотр персонажей пока реализован только для GameServer `l2j_mobius_ct0_interlude`. Пока не реализованы:
 
 - привязка существующих игровых аккаунтов;
 - административное редактирование игровых данных;

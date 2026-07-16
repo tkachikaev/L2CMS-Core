@@ -17,7 +17,7 @@
 - [x] переводы новостей, настроек сайта, названий серверов и писем
 - [x] подключаемые языковые пакеты
 - [x] отдельные подключения LoginServer и GameServer
-- [x] проверка схемы L2J Mobius LoginServer и CT0 Interlude GameServer
+- [x] проверка схемы L2J Mobius LoginServer Legacy C1/C4, LoginServer Interlude+ и CT0 Interlude GameServer
 - [x] заглушки драйверов RUSaCis
 
 ## Следующий этап — Система модулей

@@ -75,7 +75,8 @@ sort_order  — порядок отображения
 Рабочие драйверы версии 0.12.0:
 
 ```text
-LoginServer: L2J Mobius
+LoginServer: L2J Mobius — Interlude и новее
+или:        L2J Mobius Legacy — C1/C4
 GameServer:  L2J Mobius — CT0 Interlude
 ```
 

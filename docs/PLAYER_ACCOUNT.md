@@ -73,6 +73,6 @@ L2Forge CMS использует три независимые зоны:
 
 ## Ограничения первой версии
 
-Поддерживается драйвер `L2J Mobius` и GameServer `L2J Mobius — CT0 Interlude`.
+Для LoginServer поддерживаются `L2J Mobius Legacy — C1/C4` и `L2J Mobius — Interlude и новее`. Просмотр персонажей поддерживается GameServer-драйвером `L2J Mobius — CT0 Interlude`.
 
 RUSaCis остаётся заглушкой и не предлагается игрокам для создания аккаунтов до добавления контракта его таблиц.

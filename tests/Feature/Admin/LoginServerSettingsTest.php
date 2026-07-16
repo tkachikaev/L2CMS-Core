@@ -30,7 +30,8 @@ class LoginServerSettingsTest extends TestCase
             ->get('/admin/settings/login-server')
             ->assertOk()
             ->assertSee('Логин серверы')
-            ->assertSee('L2J Mobius')
+            ->assertSee('L2J Mobius — Interlude и новее')
+            ->assertSee('L2J Mobius Legacy — C1/C4')
             ->assertSee('RUSaCis')
             ->assertSee('заглушка')
             ->assertSee('Хост базы данных')
@@ -96,6 +97,32 @@ class LoginServerSettingsTest extends TestCase
         $this->assertSame('SecretDatabasePassword', $fake->connection['password'] ?? null);
         $this->assertTrue($fake->driverReady);
         $this->assertSame('accounts', $fake->requirements[0]['table'] ?? null);
+    }
+
+    public function test_legacy_mobius_connection_check_requires_only_accounts_table(): void
+    {
+        $fake = new FakeExternalDatabaseConnectionTester;
+        $this->app->instance(ExternalDatabaseConnectionTester::class, $fake);
+        $payload = $this->payload();
+        $payload['connection_action'] = 'test';
+        $payload['driver'] = 'l2j_mobius_legacy';
+
+        $this->actingAs($this->createAdmin(), 'admin')
+            ->post(route('admin.settings.login-server.store'), $payload)
+            ->assertRedirect(route('admin.settings.login-server').'#login-server-create')
+            ->assertSessionHas('database_connection_report', fn (array $report): bool => $report['driver'] === 'l2j_mobius_legacy'
+                && $report['driver_ready'] === true
+                && $report['driver_label'] === 'L2J Mobius Legacy — C1/C4'
+            );
+
+        $this->assertTrue($fake->driverReady);
+        $this->assertSame([
+            [
+                'table' => 'accounts',
+                'columns' => ['login', 'password', 'email', 'created_time', 'lastactive', 'accessLevel', 'lastIP', 'lastServer'],
+                'required' => true,
+            ],
+        ], $fake->requirements);
     }
 
     public function test_failed_connection_test_is_reported_and_audited_without_saving(): void

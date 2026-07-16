@@ -16,8 +16,8 @@ final class ServerDriverRegistry
     {
         return [
             'l2j_mobius' => [
-                'label' => 'L2J Mobius',
-                'description' => __('L2J Mobius LoginServer accounts and IP authorization tables.'),
+                'label' => __('L2J Mobius — Interlude and newer'),
+                'description' => __('L2J Mobius LoginServer for Interlude and newer builds.'),
                 'ready' => true,
                 'requirements' => [
                     [
@@ -34,6 +34,18 @@ final class ServerDriverRegistry
                         'table' => 'accounts_ipauth',
                         'columns' => ['login', 'ip', 'type'],
                         'required' => false,
+                    ],
+                ],
+            ],
+            'l2j_mobius_legacy' => [
+                'label' => __('L2J Mobius Legacy — C1/C4'),
+                'description' => __('L2J Mobius legacy LoginServer for C1 and C4 builds.'),
+                'ready' => true,
+                'requirements' => [
+                    [
+                        'table' => 'accounts',
+                        'columns' => ['login', 'password', 'email', 'created_time', 'lastactive', 'accessLevel', 'lastIP', 'lastServer'],
+                        'required' => true,
                     ],
                 ],
             ],
