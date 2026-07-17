@@ -193,7 +193,10 @@ final class ThemeManager
 
     public function asset(string $path): string
     {
-        return asset('themes/'.$this->activeTheme.'/assets/'.ltrim($path, '/'));
+        $url = asset('themes/'.$this->activeTheme.'/assets/'.ltrim($path, '/'));
+        $version = trim((string) ($this->manifest['version'] ?? ''));
+
+        return $version !== '' ? $url.'?v='.rawurlencode($version) : $url;
     }
 
     /** @param array<string, mixed> $theme */

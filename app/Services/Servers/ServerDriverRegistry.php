@@ -70,6 +70,7 @@ final class ServerDriverRegistry
      *     service_port:int,
      *     character_created_at_column?:string|null,
      *     online_count?:array{table:string,column:string,value:int|string},
+     *     statistics?:list<string>,
      *     requirements:list<array{table:string,columns:list<string>,required:bool}>
      * }>
      */
@@ -87,6 +88,7 @@ final class ServerDriverRegistry
                     'column' => 'online',
                     'value' => 1,
                 ],
+                'statistics' => ['level', 'pvp', 'pk', 'play_time', 'heroes', 'castles'],
                 'requirements' => [
                     [
                         'table' => 'characters',
@@ -95,16 +97,39 @@ final class ServerDriverRegistry
                             'charId',
                             'char_name',
                             'level',
+                            'exp',
                             'classid',
+                            'race',
+                            'sex',
+                            'title',
                             'online',
+                            'onlinetime',
                             'accesslevel',
+                            'deletetime',
                             'pvpkills',
                             'pkkills',
+                            'karma',
+                            'nobless',
                             'clanid',
                             'lastAccess',
                             'createDate',
                         ],
                         'required' => true,
+                    ],
+                    [
+                        'table' => 'clan_data',
+                        'columns' => ['clan_id', 'clan_name', 'clan_level', 'reputation_score', 'hasCastle', 'leader_id'],
+                        'required' => true,
+                    ],
+                    [
+                        'table' => 'heroes',
+                        'columns' => ['charId', 'class_id', 'count', 'played', 'claimed'],
+                        'required' => false,
+                    ],
+                    [
+                        'table' => 'castle',
+                        'columns' => ['id', 'name'],
+                        'required' => false,
                     ],
                     [
                         'table' => 'account_gsdata',
@@ -146,7 +171,7 @@ final class ServerDriverRegistry
         return $this->loginDrivers()[$key] ?? null;
     }
 
-    /** @return array{label:string,description:string,ready:bool,service_port:int,character_created_at_column?:string|null,online_count?:array{table:string,column:string,value:int|string},requirements:list<array{table:string,columns:list<string>,required:bool}>}|null */
+    /** @return array{label:string,description:string,ready:bool,service_port:int,character_created_at_column?:string|null,online_count?:array{table:string,column:string,value:int|string},statistics?:list<string>,requirements:list<array{table:string,columns:list<string>,required:bool}>}|null */
     public function gameDriver(string $key): ?array
     {
         return $this->gameDrivers()[$key] ?? null;

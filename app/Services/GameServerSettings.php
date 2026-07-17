@@ -33,6 +33,14 @@ final class GameServerSettings
      *     maintenance_enabled: bool,
      *     maintenance_message: string,
      *     maintenance_messages: array<string,string>,
+     *     statistics_enabled:bool,
+     *     statistics_level_enabled:bool,
+     *     statistics_pvp_enabled:bool,
+     *     statistics_pk_enabled:bool,
+     *     statistics_play_time_enabled:bool,
+     *     statistics_heroes_enabled:bool,
+     *     statistics_castles_enabled:bool,
+     *     statistics_limit:int,
      *     login_server_id:int|null,
      *     login_server_name:string|null,
      *     driver:string|null,
@@ -75,7 +83,7 @@ final class GameServerSettings
         return $this->all($locale)[0] ?? null;
     }
 
-    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?:bool, maintenance_messages?:array<string,string>} $values */
+    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?: bool, maintenance_messages?:array<string,string>, statistics_enabled?: bool, statistics_level_enabled?: bool, statistics_pvp_enabled?: bool, statistics_pk_enabled?: bool, statistics_play_time_enabled?: bool, statistics_heroes_enabled?: bool, statistics_castles_enabled?: bool, statistics_limit?: int} $values */
     public function create(array $values): GameServer
     {
         $this->ensureTableExists();
@@ -90,6 +98,14 @@ final class GameServerSettings
                 'chronicle' => $this->nullableString($values['chronicle'] ?? null),
                 'mode' => $this->nullableString($values['mode'] ?? null),
                 'maintenance_enabled' => (bool) ($values['maintenance_enabled'] ?? false),
+                'statistics_enabled' => (bool) ($values['statistics_enabled'] ?? false),
+                'statistics_level_enabled' => (bool) ($values['statistics_level_enabled'] ?? true),
+                'statistics_pvp_enabled' => (bool) ($values['statistics_pvp_enabled'] ?? true),
+                'statistics_pk_enabled' => (bool) ($values['statistics_pk_enabled'] ?? true),
+                'statistics_play_time_enabled' => (bool) ($values['statistics_play_time_enabled'] ?? true),
+                'statistics_heroes_enabled' => (bool) ($values['statistics_heroes_enabled'] ?? true),
+                'statistics_castles_enabled' => (bool) ($values['statistics_castles_enabled'] ?? true),
+                'statistics_limit' => $this->statisticsLimit($values['statistics_limit'] ?? 50),
                 'sort_order' => $nextSortOrder,
             ]);
 
@@ -104,7 +120,7 @@ final class GameServerSettings
         });
     }
 
-    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?:bool, maintenance_messages?:array<string,string>} $values */
+    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?: bool, maintenance_messages?:array<string,string>, statistics_enabled?: bool, statistics_level_enabled?: bool, statistics_pvp_enabled?: bool, statistics_pk_enabled?: bool, statistics_play_time_enabled?: bool, statistics_heroes_enabled?: bool, statistics_castles_enabled?: bool, statistics_limit?: int} $values */
     public function update(GameServer $server, array $values): void
     {
         DB::transaction(function () use ($server, $values): void {
@@ -116,6 +132,14 @@ final class GameServerSettings
                 'chronicle' => $this->nullableString($values['chronicle'] ?? null),
                 'mode' => $this->nullableString($values['mode'] ?? null),
                 'maintenance_enabled' => (bool) ($values['maintenance_enabled'] ?? false),
+                'statistics_enabled' => (bool) ($values['statistics_enabled'] ?? $server->statistics_enabled),
+                'statistics_level_enabled' => (bool) ($values['statistics_level_enabled'] ?? $server->statistics_level_enabled),
+                'statistics_pvp_enabled' => (bool) ($values['statistics_pvp_enabled'] ?? $server->statistics_pvp_enabled),
+                'statistics_pk_enabled' => (bool) ($values['statistics_pk_enabled'] ?? $server->statistics_pk_enabled),
+                'statistics_play_time_enabled' => (bool) ($values['statistics_play_time_enabled'] ?? $server->statistics_play_time_enabled),
+                'statistics_heroes_enabled' => (bool) ($values['statistics_heroes_enabled'] ?? $server->statistics_heroes_enabled),
+                'statistics_castles_enabled' => (bool) ($values['statistics_castles_enabled'] ?? $server->statistics_castles_enabled),
+                'statistics_limit' => $this->statisticsLimit($values['statistics_limit'] ?? $server->statistics_limit),
             ]);
 
             $this->saveTranslations(
@@ -237,6 +261,14 @@ final class GameServerSettings
             'maintenance_enabled' => (bool) $server->maintenance_enabled,
             'maintenance_message' => $server->maintenanceMessageFor($locale),
             'maintenance_messages' => $maintenanceMessages,
+            'statistics_enabled' => (bool) $server->statistics_enabled,
+            'statistics_level_enabled' => (bool) $server->statistics_level_enabled,
+            'statistics_pvp_enabled' => (bool) $server->statistics_pvp_enabled,
+            'statistics_pk_enabled' => (bool) $server->statistics_pk_enabled,
+            'statistics_play_time_enabled' => (bool) $server->statistics_play_time_enabled,
+            'statistics_heroes_enabled' => (bool) $server->statistics_heroes_enabled,
+            'statistics_castles_enabled' => (bool) $server->statistics_castles_enabled,
+            'statistics_limit' => (int) $server->statistics_limit,
             'login_server_id' => $server->login_server_id,
             'login_server_name' => $server->loginServer?->name,
             'driver' => $server->driver,
@@ -310,6 +342,11 @@ final class GameServerSettings
     private function modeIsVisible(string $mode): bool
     {
         return $mode !== '' && mb_strtolower($mode) !== 'none';
+    }
+
+    private function statisticsLimit(mixed $value): int
+    {
+        return min(max((int) $value, 10), 100);
     }
 
     private function nullableString(?string $value): ?string

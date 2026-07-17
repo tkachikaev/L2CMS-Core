@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\CmsSettings;
+use App\Services\GameWorld\GameStatistics;
 use App\Services\Pages\PageNavigation;
 use App\Support\Themes\ThemeManager;
 use Illuminate\Filesystem\Filesystem;
@@ -27,7 +28,10 @@ class ThemeServiceProvider extends ServiceProvider
         view()->share('activeTheme', $themes->manifest());
 
         view()->composer('theme::partials.header', function ($view) use ($pages): void {
-            $view->with('headerPages', $pages->header());
+            $view->with([
+                'headerPages' => $pages->header(),
+                'statisticsNavigationAvailable' => app(GameStatistics::class)->navigationAvailable(),
+            ]);
         });
 
         view()->composer('theme::partials.footer', function ($view) use ($pages): void {

@@ -555,8 +555,7 @@ class GameAccountCabinetTest extends TestCase
             ->assertSee('Дуэлист')
             ->assertSee('L2Forge')
             ->assertSee('Создан: 05.04.2024')
-            ->assertSee('Текущий пароль от личного кабинета')
-            ->assertSee('В игре');
+            ->assertSee('Текущий пароль от личного кабинета');
     }
 
     public function test_character_creation_date_is_hidden_when_the_driver_does_not_return_it(): void

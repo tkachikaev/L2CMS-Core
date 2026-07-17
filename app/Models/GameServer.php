@@ -41,6 +41,14 @@ use Throwable;
  * @property int|null $online_players
  * @property Carbon|null $online_checked_at
  * @property bool $maintenance_enabled
+ * @property bool $statistics_enabled
+ * @property bool $statistics_level_enabled
+ * @property bool $statistics_pvp_enabled
+ * @property bool $statistics_pk_enabled
+ * @property bool $statistics_play_time_enabled
+ * @property bool $statistics_heroes_enabled
+ * @property bool $statistics_castles_enabled
+ * @property int $statistics_limit
  * @property-read LoginServer|null $loginServer
  * @property-read Collection<int, GameServerTranslation> $translations
  */
@@ -75,6 +83,14 @@ class GameServer extends Model
         'online_players',
         'online_checked_at',
         'maintenance_enabled',
+        'statistics_enabled',
+        'statistics_level_enabled',
+        'statistics_pvp_enabled',
+        'statistics_pk_enabled',
+        'statistics_play_time_enabled',
+        'statistics_heroes_enabled',
+        'statistics_castles_enabled',
+        'statistics_limit',
     ];
 
     protected $hidden = [
@@ -97,6 +113,14 @@ class GameServer extends Model
             'online_players' => 'integer',
             'online_checked_at' => 'datetime',
             'maintenance_enabled' => 'boolean',
+            'statistics_enabled' => 'boolean',
+            'statistics_level_enabled' => 'boolean',
+            'statistics_pvp_enabled' => 'boolean',
+            'statistics_pk_enabled' => 'boolean',
+            'statistics_play_time_enabled' => 'boolean',
+            'statistics_heroes_enabled' => 'boolean',
+            'statistics_castles_enabled' => 'boolean',
+            'statistics_limit' => 'integer',
         ];
     }
 

@@ -213,3 +213,54 @@
 .server-row .status.offline:before{box-shadow:0 0 10px rgba(213,107,100,.35)}
 @media(max-width:780px){.server-row{grid-template-columns:1fr}}
 .footer-section-links{display:grid;grid-auto-flow:column;grid-template-rows:repeat(3,auto);grid-auto-columns:minmax(150px,1fr);column-gap:28px;overflow-x:auto;scrollbar-width:thin}.footer-section-links>a{display:block;color:#8e9495;margin:7px 0;white-space:nowrap}.footer-sections{min-width:0}@media(max-width:780px){.footer-sections{grid-column:span 1}.footer-section-links{grid-auto-columns:minmax(135px,1fr)}}@media(max-width:520px){.footer-section-links{grid-auto-columns:minmax(130px,1fr)}}.status.maintenance{color:#f59e0b}.status.maintenance:before{background:#f59e0b;box-shadow:0 0 12px rgba(245,158,11,.55)}.server-maintenance-message{display:block;margin-top:4px;color:#d6a85d}.server-maintenance-message{color:var(--muted)}
+
+/* Public game statistics 0.15.0 */
+.compact-page-hero { padding: 52px 0 38px; }
+.compact-page-hero h1 { margin-bottom: 8px; }
+.compact-page-hero p:last-child { max-width: 720px; margin: 0; color: #c1c4c3; }
+.statistics-page { padding: 34px 0 54px; }
+.statistics-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 16px; padding: 18px 20px; border: 1px solid #2b302e; background: rgba(10,15,18,.9); }
+.statistics-toolbar > div > span { display: block; color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.statistics-toolbar > div > strong { display: block; margin-top: 3px; font: 22px Georgia,serif; }
+.statistics-server-switcher,.statistics-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; }
+.statistics-server-switcher a,.statistics-tabs a { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid #343a3d; background: #0b1013; color: #b6bab9; white-space: nowrap; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+.statistics-server-switcher a:hover,.statistics-server-switcher a.active,.statistics-tabs a:hover,.statistics-tabs a.active { border-color: #9f6e27; background: rgba(178,122,45,.14); color: var(--gold2); }
+.statistics-tabs { margin-bottom: 16px; padding-bottom: 2px; }
+.statistics-table-card { overflow: hidden; }
+.statistics-table-wrap { overflow-x: auto; }
+.statistics-table { min-width: 960px; }
+.statistics-table th { padding: 15px 16px; background: rgba(255,255,255,.018); }
+.statistics-table td { padding: 16px; vertical-align: middle; }
+.statistics-table tbody tr { transition: background .18s ease; }
+.statistics-table tbody tr:hover { background: rgba(224,182,109,.035); }
+.statistics-rank { width: 32px; height: 32px; display: inline-grid; place-items: center; border: 1px solid #353b3d; color: #b5b9b8; font: 14px Georgia,serif; }
+.statistics-table tbody tr:nth-child(1) .statistics-rank { border-color: #b68a35; background: rgba(182,138,53,.13); color: #f0cf7a; }
+.statistics-table tbody tr:nth-child(2) .statistics-rank { border-color: #7d8589; background: rgba(125,133,137,.12); color: #d1d5d6; }
+.statistics-table tbody tr:nth-child(3) .statistics-rank { border-color: #8f5f37; background: rgba(143,95,55,.12); color: #d59a67; }
+.statistics-character strong,.statistics-character small { display: block; }
+.statistics-character strong { color: #f0e7d7; font-size: 14px; }
+.statistics-character small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.statistics-value { color: var(--gold2); font-size: 15px; }
+.statistics-value.danger { color: #e58a83; }
+.statistics-online { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.statistics-online:before { content: ""; width: 7px; height: 7px; display: inline-block; margin-right: 7px; border-radius: 50%; background: #747c80; }
+.statistics-online.online { color: var(--green); }
+.statistics-online.online:before { background: var(--green); box-shadow: 0 0 9px rgba(89,201,106,.55); }
+.statistics-hero-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid #a8782e; background: linear-gradient(135deg,rgba(178,122,45,.2),rgba(92,59,21,.12)); color: #efc977; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.statistics-empty-state { min-height: 300px; display: grid; place-items: center; align-content: center; padding: 40px; text-align: center; }
+.statistics-empty-state > span { width: 58px; height: 58px; display: grid; place-items: center; margin-bottom: 14px; border: 1px solid #80602c; color: var(--gold2); font: 24px Georgia,serif; transform: rotate(45deg); }
+.statistics-empty-state > span i { display: block; font-style: normal; transform: rotate(-45deg); }
+.statistics-empty-state h2 { margin: 0; font: 28px Georgia,serif; }
+.statistics-empty-state p { max-width: 560px; margin: 10px 0 0; color: var(--muted); }
+.statistics-error-state > span { border-color: rgba(213,107,100,.6); color: #e58a83; }
+.castle-owner-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(310px,1fr)); gap: 16px; }
+.castle-owner-card { display: grid; grid-template-columns: 64px 1fr; gap: 20px; padding: 24px; }
+.castle-owner-mark { width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid #9f6e27; color: var(--gold2); font-size: 27px; }
+.castle-owner-card span { color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.castle-owner-card h2 { margin: 2px 0 8px; font: 29px Georgia,serif; }
+.castle-owner-card > div > strong { color: var(--gold2); font-size: 15px; }
+.castle-owner-card dl { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 18px; }
+.castle-owner-card dl div { padding: 0 12px; }
+.castle-owner-card dl div:first-child { padding-left: 0; border-left: 0; }
+.castle-owner-card dd { overflow-wrap: anywhere; }
+@media(max-width:780px){.statistics-toolbar{align-items:flex-start;flex-direction:column}.statistics-server-switcher{width:100%}.statistics-server-switcher a{flex:1}.statistics-page{padding-top:22px}.castle-owner-card{grid-template-columns:1fr}.castle-owner-card dl{grid-template-columns:1fr}.castle-owner-card dl div{padding:10px 0;border-left:0;border-top:1px solid #252b2d}}

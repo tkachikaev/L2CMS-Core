@@ -77,6 +77,10 @@
                             </div>
                         @endif
                         <div>
+                            <dt>{{ __('Public statistics') }}</dt>
+                            <dd>{{ $server['statistics_enabled'] ? __('Enabled') : __('Disabled') }}</dd>
+                        </div>
+                        <div>
                             <dt>{{ __('Database status') }}</dt>
                             <dd>{{ $server['database_status'] === 'configured' ? __('Connected') : ($server['database_status'] === 'not_configured' ? __('Connection failed') : __('Status pending')) }}</dd>
                         </div>
@@ -199,6 +203,66 @@
                     @endif
                 </section>
 
+                @if($statisticsCapabilities !== [])
+                    <section class="server-drawer-section">
+                        <label class="server-connection-enable">
+                            <span>
+                                <strong>{{ __('Public statistics') }}</strong>
+                                <small>{{ __('Show read-only character rankings, current heroes and castle owners on the public website.') }}</small>
+                            </span>
+                            <span class="switch-control">
+                                <input type="checkbox" wire:model.live="statisticsEnabled">
+                                <span></span>
+                            </span>
+                        </label>
+                        @error('statisticsEnabled')<small class="field-error">{{ $message }}</small>@enderror
+
+                        @if($statisticsEnabled)
+                            <div class="server-statistics-options">
+                                <label class="server-connection-toggle compact-toggle">
+                                    <input type="checkbox" wire:model="statisticsLevelEnabled">
+                                    <span><strong>{{ __('Level ranking') }}</strong></span>
+                                </label>
+                                <label class="server-connection-toggle compact-toggle">
+                                    <input type="checkbox" wire:model="statisticsPvpEnabled">
+                                    <span><strong>{{ __('PvP ranking') }}</strong></span>
+                                </label>
+                                <label class="server-connection-toggle compact-toggle">
+                                    <input type="checkbox" wire:model="statisticsPkEnabled">
+                                    <span><strong>{{ __('PK ranking') }}</strong></span>
+                                </label>
+                                <label class="server-connection-toggle compact-toggle">
+                                    <input type="checkbox" wire:model="statisticsPlayTimeEnabled">
+                                    <span><strong>{{ __('Play time ranking') }}</strong></span>
+                                </label>
+                                <label class="server-connection-toggle compact-toggle">
+                                    <input type="checkbox" wire:model="statisticsHeroesEnabled">
+                                    <span><strong>{{ __('Current heroes') }}</strong></span>
+                                </label>
+                                <label class="server-connection-toggle compact-toggle">
+                                    <input type="checkbox" wire:model="statisticsCastlesEnabled">
+                                    <span><strong>{{ __('Castle owners') }}</strong></span>
+                                </label>
+                            </div>
+
+                            <div class="form-group server-statistics-limit">
+                                <label for="live_game_statistics_limit">{{ __('Rows in each ranking') }}</label>
+                                <input id="live_game_statistics_limit" type="number" min="10" max="100" wire:model="statisticsLimit">
+                                <small>{{ __('Statistics are cached for five minutes to protect the game database.') }}</small>
+                                @error('statisticsLimit')<small class="field-error">{{ $message }}</small>@enderror
+                            </div>
+                        @endif
+                    </section>
+
+                @else
+                    <section class="server-drawer-section">
+                        <div class="server-statistics-unavailable">
+                            <strong>{{ __('Public statistics') }}</strong>
+                            <p>{{ __('The selected GameServer driver does not support public statistics.') }}</p>
+                        </div>
+                    </section>
+                @endif
+
                 <section class="server-drawer-section">
                     <label class="server-connection-enable">
                         <span>
@@ -231,7 +295,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="live_game_driver">{{ __('GameServer driver') }}</label>
-                                    <select id="live_game_driver" wire:model="driver" required>
+                                    <select id="live_game_driver" wire:model.live="driver" required>
                                         @foreach($gameDrivers as $key => $driverOption)
                                             <option value="{{ $key }}">{{ $driverOption['label'] }}@if(!$driverOption['ready']) — {{ __('placeholder') }}@endif</option>
                                         @endforeach

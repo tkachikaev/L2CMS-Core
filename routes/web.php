@@ -34,6 +34,7 @@ use App\Http\Controllers\Localization\LocaleController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ServerMonitorStatusController;
+use App\Http\Controllers\StatisticsController;
 use Illuminate\Support\Facades\Route;
 
 $registerPublicRoutes = static function (bool $localized = false): void {
@@ -44,6 +45,13 @@ $registerPublicRoutes = static function (bool $localized = false): void {
         ->middleware('throttle:120,1')
         ->name($namePrefix.'server-monitor.refresh');
     Route::get('/news', [NewsController::class, 'index'])->name($namePrefix.'news.index');
+    Route::get('/statistics', [StatisticsController::class, $localized ? 'indexLocalized' : 'index'])
+        ->middleware('throttle:120,1')
+        ->name($namePrefix.'statistics.index');
+    Route::get('/statistics/{gameServer}', [StatisticsController::class, $localized ? 'showLocalized' : 'show'])
+        ->whereNumber('gameServer')
+        ->middleware('throttle:120,1')
+        ->name($namePrefix.'statistics.show');
 
     if ($localized) {
         Route::get('/news/{slug}', [NewsController::class, 'showLocalized'])

@@ -32,6 +32,16 @@ class HomePageTest extends TestCase
         $this->assertStringContainsString('grid-template-rows:repeat(3,auto)', $css);
     }
 
+    public function test_public_theme_assets_are_versioned_for_cache_invalidation(): void
+    {
+        $this->seed();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('/themes/default/assets/css/app.css?v=0.8.0', false)
+            ->assertSee('/themes/default/assets/js/app.js?v=0.8.0', false);
+    }
+
     public function test_home_page_is_available(): void
     {
         $this->seed();

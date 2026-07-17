@@ -12,7 +12,9 @@
         <nav id="main-menu" class="main-nav" aria-label="{{ __('Main navigation') }}">
             <a class="{{ request()->routeIs('home', 'localized.home') ? 'active' : '' }}" href="{{ public_route('home') }}">{{ __('Home') }}</a>
             <a class="{{ request()->routeIs('news.*', 'localized.news.*') ? 'active' : '' }}" href="{{ public_route('news.index') }}">{{ __('News') }}</a>
-            <a href="{{ public_route('home') }}#rating">{{ __('Statistics') }}</a>
+            @if($statisticsNavigationAvailable ?? false)
+                <a class="{{ request()->routeIs('statistics.*', 'localized.statistics.*') ? 'active' : '' }}" href="{{ public_route('statistics.index') }}">{{ __('Statistics') }}</a>
+            @endif
             <a class="{{ request()->routeIs('about', 'localized.about') ? 'active' : '' }}" href="{{ public_route('about') }}">{{ __('About the server') }}</a>
             @foreach ($headerPages ?? [] as $menuPage)
                 <a class="{{ request()->routeIs('pages.show', 'localized.pages.show') && (($page ?? null) instanceof \App\Models\Page) && $page->is($menuPage) ? 'active' : '' }}" href="{{ page_url($menuPage) }}">{{ $menuPage->titleFor() }}</a>

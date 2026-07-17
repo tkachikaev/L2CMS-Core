@@ -50,6 +50,22 @@ class GameServerManager extends Component
 
     public bool $maintenanceEnabled = false;
 
+    public bool $statisticsEnabled = false;
+
+    public bool $statisticsLevelEnabled = true;
+
+    public bool $statisticsPvpEnabled = true;
+
+    public bool $statisticsPkEnabled = true;
+
+    public bool $statisticsPlayTimeEnabled = true;
+
+    public bool $statisticsHeroesEnabled = true;
+
+    public bool $statisticsCastlesEnabled = true;
+
+    public string $statisticsLimit = '50';
+
     public bool $showPublicOnline = true;
 
     public string $serverRates = '';
@@ -136,6 +152,14 @@ class GameServerManager extends Component
         }
 
         $this->maintenanceEnabled = (bool) $server->maintenance_enabled;
+        $this->statisticsEnabled = (bool) $server->statistics_enabled;
+        $this->statisticsLevelEnabled = (bool) $server->statistics_level_enabled;
+        $this->statisticsPvpEnabled = (bool) $server->statistics_pvp_enabled;
+        $this->statisticsPkEnabled = (bool) $server->statistics_pk_enabled;
+        $this->statisticsPlayTimeEnabled = (bool) $server->statistics_play_time_enabled;
+        $this->statisticsHeroesEnabled = (bool) $server->statistics_heroes_enabled;
+        $this->statisticsCastlesEnabled = (bool) $server->statistics_castles_enabled;
+        $this->statisticsLimit = (string) $server->statistics_limit;
         $this->serverRates = trim((string) $server->rates);
         $this->serverChronicle = trim((string) $server->chronicle);
         $this->serverMode = trim((string) $server->mode);
@@ -247,6 +271,12 @@ class GameServerManager extends Component
     {
         $this->ensureAuthorized();
         $general = $this->validate($this->generalRules(), [], $this->generalAttributes());
+        if ($this->statisticsCapabilities() !== [] && $this->statisticsEnabled && ! $this->hasEnabledStatisticsSection()) {
+            $this->addError('statisticsEnabled', __('Enable at least one public statistics section.'));
+
+            return;
+        }
+
         $connection = $this->connectionEnabled
             ? $this->validate($this->connectionRules(), [], $this->connectionAttributes())
             : null;
@@ -328,6 +358,7 @@ class GameServerManager extends Component
             'servers' => app(GameServerSettings::class)->all(),
             'loginServers' => LoginServer::query()->orderBy('name')->orderBy('id')->get(),
             'gameDrivers' => app(ServerDriverRegistry::class)->gameDrivers(),
+            'statisticsCapabilities' => $this->statisticsCapabilities(),
             'languages' => app(LanguageManager::class)->enabled(),
             'defaultLocale' => app(LanguageManager::class)->default(),
         ]);
@@ -344,6 +375,14 @@ class GameServerManager extends Component
             'serverMode' => ['nullable', 'string', 'max:100'],
             'maintenanceEnabled' => ['required', 'boolean'],
             'maintenanceMessages' => ['required', 'array'],
+            'statisticsEnabled' => ['required', 'boolean'],
+            'statisticsLevelEnabled' => ['required', 'boolean'],
+            'statisticsPvpEnabled' => ['required', 'boolean'],
+            'statisticsPkEnabled' => ['required', 'boolean'],
+            'statisticsPlayTimeEnabled' => ['required', 'boolean'],
+            'statisticsHeroesEnabled' => ['required', 'boolean'],
+            'statisticsCastlesEnabled' => ['required', 'boolean'],
+            'statisticsLimit' => ['required', 'integer', 'between:10,100'],
         ];
 
         foreach ($languages->enabledCodes() as $locale) {
@@ -388,6 +427,7 @@ class GameServerManager extends Component
             'serverRates' => __('Server rates validation attribute'),
             'serverChronicle' => __('Chronicle validation attribute'),
             'serverMode' => __('server mode'),
+            'statisticsLimit' => __('Statistics row limit'),
         ];
 
         foreach (app(LanguageManager::class)->enabledCodes() as $locale) {
@@ -430,6 +470,8 @@ class GameServerManager extends Component
         }
         $defaultLocale = app(LanguageManager::class)->default();
 
+        $statisticsSupported = $this->statisticsCapabilities() !== [];
+
         return [
             'name' => $translations[$defaultLocale] ?? '',
             'rates' => trim((string) ($validated['serverRates'] ?? '')),
@@ -438,6 +480,14 @@ class GameServerManager extends Component
             'translations' => $translations,
             'maintenance_enabled' => (bool) $validated['maintenanceEnabled'],
             'maintenance_messages' => $maintenanceMessages,
+            'statistics_enabled' => $statisticsSupported && (bool) $validated['statisticsEnabled'],
+            'statistics_level_enabled' => (bool) $validated['statisticsLevelEnabled'],
+            'statistics_pvp_enabled' => (bool) $validated['statisticsPvpEnabled'],
+            'statistics_pk_enabled' => (bool) $validated['statisticsPkEnabled'],
+            'statistics_play_time_enabled' => (bool) $validated['statisticsPlayTimeEnabled'],
+            'statistics_heroes_enabled' => (bool) $validated['statisticsHeroesEnabled'],
+            'statistics_castles_enabled' => (bool) $validated['statisticsCastlesEnabled'],
+            'statistics_limit' => (int) $validated['statisticsLimit'],
         ];
     }
 
@@ -476,6 +526,24 @@ class GameServerManager extends Component
         return ['state' => 'success', 'message' => __('Database connection established.')];
     }
 
+    private function hasEnabledStatisticsSection(): bool
+    {
+        return $this->statisticsLevelEnabled
+            || $this->statisticsPvpEnabled
+            || $this->statisticsPkEnabled
+            || $this->statisticsPlayTimeEnabled
+            || $this->statisticsHeroesEnabled
+            || $this->statisticsCastlesEnabled;
+    }
+
+    /** @return list<string> */
+    private function statisticsCapabilities(): array
+    {
+        $driver = app(ServerDriverRegistry::class)->gameDriver($this->driver);
+
+        return is_array($driver) ? ($driver['statistics'] ?? []) : [];
+    }
+
     private function initializeTranslations(): void
     {
         $this->translations = [];
@@ -502,6 +570,14 @@ class GameServerManager extends Component
         $this->clearDeleteConfirmation();
         $this->initializeTranslations();
         $this->maintenanceEnabled = false;
+        $this->statisticsEnabled = false;
+        $this->statisticsLevelEnabled = true;
+        $this->statisticsPvpEnabled = true;
+        $this->statisticsPkEnabled = true;
+        $this->statisticsPlayTimeEnabled = true;
+        $this->statisticsHeroesEnabled = true;
+        $this->statisticsCastlesEnabled = true;
+        $this->statisticsLimit = '50';
         $this->serverRates = '';
         $this->serverChronicle = '';
         $this->serverMode = '';

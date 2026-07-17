@@ -114,6 +114,32 @@ class UpgradeGameServerMigrationTest extends TestCase
         ]);
     }
 
+    public function test_public_statistics_migration_preserves_servers_and_keeps_publication_opt_in(): void
+    {
+        $migration = require database_path('migrations/2026_07_17_000500_add_public_statistics_to_game_servers.php');
+        $migration->down();
+
+        $gameServer = GameServer::query()->create([
+            'name' => 'Existing GameServer',
+            'sort_order' => 0,
+        ]);
+
+        $migration->up();
+
+        $this->assertDatabaseHas('game_servers', [
+            'id' => $gameServer->id,
+            'name' => 'Existing GameServer',
+            'statistics_enabled' => 0,
+            'statistics_level_enabled' => 1,
+            'statistics_pvp_enabled' => 1,
+            'statistics_pk_enabled' => 1,
+            'statistics_play_time_enabled' => 1,
+            'statistics_heroes_enabled' => 1,
+            'statistics_castles_enabled' => 1,
+            'statistics_limit' => 50,
+        ]);
+    }
+
     public function test_legacy_071_settings_are_copied_to_the_first_game_server(): void
     {
         Schema::drop('game_servers');

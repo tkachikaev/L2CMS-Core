@@ -41,6 +41,14 @@ class GameServerFactory extends Factory
             'online_players' => null,
             'online_checked_at' => null,
             'maintenance_enabled' => false,
+            'statistics_enabled' => false,
+            'statistics_level_enabled' => true,
+            'statistics_pvp_enabled' => true,
+            'statistics_pk_enabled' => true,
+            'statistics_play_time_enabled' => true,
+            'statistics_heroes_enabled' => true,
+            'statistics_castles_enabled' => true,
+            'statistics_limit' => 50,
         ];
     }
 

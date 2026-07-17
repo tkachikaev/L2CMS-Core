@@ -2,6 +2,8 @@
 
 namespace Tests\Unit;
 
+use App\Models\GameServer;
+use App\Services\GameWorld\GameWorldDriverResolver;
 use App\Services\Servers\ServerDriverRegistry;
 use Tests\TestCase;
 
@@ -72,6 +74,7 @@ class ServerDriverRegistryTest extends TestCase
             'column' => 'online',
             'value' => 1,
         ], $driver['online_count']);
+        $this->assertSame(['level', 'pvp', 'pk', 'play_time', 'heroes', 'castles'], $driver['statistics']);
         $this->assertSame([
             [
                 'table' => 'characters',
@@ -80,16 +83,39 @@ class ServerDriverRegistryTest extends TestCase
                     'charId',
                     'char_name',
                     'level',
+                    'exp',
                     'classid',
+                    'race',
+                    'sex',
+                    'title',
                     'online',
+                    'onlinetime',
                     'accesslevel',
+                    'deletetime',
                     'pvpkills',
                     'pkkills',
+                    'karma',
+                    'nobless',
                     'clanid',
                     'lastAccess',
                     'createDate',
                 ],
                 'required' => true,
+            ],
+            [
+                'table' => 'clan_data',
+                'columns' => ['clan_id', 'clan_name', 'clan_level', 'reputation_score', 'hasCastle', 'leader_id'],
+                'required' => true,
+            ],
+            [
+                'table' => 'heroes',
+                'columns' => ['charId', 'class_id', 'count', 'played', 'claimed'],
+                'required' => false,
+            ],
+            [
+                'table' => 'castle',
+                'columns' => ['id', 'name'],
+                'required' => false,
             ],
             [
                 'table' => 'account_gsdata',
@@ -102,6 +128,18 @@ class ServerDriverRegistryTest extends TestCase
                 'required' => false,
             ],
         ], $driver['requirements']);
+    }
+
+    public function test_mobius_statistics_registry_matches_the_runtime_driver(): void
+    {
+        $server = new GameServer(['driver' => 'l2j_mobius_ct0_interlude']);
+        $definition = app(ServerDriverRegistry::class)->gameDriver('l2j_mobius_ct0_interlude');
+
+        $this->assertNotNull($definition);
+        $this->assertSame(
+            $definition['statistics'],
+            app(GameWorldDriverResolver::class)->resolve($server)->capabilities(),
+        );
     }
 
     public function test_rusacis_drivers_are_registered_as_placeholders(): void

@@ -2336,3 +2336,15 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 }
 .dashboard-monitor-name-wrap{display:flex;min-width:0;flex-direction:column}.dashboard-monitor-name-wrap small{overflow:hidden;color:#6b7280;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.dashboard-monitor-dot.configured{background:#d97706;box-shadow:0 0 0 3px #fef3c7}.dashboard-monitor-dot.not_configured{background:#ef4444;box-shadow:0 0 0 3px #fee2e2}.notice-info{border-color:#bfdbfe;background:#eff6ff;color:#1e40af}.security-cleanup-empty{margin:14px 0 0}.security-cleanup-empty p{margin:0}
 .dashboard-monitor-dot.maintenance{background:#f59e0b;box-shadow:0 0 0 3px #fef3c7}
+
+/* Game server public statistics 0.15.0 */
+.server-statistics-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}.server-statistics-options .server-connection-toggle{margin:0}.server-statistics-limit{max-width:260px;margin-top:18px}@media(max-width:760px){.server-statistics-options{grid-template-columns:1fr}}
+.server-statistics-unavailable {
+    padding: 16px 18px;
+    border: 1px dashed #d1d5db;
+    border-radius: 10px;
+    background: #f9fafb;
+}
+.server-statistics-unavailable strong { display: block; color: #111827; }
+.server-statistics-unavailable p { margin: 5px 0 0; color: #6b7280; font-size: 13px; }
+
