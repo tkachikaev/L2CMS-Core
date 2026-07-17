@@ -1,4 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
+    'use strict';
+
     const button = document.querySelector('[data-copy-system-report]');
     const source = document.querySelector('[data-system-report]');
     const state = document.querySelector('[data-system-copy-state]');
@@ -42,4 +44,4 @@ document.addEventListener('DOMContentLoaded', () => {
             setState(button.dataset.copyError || 'Could not copy the report.', 'error');
         }
     });
-});
+})();

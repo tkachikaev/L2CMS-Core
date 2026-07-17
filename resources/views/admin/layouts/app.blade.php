@@ -7,12 +7,13 @@
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="theme-color" content="#090c10">
     <title>@yield('title', __('Control panel')) — {{ config('app.name') }}</title>
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/app.css') }}?v={{ cms_version() }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/app.css') }}?v={{ cms_version() }}" data-navigate-track>
+    @livewireStyles
     @stack('head')
 </head>
 <body class="admin-body">
     @yield('body')
-    @stack('framework-scripts')
+    @livewireScripts
     <script src="{{ asset('assets/admin/js/navigation.js') }}?v={{ cms_version() }}" defer></script>
     @stack('scripts')
 </body>

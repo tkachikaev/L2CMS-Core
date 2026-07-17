@@ -20,11 +20,9 @@
         });
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[data-locale-tabs]').forEach((root) => {
-            root.querySelectorAll('[data-locale-tab]').forEach((tab) => {
-                tab.addEventListener('click', () => activate(root, tab.dataset.localeTab ?? ''));
-            });
+    document.querySelectorAll('[data-locale-tabs]').forEach((root) => {
+        root.querySelectorAll('[data-locale-tab]').forEach((tab) => {
+            tab.addEventListener('click', () => activate(root, tab.dataset.localeTab ?? ''));
         });
     });
 })();

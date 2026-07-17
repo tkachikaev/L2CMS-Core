@@ -7,6 +7,3 @@
     <livewire:admin.game-server-manager />
 @endsection
 
-@push('framework-scripts')
-    @livewireScripts
-@endpush

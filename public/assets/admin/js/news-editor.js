@@ -285,8 +285,6 @@
         syncSource();
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeCoverPreview();
-        document.querySelectorAll('[data-rich-editor]').forEach(initializeRichEditor);
-    });
+    initializeCoverPreview();
+    document.querySelectorAll('[data-rich-editor]').forEach(initializeRichEditor);
 })();

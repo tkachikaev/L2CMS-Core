@@ -4,10 +4,10 @@
 @section('content')
 <div class="audit-summary"><div><span>{{ __('Total records') }}</span><strong>{{ $totalCount }}</strong></div><p>{{ __('Records are retained for :days days. Passwords, tokens and other secrets are never written to the log.', ['days' => $retentionDays]) }}</p></div>
 <nav class="audit-tabs" aria-label="{{ __('Audit categories') }}">
-    <a @class(['active' => $activeCategory === null]) href="{{ route('admin.logs.index') }}">{{ __('All') }} <span>{{ $totalCount }}</span></a>
+    <a wire:navigate @class(['active' => $activeCategory === null]) href="{{ route('admin.logs.index') }}">{{ __('All') }} <span>{{ $totalCount }}</span></a>
     @foreach($categories as $category)
         @php($categoryLabel = \App\Models\AuditLog::categoryLabelFor($category))
-        <a @class(['active' => $activeCategory === $category]) href="{{ route('admin.logs.index', ['category'=>$category]) }}">{{ $categoryLabel }} <span>{{ (int)($counts[$category]??0) }}</span></a>
+        <a wire:navigate @class(['active' => $activeCategory === $category]) href="{{ route('admin.logs.index', ['category'=>$category]) }}">{{ $categoryLabel }} <span>{{ (int)($counts[$category]??0) }}</span></a>
     @endforeach
 </nav>
 @if($logs->isEmpty())
@@ -19,16 +19,16 @@
             <td><strong>{{ $log->actorLabel() }}</strong><span class="audit-muted">{{ $log->actorTypeLabel() }}</span></td>
             <td><strong>{{ $log->actionLabel() }}</strong><code>{{ $log->action }}</code></td><td>{{ $log->targetLabel() }}</td>
             <td><span @class(['status-badge','status-badge-success'=>$log->result==='success','status-badge-danger'=>$log->result==='failed'])>{{ $log->resultLabel() }}</span></td>
-            <td class="audit-monospace">{{ $log->ip_address ?: '—' }}</td><td class="audit-details-link"><a class="button button-secondary" href="{{ route('admin.logs.show', array_filter(['auditLog'=>$log,'category'=>$activeCategory])) }}">{{ __('Details') }}</a></td>
+            <td class="audit-monospace">{{ $log->ip_address ?: '—' }}</td><td class="audit-details-link"><a wire:navigate class="button button-secondary" href="{{ route('admin.logs.show', array_filter(['auditLog'=>$log,'category'=>$activeCategory])) }}">{{ __('Details') }}</a></td>
         </tr>@endforeach
     </tbody></table></div>
     @if($logs->hasPages())
         @php($firstPage=max(1,$logs->currentPage()-2))
         @php($lastPage=min($logs->lastPage(),$logs->currentPage()+2))
         <nav class="simple-pagination" aria-label="{{ __('Audit page navigation') }}">
-            @if($logs->onFirstPage())<span class="button button-secondary disabled">← {{ __('Back') }}</span>@else<a class="button button-secondary" href="{{ $logs->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>@endif
-            <div class="pagination-pages" aria-label="{{ __('Pages') }}">@foreach($logs->getUrlRange($firstPage,$lastPage) as $page=>$url) @if($page===$logs->currentPage())<span class="pagination-page active" aria-current="page">{{ $page }}</span>@else<a class="pagination-page" href="{{ $url }}">{{ $page }}</a>@endif @endforeach</div>
-            @if($logs->hasMorePages())<a class="button button-secondary" href="{{ $logs->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>@else<span class="button button-secondary disabled">{{ __('Next') }} →</span>@endif
+            @if($logs->onFirstPage())<span class="button button-secondary disabled">← {{ __('Back') }}</span>@else<a wire:navigate class="button button-secondary" href="{{ $logs->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>@endif
+            <div class="pagination-pages" aria-label="{{ __('Pages') }}">@foreach($logs->getUrlRange($firstPage,$lastPage) as $page=>$url) @if($page===$logs->currentPage())<span class="pagination-page active" aria-current="page">{{ $page }}</span>@else<a wire:navigate class="pagination-page" href="{{ $url }}">{{ $page }}</a>@endif @endforeach</div>
+            @if($logs->hasMorePages())<a wire:navigate class="button button-secondary" href="{{ $logs->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>@else<span class="button button-secondary disabled">{{ __('Next') }} →</span>@endif
         </nav>
     @endif
 @endif

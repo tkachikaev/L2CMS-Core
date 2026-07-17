@@ -7,7 +7,7 @@
     <div class="content-stat"><span>{{ __('Published') }}</span><strong>{{ $publishedCount }}</strong></div>
     <div class="content-stat"><span>{{ __('Drafts') }}</span><strong>{{ $draftCount }}</strong></div>
     <div class="content-stat"><span>{{ __('In navigation') }}</span><strong>{{ $menuCount }}</strong></div>
-    <a class="button button-primary" href="{{ route('admin.pages.create') }}">{{ __('Create page') }}</a>
+    <a wire:navigate class="button button-primary" href="{{ route('admin.pages.create') }}">{{ __('Create page') }}</a>
 </div>
 
 @if ($pages->isEmpty())
@@ -15,7 +15,7 @@
         <div class="empty-state-mark">P</div>
         <h2>{{ __('No pages yet') }}</h2>
         <p>{{ __('Create rules, contacts, privacy information or any other website page.') }}</p>
-        <a class="button button-primary" href="{{ route('admin.pages.create') }}">{{ __('Create first page') }}</a>
+        <a wire:navigate class="button button-primary" href="{{ route('admin.pages.create') }}">{{ __('Create first page') }}</a>
     </div>
 @else
     <div class="content-list">
@@ -25,11 +25,11 @@
                 $translationCodes = $item->translations->pluck('locale')->all();
             @endphp
             <article class="content-row">
-                <a class="content-row-preview page-row-preview" href="{{ route('admin.pages.edit', $item) }}" aria-label="{{ __('Edit: :title', ['title' => $itemTitle]) }}">
+                <a wire:navigate class="content-row-preview page-row-preview" href="{{ route('admin.pages.edit', $item) }}" aria-label="{{ __('Edit: :title', ['title' => $itemTitle]) }}">
                     <span>PAGE</span>
                 </a>
                 <div class="content-row-main">
-                    <a class="content-row-title" href="{{ route('admin.pages.edit', $item) }}">{{ $itemTitle }}</a>
+                    <a wire:navigate class="content-row-title" href="{{ route('admin.pages.edit', $item) }}">{{ $itemTitle }}</a>
                     <p>/pages/{{ $item->slug }}</p>
                     <div class="content-row-meta">
                         <span>{{ __('Languages') }}: {{ implode(', ', array_map('strtoupper', $translationCodes)) }}</span>
@@ -45,7 +45,7 @@
                     @endif
                 </div>
                 <div class="content-row-actions">
-                    <a class="button button-primary" href="{{ route('admin.pages.edit', $item) }}">{{ __('Edit') }}</a>
+                    <a wire:navigate class="button button-primary" href="{{ route('admin.pages.edit', $item) }}">{{ __('Edit') }}</a>
                     <button class="button button-danger" type="button" data-page-delete-open data-page-delete-title="{{ $itemTitle }}" data-page-delete-url="{{ route('admin.pages.destroy', $item) }}">{{ __('Delete') }}</button>
                 </div>
             </article>
@@ -54,9 +54,9 @@
 
     @if ($pages->hasPages())
         <nav class="simple-pagination" aria-label="{{ __('Pagination') }}">
-            <a @class(['button button-secondary', 'disabled' => $pages->onFirstPage()]) href="{{ $pages->previousPageUrl() ?? '#' }}">← {{ __('Previous') }}</a>
+            <a wire:navigate @class(['button button-secondary', 'disabled' => $pages->onFirstPage()]) href="{{ $pages->previousPageUrl() ?? '#' }}">← {{ __('Previous') }}</a>
             <span>{{ __('Page :current of :last', ['current' => $pages->currentPage(), 'last' => $pages->lastPage()]) }}</span>
-            <a @class(['button button-secondary', 'disabled' => ! $pages->hasMorePages()]) href="{{ $pages->nextPageUrl() ?? '#' }}">{{ __('Next') }} →</a>
+            <a wire:navigate @class(['button button-secondary', 'disabled' => ! $pages->hasMorePages()]) href="{{ $pages->nextPageUrl() ?? '#' }}">{{ __('Next') }} →</a>
         </nav>
     @endif
 @endif
@@ -83,5 +83,5 @@
 </dialog>
 @endsection
 @push('scripts')
-<script src="{{ asset('assets/admin/js/page-actions.js') }}" defer></script>
+<script src="{{ asset('assets/admin/js/page-actions.js') }}?v={{ cms_version() }}" defer></script>
 @endpush

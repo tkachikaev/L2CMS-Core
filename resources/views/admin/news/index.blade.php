@@ -9,7 +9,7 @@
     <div class="content-stat"><span>{{ __('Published') }}</span><strong>{{ $publishedCount }}</strong></div>
     <div class="content-stat"><span>{{ __('Scheduled') }}</span><strong>{{ $scheduledCount }}</strong></div>
     <div class="content-stat"><span>{{ __('Drafts') }}</span><strong>{{ $draftCount }}</strong></div>
-    <a class="button button-primary" href="{{ route('admin.news.create') }}">{{ __('Create news') }}</a>
+    <a wire:navigate class="button button-primary" href="{{ route('admin.news.create') }}">{{ __('Create news') }}</a>
 </div>
 
 @if ($news->isEmpty())
@@ -17,7 +17,7 @@
         <div class="empty-state-mark" aria-hidden="true">N</div>
         <h2>{{ __('No news yet') }}</h2>
         <p>{{ __('Create the first article, add an image and publish it on the website.') }}</p>
-        <a class="button button-primary" href="{{ route('admin.news.create') }}">{{ __('Create first news') }}</a>
+        <a wire:navigate class="button button-primary" href="{{ route('admin.news.create') }}">{{ __('Create first news') }}</a>
     </div>
 @else
     <div class="content-list">
@@ -27,7 +27,7 @@
                 $itemExcerpt = $item->excerptFor(app()->getLocale());
             @endphp
             <article class="content-row">
-                <a class="content-row-preview" href="{{ route('admin.news.edit', $item) }}" aria-label="{{ __('Edit: :title', ['title' => $itemTitle]) }}">
+                <a wire:navigate class="content-row-preview" href="{{ route('admin.news.edit', $item) }}" aria-label="{{ __('Edit: :title', ['title' => $itemTitle]) }}">
                     @if ($item->coverUrl())
                         <img src="{{ $item->coverUrl() }}" alt="">
                     @else
@@ -36,7 +36,7 @@
                 </a>
 
                 <div class="content-row-main">
-                    <a class="content-row-title" href="{{ route('admin.news.edit', $item) }}">{{ $itemTitle }}</a>
+                    <a wire:navigate class="content-row-title" href="{{ route('admin.news.edit', $item) }}">{{ $itemTitle }}</a>
                     <p>{{ $itemExcerpt ?: __('No short description.') }}</p>
                     <div class="content-row-meta">
                         <span>/{{ app()->getLocale() }}/news/{{ $item->slugFor(app()->getLocale()) }}</span>
@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="content-row-actions">
-                    <a class="button button-primary" href="{{ route('admin.news.edit', $item) }}">{{ __('Edit') }}</a>
+                    <a wire:navigate class="button button-primary" href="{{ route('admin.news.edit', $item) }}">{{ __('Edit') }}</a>
                     <button class="button button-danger" type="button" data-news-delete-open data-news-delete-title="{{ $itemTitle }}" data-news-delete-url="{{ route('admin.news.destroy', $item) }}">{{ __('Delete') }}</button>
                 </div>
             </article>
@@ -66,19 +66,19 @@
             @if ($news->onFirstPage())
                 <span class="button button-secondary disabled">← {{ __('Back') }}</span>
             @else
-                <a class="button button-secondary" href="{{ $news->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>
+                <a wire:navigate class="button button-secondary" href="{{ $news->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>
             @endif
             <div class="pagination-pages" aria-label="{{ __('Pages') }}">
                 @foreach ($news->getUrlRange($firstPage, $lastPage) as $page => $url)
                     @if ($page === $news->currentPage())
                         <span class="pagination-page active" aria-current="page">{{ $page }}</span>
                     @else
-                        <a class="pagination-page" href="{{ $url }}">{{ $page }}</a>
+                        <a wire:navigate class="pagination-page" href="{{ $url }}">{{ $page }}</a>
                     @endif
                 @endforeach
             </div>
             @if ($news->hasMorePages())
-                <a class="button button-secondary" href="{{ $news->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>
+                <a wire:navigate class="button button-secondary" href="{{ $news->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>
             @else
                 <span class="button button-secondary disabled">{{ __('Next') }} →</span>
             @endif
@@ -108,5 +108,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/js/news-actions.js') }}" defer></script>
+<script src="{{ asset('assets/admin/js/news-actions.js') }}?v={{ cms_version() }}" defer></script>
 @endpush

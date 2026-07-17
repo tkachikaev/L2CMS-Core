@@ -11,7 +11,7 @@
         <p>{!! __('The version is read from the <code>VERSION</code> file in the project root.') !!}</p>
     </div>
     <div class="system-overview-actions">
-        <a class="button button-secondary" href="{{ route('admin.settings.system') }}">{{ __('Refresh information') }}</a>
+        <a wire:navigate class="button button-secondary" href="{{ route('admin.settings.system') }}">{{ __('Refresh information') }}</a>
         <button
             class="button button-primary"
             type="button"

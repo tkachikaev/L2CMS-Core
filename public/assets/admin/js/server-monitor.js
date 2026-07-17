@@ -1,4 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
+    'use strict';
+
     const dashboard = document.querySelector('[data-server-monitor-dashboard]');
     if (!dashboard || dashboard.dataset.autoRefresh !== '1') {
         return;
@@ -11,7 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const stateClasses = ['maintenance', 'online', 'configured', 'not_configured', 'offline', 'unknown'];
+    const controller = new AbortController();
     let attempts = 0;
+    let timeoutId = null;
+    let active = true;
 
     const rowFor = (selector, dataKey, id) => Array.from(dashboard.querySelectorAll(selector))
         .find((row) => row.dataset[dataKey] === String(id));
@@ -35,6 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const applyMonitor = (payload) => {
+        if (!active || !document.body.contains(dashboard)) {
+            return;
+        }
+
         const total = dashboard.querySelector('[data-monitor-total-online]');
         const partial = dashboard.querySelector('[data-monitor-partial]');
         const updated = dashboard.querySelector('[data-monitor-updated]');
@@ -77,13 +86,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const schedule = (callback, delay) => {
+        if (active) {
+            timeoutId = window.setTimeout(callback, delay);
+        }
+    };
+
     const refresh = async () => {
+        if (!active) {
+            return;
+        }
+
         attempts += 1;
 
         try {
             const response = await fetch(refreshUrl, {
                 method: 'POST',
                 credentials: 'same-origin',
+                signal: controller.signal,
                 headers: {
                     Accept: 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
@@ -93,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 if ((response.status === 429 || response.status === 503) && attempts < 20) {
-                    window.setTimeout(refresh, 1500);
+                    schedule(refresh, 1500);
                 }
 
                 return;
@@ -105,12 +125,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (payload.refreshing && attempts < 20) {
-                window.setTimeout(refresh, 1000);
+                schedule(refresh, 1000);
             }
-        } catch (_) {
-            // Leave the last known dashboard snapshot visible.
+        } catch (error) {
+            if (!(error instanceof DOMException && error.name === 'AbortError')) {
+                // Leave the last known dashboard snapshot visible.
+            }
         }
     };
 
+    document.addEventListener('livewire:navigating', () => {
+        active = false;
+        controller.abort();
+        if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+        }
+    }, { once: true });
+
     refresh();
-});
+})();

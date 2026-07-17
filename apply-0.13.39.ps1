@@ -14,20 +14,16 @@ if (-not (Test-Path '.env')) {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete 0.13.37 patch with file replacement enabled.'
+    throw 'VERSION is missing. Re-extract the complete 0.13.39 patch with file replacement enabled.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
-if ($cmsVersion -ne '0.13.37') {
+if ($cmsVersion -ne '0.13.39') {
     throw "Unexpected patch version: $cmsVersion"
 }
 
 $requiredFiles = @(
-    'app\Livewire\Admin\GameServerManager.php',
-    'app\Services\Servers\ServerStatusPayload.php',
-    'app\Services\SiteSettings.php',
-    'resources\views\livewire\admin\game-server-manager.blade.php',
-    'themes\default\views\home.blade.php',
+    'tests\Feature\Admin\AdminPanelTest.php',
     'CHANGELOG.md',
     'README.md',
     'VERSION',
@@ -36,21 +32,20 @@ $requiredFiles = @(
 )
 foreach ($requiredFile in $requiredFiles) {
     if (-not (Test-Path $requiredFile -PathType Leaf)) {
-        throw "Patch file is missing: $requiredFile. Re-extract the complete 0.13.37 patch with file replacement enabled."
+        throw "Patch file is missing: $requiredFile. Re-extract the complete 0.13.39 patch with file replacement enabled."
     }
 }
 
 Write-Host "L2Forge CMS $cmsVersion update"
-Write-Host 'Moving public online visibility to game server management.'
+Write-Host 'Updating the Livewire navigation regression test.'
 Write-Host ''
 
 Get-ChildItem -Path $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -ne 'apply-0.13.37.ps1' } |
+    Where-Object { $_.Name -ne 'apply-0.13.39.ps1' } |
     Remove-Item -Force -ErrorAction SilentlyContinue
 
 & "$PSScriptRoot\update.ps1" -SkipTests:$SkipTests
 
 Write-Host ''
 Write-Host "L2Forge CMS $cmsVersion is ready." -ForegroundColor Green
-Write-Host 'Public online visibility is managed from Game servers.'
 Write-Host 'Developer quality gate: .\quality.ps1'

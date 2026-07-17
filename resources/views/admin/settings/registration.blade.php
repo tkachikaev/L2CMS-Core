@@ -16,7 +16,7 @@
         @if($mailReady)
             <div class="notice notice-success settings-inline-notice"><p><strong>{{ __('Mail is verified.') }}</strong> {{ __('Email verification may be enabled.') }}</p></div>
         @else
-            <div class="notice notice-warning settings-inline-notice"><p><strong>{{ __('Mail is not verified yet.') }}</strong> {{ __('Save SMTP settings and send a test email before enabling verified registration.') }}</p><p><a href="{{ route('admin.settings.mail') }}">{{ __('Open mail settings') }} →</a></p></div>
+            <div class="notice notice-warning settings-inline-notice"><p><strong>{{ __('Mail is not verified yet.') }}</strong> {{ __('Save SMTP settings and send a test email before enabling verified registration.') }}</p><p><a wire:navigate href="{{ route('admin.settings.mail') }}">{{ __('Open mail settings') }} →</a></p></div>
         @endif
     </section>
     <div class="settings-actions settings-actions-narrow"><button class="button button-primary" type="submit">{{ __('Save settings') }}</button></div>

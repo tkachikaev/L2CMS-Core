@@ -1,10 +1,10 @@
 <nav class="mail-template-tabs" aria-label="{{ __('Mail sections') }}">
-    <a @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail')]) href="{{ route('admin.settings.mail') }}">
+    <a wire:navigate @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail')]) href="{{ route('admin.settings.mail') }}">
         {{ __('Connection') }}
     </a>
 
     @foreach ($mailTemplates as $templateKey => $item)
-        <a
+        <a wire:navigate
             @class([
                 'mail-template-tab',
                 'active' => request()->routeIs('admin.settings.mail.template') && request()->route('template') === $templateKey,
@@ -15,7 +15,7 @@
         </a>
     @endforeach
 
-    <a @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail.custom') || request()->routeIs('admin.settings.mail.custom.send')]) href="{{ route('admin.settings.mail.custom') }}">
+    <a wire:navigate @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail.custom') || request()->routeIs('admin.settings.mail.custom.send')]) href="{{ route('admin.settings.mail.custom') }}">
         {{ __('Send email') }}
     </a>
 </nav>

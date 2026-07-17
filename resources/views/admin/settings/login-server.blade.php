@@ -7,6 +7,3 @@
     <livewire:admin.login-server-manager />
 @endsection
 
-@push('framework-scripts')
-    @livewireScripts
-@endpush

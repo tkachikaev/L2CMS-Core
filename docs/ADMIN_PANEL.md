@@ -38,6 +38,8 @@ The former global settings tab bar was removed. Existing `/admin/settings/*` URL
 
 Navigation groups are collapsed by default. The group containing the current page opens automatically, while manually opened or closed inactive groups are remembered in browser storage. On narrow screens the links remain available in the horizontal navigation without extra expansion.
 
+Internal panel links use Livewire `wire:navigate`, so the document body is replaced without a full browser reload. Livewire assets are loaded by the shared admin layout, and the built-in progress bar uses the panel accent color. Page-specific JavaScript must initialize immediately when its body script is evaluated and must not rely on `DOMContentLoaded`. Long-running requests, timers and temporary browser resources must be cancelled on `livewire:navigating`.
+
 The panel language switcher is independent of the public theme. Russian and English are built in; the selected locale is stored in the administrator account.
 
 ## Theme activation

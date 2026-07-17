@@ -53,12 +53,12 @@
         <section class="dashboard-monitor-card">
             <header>
                 <h2>{{ __('Game servers') }}</h2>
-                <a href="{{ route('admin.settings.game-server') }}">{{ __('Settings') }}</a>
+                <a wire:navigate href="{{ route('admin.settings.game-server') }}">{{ __('Settings') }}</a>
             </header>
 
             <div class="dashboard-monitor-list">
                 @forelse($monitor['game_servers'] as $server)
-                    <a class="dashboard-monitor-row" data-monitor-admin-game="{{ $server['id'] }}" href="{{ route('admin.settings.game-server') }}">
+                    <a wire:navigate class="dashboard-monitor-row" data-monitor-admin-game="{{ $server['id'] }}" href="{{ route('admin.settings.game-server') }}">
                         <span class="dashboard-monitor-dot {{ $server['state'] }}" data-monitor-dot aria-hidden="true"></span>
                         <span class="dashboard-monitor-name-wrap"><span class="dashboard-monitor-name">{{ $server['name'] }}</span><small data-monitor-details>{{ __('Database: :database · Service: :service', ['database' => $databaseStateLabels[$server['database_state']], 'service' => $serviceStateLabels[$server['service_state']]]) }}</small></span>
                         <span class="dashboard-monitor-state" data-monitor-state>{{ $stateLabels[$server['state']] }}</span>
@@ -77,12 +77,12 @@
         <section class="dashboard-monitor-card">
             <header>
                 <h2>{{ __('Login servers') }}</h2>
-                <a href="{{ route('admin.settings.login-server') }}">{{ __('Settings') }}</a>
+                <a wire:navigate href="{{ route('admin.settings.login-server') }}">{{ __('Settings') }}</a>
             </header>
 
             <div class="dashboard-monitor-list">
                 @forelse($monitor['login_servers'] as $server)
-                    <a class="dashboard-monitor-row dashboard-monitor-row-login" data-monitor-admin-login="{{ $server['id'] }}" href="{{ route('admin.settings.login-server') }}">
+                    <a wire:navigate class="dashboard-monitor-row dashboard-monitor-row-login" data-monitor-admin-login="{{ $server['id'] }}" href="{{ route('admin.settings.login-server') }}">
                         <span class="dashboard-monitor-dot {{ $server['state'] }}" data-monitor-dot aria-hidden="true"></span>
                         <span class="dashboard-monitor-name-wrap"><span class="dashboard-monitor-name">{{ $server['name'] }}</span><small data-monitor-details>{{ __('Database: :database · Service: :service', ['database' => $databaseStateLabels[$server['database_state']], 'service' => $serviceStateLabels[$server['service_state']]]) }}</small></span>
                         <span class="dashboard-monitor-state" data-monitor-state>{{ $stateLabels[$server['state']] }}</span>

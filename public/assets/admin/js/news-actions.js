@@ -46,5 +46,5 @@
         });
     };
 
-    document.addEventListener('DOMContentLoaded', initializeDeleteDialog);
+    initializeDeleteDialog();
 })();

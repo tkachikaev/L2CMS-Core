@@ -2,7 +2,7 @@
 @section('title', __('Create administrator'))
 @section('description', __('The new account will receive full control panel access.'))
 @section('content')
-<div class="administrator-page-toolbar"><a class="button button-secondary" href="{{ route('admin.administrators.index') }}">← {{ __('Back to list') }}</a></div>
+<div class="administrator-page-toolbar"><a wire:navigate class="button button-secondary" href="{{ route('admin.administrators.index') }}">← {{ __('Back to list') }}</a></div>
 <form class="administrator-form" method="POST" action="{{ route('admin.administrators.store') }}">
     @csrf
     <section class="form-card administrator-form-card">
@@ -15,6 +15,6 @@
         </div>
         <div class="administrator-password-rules"><strong>{{ __('Password requirements') }}</strong><span>{{ __('At least 12 characters, lowercase and uppercase letters, and at least one digit.') }}</span></div>
     </section>
-    <div class="settings-actions administrator-form-actions"><button class="button button-primary" type="submit">{{ __('Create administrator') }}</button><a class="button button-secondary" href="{{ route('admin.administrators.index') }}">{{ __('Cancel') }}</a></div>
+    <div class="settings-actions administrator-form-actions"><button class="button button-primary" type="submit">{{ __('Create administrator') }}</button><a wire:navigate class="button button-secondary" href="{{ route('admin.administrators.index') }}">{{ __('Cancel') }}</a></div>
 </form>
 @endsection

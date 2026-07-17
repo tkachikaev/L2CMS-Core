@@ -150,6 +150,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/js/settings.js') }}" defer></script>
-<script src="{{ asset('assets/admin/js/localization.js') }}" defer></script>
+<script src="{{ asset('assets/admin/js/settings.js') }}?v={{ cms_version() }}" defer></script>
+<script src="{{ asset('assets/admin/js/localization.js') }}?v={{ cms_version() }}" defer></script>
 @endpush

@@ -80,6 +80,56 @@ class AdminPanelTest extends TestCase
             ->assertDontSee('settings-tabs', false);
     }
 
+    public function test_admin_navigation_uses_livewire_without_full_page_reload(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Navigation Admin',
+            'email' => 'navigation-admin@example.com',
+            'password' => Hash::make('CorrectPassword123'),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->get('/admin');
+
+        $response
+            ->assertOk()
+            ->assertSee('wire:navigate', false)
+            ->assertSee('data-navigate-track', false)
+            ->assertSee('livewire.js?id=', false)
+            ->assertSee('data-navigate-once="true"', false);
+
+        $this->assertGreaterThanOrEqual(16, substr_count($response->getContent(), 'wire:navigate'));
+    }
+
+    public function test_admin_scripts_are_safe_for_livewire_page_navigation(): void
+    {
+        $scripts = [
+            'localization.js',
+            'news-actions.js',
+            'news-editor.js',
+            'page-actions.js',
+            'security.js',
+            'server-monitor.js',
+            'settings.js',
+            'system.js',
+        ];
+
+        foreach ($scripts as $script) {
+            $contents = file_get_contents(public_path('assets/admin/js/'.$script));
+            $this->assertIsString($contents);
+            $this->assertStringNotContainsString('DOMContentLoaded', $contents, $script);
+        }
+
+        $monitor = file_get_contents(public_path('assets/admin/js/server-monitor.js'));
+        $settings = file_get_contents(public_path('assets/admin/js/settings.js'));
+
+        $this->assertIsString($monitor);
+        $this->assertIsString($settings);
+        $this->assertStringContainsString('livewire:navigating', $monitor);
+        $this->assertStringContainsString('AbortController', $monitor);
+        $this->assertStringContainsString('livewire:navigating', $settings);
+    }
+
     public function test_old_dashboard_address_redirects_to_admin_root(): void
     {
         $admin = Admin::query()->create([

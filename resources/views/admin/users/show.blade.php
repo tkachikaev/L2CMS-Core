@@ -2,7 +2,7 @@
 @section('title', __('User :name', ['name' => $user->name]))
 @section('description', __('Website account details and recent related audit events.'))
 @section('content')
-<div class="user-detail-toolbar"><a class="button button-secondary" href="{{ route('admin.users.index') }}">← {{ __('Back to users') }}</a></div>
+<div class="user-detail-toolbar"><a wire:navigate class="button button-secondary" href="{{ route('admin.users.index') }}">← {{ __('Back to users') }}</a></div>
 <div class="user-detail-grid">
     <div class="user-detail-main">
         <section class="form-card user-profile-card">
@@ -22,12 +22,12 @@
             </dl>
         </section>
         <section class="form-card user-activity-card">
-            <div class="user-card-heading"><div><h2>{{ __('Recent activity') }}</h2><p>{{ __('Up to 25 recent records where the user is the actor or target.') }}</p></div><a class="button button-secondary" href="{{ route('admin.logs.index', ['category' => 'user']) }}">{{ __('Open audit log') }}</a></div>
+            <div class="user-card-heading"><div><h2>{{ __('Recent activity') }}</h2><p>{{ __('Up to 25 recent records where the user is the actor or target.') }}</p></div><a wire:navigate class="button button-secondary" href="{{ route('admin.logs.index', ['category' => 'user']) }}">{{ __('Open audit log') }}</a></div>
             @if ($activity->isEmpty())
                 <div class="user-activity-empty">{{ __('No related audit records yet.') }}</div>
             @else
                 <div class="user-activity-table-wrap"><table class="user-activity-table"><thead><tr><th>{{ __('Date') }}</th><th>{{ __('Action') }}</th><th>{{ __('Result') }}</th><th>{{ __('IP address') }}</th><th>{{ __('Browser') }}</th></tr></thead><tbody>
-                    @foreach($activity as $event)<tr><td><strong>{{ $event->created_at?->format('d.m.Y') }}</strong><span>{{ $event->created_at?->format('H:i:s') }}</span></td><td><a href="{{ route('admin.logs.show',$event) }}">{{ $event->actionLabel() }}</a><code>{{ $event->action }}</code></td><td><span @class(['status-badge','status-badge-success'=>$event->result==='success','status-badge-danger'=>$event->result==='failed'])>{{ $event->resultLabel() }}</span></td><td class="user-activity-monospace">{{ $event->ip_address ?: '—' }}</td><td class="user-agent-cell" title="{{ $event->user_agent ?: '' }}">{{ $event->user_agent ?: '—' }}</td></tr>@endforeach
+                    @foreach($activity as $event)<tr><td><strong>{{ $event->created_at?->format('d.m.Y') }}</strong><span>{{ $event->created_at?->format('H:i:s') }}</span></td><td><a wire:navigate href="{{ route('admin.logs.show',$event) }}">{{ $event->actionLabel() }}</a><code>{{ $event->action }}</code></td><td><span @class(['status-badge','status-badge-success'=>$event->result==='success','status-badge-danger'=>$event->result==='failed'])>{{ $event->resultLabel() }}</span></td><td class="user-activity-monospace">{{ $event->ip_address ?: '—' }}</td><td class="user-agent-cell" title="{{ $event->user_agent ?: '' }}">{{ $event->user_agent ?: '—' }}</td></tr>@endforeach
                 </tbody></table></div>
             @endif
         </section>

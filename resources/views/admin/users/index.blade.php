@@ -14,10 +14,10 @@
     <div><label for="users-status">{{ __('Status') }}</label><select id="users-status" name="status"><option value="">{{ __('All') }}</option><option value="active" @selected($activeStatus === 'active')>{{ __('Active') }}</option><option value="inactive" @selected($activeStatus === 'inactive')>{{ __('Disabled') }}</option></select></div>
     <div><label for="users-verification">Email</label><select id="users-verification" name="verification"><option value="">{{ __('Any status') }}</option><option value="verified" @selected($activeVerification === 'verified')>{{ __('Verified') }}</option><option value="unverified" @selected($activeVerification === 'unverified')>{{ __('Not verified') }}</option></select></div>
     <button class="button button-primary" type="submit">{{ __('Apply') }}</button>
-    @if ($search !== '' || $activeStatus !== '' || $activeVerification !== '')<a class="button button-secondary" href="{{ route('admin.users.index') }}">{{ __('Reset') }}</a>@endif
+    @if ($search !== '' || $activeStatus !== '' || $activeVerification !== '')<a wire:navigate class="button button-secondary" href="{{ route('admin.users.index') }}">{{ __('Reset') }}</a>@endif
 </form>
 @if ($users->isEmpty())
-    <div class="empty-state"><div class="empty-state-mark" aria-hidden="true">U</div><h2>{{ __('No users found') }}</h2><p>{{ __('Change the filters or wait for the first website registration.') }}</p>@if($search !== '' || $activeStatus !== '' || $activeVerification !== '')<a class="button button-secondary" href="{{ route('admin.users.index') }}">{{ __('Show all') }}</a>@endif</div>
+    <div class="empty-state"><div class="empty-state-mark" aria-hidden="true">U</div><h2>{{ __('No users found') }}</h2><p>{{ __('Change the filters or wait for the first website registration.') }}</p>@if($search !== '' || $activeStatus !== '' || $activeVerification !== '')<a wire:navigate class="button button-secondary" href="{{ route('admin.users.index') }}">{{ __('Show all') }}</a>@endif</div>
 @else
     <div class="users-list">
         <div class="user-row user-row-header"><span>{{ __('User') }}</span><span>Email</span><span>{{ __('Registered') }}</span><span>{{ __('Last sign in') }}</span><span>{{ __('Status') }}</span><span></span></div>
@@ -28,7 +28,7 @@
                 <time datetime="{{ $user->created_at?->toAtomString() }}">{{ $user->created_at?->format('d.m.Y H:i') ?? '—' }}</time>
                 <time datetime="{{ $user->last_login_at?->toAtomString() }}">{{ $user->last_login_at?->format('d.m.Y H:i') ?? __('Never') }}</time>
                 <div><span @class(['status-badge','status-badge-success' => $user->is_active,'status-badge-muted' => ! $user->is_active])>{{ $user->is_active ? __('Active') : __('Disabled') }}</span></div>
-                <div class="user-list-action"><a class="button button-secondary" href="{{ route('admin.users.show', $user) }}">{{ __('Details') }}</a></div>
+                <div class="user-list-action"><a wire:navigate class="button button-secondary" href="{{ route('admin.users.show', $user) }}">{{ __('Details') }}</a></div>
             </article>
         @endforeach
     </div>
@@ -36,9 +36,9 @@
         @php($firstPage = max(1, $users->currentPage() - 2))
         @php($lastPage = min($users->lastPage(), $users->currentPage() + 2))
         <nav class="simple-pagination" aria-label="{{ __('User page navigation') }}">
-            @if($users->onFirstPage())<span class="button button-secondary disabled">← {{ __('Back') }}</span>@else<a class="button button-secondary" href="{{ $users->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>@endif
-            <div class="pagination-pages" aria-label="{{ __('Pages') }}">@foreach($users->getUrlRange($firstPage,$lastPage) as $page=>$url) @if($page===$users->currentPage())<span class="pagination-page active" aria-current="page">{{ $page }}</span>@else<a class="pagination-page" href="{{ $url }}">{{ $page }}</a>@endif @endforeach</div>
-            @if($users->hasMorePages())<a class="button button-secondary" href="{{ $users->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>@else<span class="button button-secondary disabled">{{ __('Next') }} →</span>@endif
+            @if($users->onFirstPage())<span class="button button-secondary disabled">← {{ __('Back') }}</span>@else<a wire:navigate class="button button-secondary" href="{{ $users->previousPageUrl() }}" rel="prev">← {{ __('Back') }}</a>@endif
+            <div class="pagination-pages" aria-label="{{ __('Pages') }}">@foreach($users->getUrlRange($firstPage,$lastPage) as $page=>$url) @if($page===$users->currentPage())<span class="pagination-page active" aria-current="page">{{ $page }}</span>@else<a wire:navigate class="pagination-page" href="{{ $url }}">{{ $page }}</a>@endif @endforeach</div>
+            @if($users->hasMorePages())<a wire:navigate class="button button-secondary" href="{{ $users->nextPageUrl() }}" rel="next">{{ __('Next') }} →</a>@else<span class="button button-secondary disabled">{{ __('Next') }} →</span>@endif
         </nav>
     @endif
 @endif

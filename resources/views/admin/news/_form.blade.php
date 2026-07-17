@@ -87,7 +87,7 @@
 </div>
 
 <div class="editor-actions">
-    <a class="button button-secondary" href="{{ route('admin.news.index') }}">{{ __('Cancel') }}</a>
+    <a wire:navigate class="button button-secondary" href="{{ route('admin.news.index') }}">{{ __('Cancel') }}</a>
     <button class="button button-secondary" type="submit" formaction="{{ route('admin.news.preview') }}" formmethod="POST" formtarget="_blank" data-news-preview>{{ __('Preview') }}</button>
     <button class="button button-primary" type="submit">{{ $newsItem->exists ? __('Save changes') : __('Create news') }}</button>
 </div>

@@ -1,6 +1,8 @@
 (() => {
     'use strict';
 
+    const cleanupCallbacks = [];
+
     const initializeImageUpload = (container) => {
         const input = container.querySelector('[data-settings-file]');
         const selectButton = container.querySelector('[data-settings-file-select]');
@@ -53,10 +55,12 @@
             preview.classList.toggle('marked-for-removal', remove.checked);
         });
 
-        window.addEventListener('beforeunload', clearObjectUrl, { once: true });
+        cleanupCallbacks.push(clearObjectUrl);
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[data-settings-image]').forEach(initializeImageUpload);
-    });
+    document.querySelectorAll('[data-settings-image]').forEach(initializeImageUpload);
+
+    const cleanup = () => cleanupCallbacks.forEach((callback) => callback());
+    window.addEventListener('beforeunload', cleanup, { once: true });
+    document.addEventListener('livewire:navigating', cleanup, { once: true });
 })();

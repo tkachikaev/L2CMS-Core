@@ -3,7 +3,7 @@
 @section('body')
 <div class="admin-shell">
     <aside class="admin-sidebar">
-        <a class="admin-brand" href="{{ route('admin.dashboard') }}">
+        <a wire:navigate class="admin-brand" href="{{ route('admin.dashboard') }}">
             <span class="admin-brand-mark">L2</span>
             <span>
                 <strong>{{ config('app.name') }}</strong>
@@ -40,8 +40,8 @@
                         <span class="admin-account-chevron" aria-hidden="true">⌄</span>
                     </summary>
                     <div class="admin-account-dropdown">
-                        <a href="{{ route('admin.administrators.edit', auth('admin')->user()) }}">{{ __('My profile') }}</a>
-                        <a href="{{ route('admin.account.security') }}">
+                        <a wire:navigate href="{{ route('admin.administrators.edit', auth('admin')->user()) }}">{{ __('My profile') }}</a>
+                        <a wire:navigate href="{{ route('admin.account.security') }}">
                             {{ __('Account security') }}
                             <span @class(['account-menu-state', 'enabled' => auth('admin')->user()->twoFactorEnabled()])>
                                 {{ auth('admin')->user()->twoFactorEnabled() ? __('2FA enabled') : __('2FA disabled') }}

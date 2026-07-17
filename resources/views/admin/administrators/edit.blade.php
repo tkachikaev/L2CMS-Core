@@ -3,7 +3,7 @@
 @section('description', __('Edit account details, password and status.'))
 @section('content')
 <div class="administrator-page-toolbar">
-    <a class="button button-secondary" href="{{ route('admin.administrators.index') }}">← {{ __('Back to list') }}</a>
+    <a wire:navigate class="button button-secondary" href="{{ route('admin.administrators.index') }}">← {{ __('Back to list') }}</a>
     <span @class(['status-badge','status-badge-success' => $administrator->is_active,'status-badge-muted' => ! $administrator->is_active])>{{ $administrator->is_active ? __('Active') : __('Disabled') }}</span>
 </div>
 <div class="administrator-edit-grid">
@@ -41,7 +41,7 @@
             @if ($administrator->twoFactorEnabled())
                 <p>{{ __('Connected: :date', ['date' => $administrator->two_factor_confirmed_at?->format('d.m.Y H:i') ?? '—']) }}</p>
                 @if ($isCurrentAdmin)
-                    <a class="button button-secondary" href="{{ route('admin.account.security') }}">{{ __('Manage account security') }}</a>
+                    <a wire:navigate class="button button-secondary" href="{{ route('admin.account.security') }}">{{ __('Manage account security') }}</a>
                 @else
                     <p>{{ __('Resetting 2FA removes the secret and recovery codes and revokes active sessions.') }}</p>
                     <form method="POST" action="{{ route('admin.administrators.two-factor.destroy', $administrator) }}">
@@ -54,7 +54,7 @@
             @else
                 <p>{{ __('This administrator has not enabled two-factor authentication.') }}</p>
                 @if ($isCurrentAdmin)
-                    <a class="button button-primary" href="{{ route('admin.account.security') }}">{{ __('Enable 2FA') }}</a>
+                    <a wire:navigate class="button button-primary" href="{{ route('admin.account.security') }}">{{ __('Enable 2FA') }}</a>
                 @endif
             @endif
         </section>

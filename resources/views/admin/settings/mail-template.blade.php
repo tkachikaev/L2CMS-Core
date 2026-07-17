@@ -8,7 +8,7 @@
 
 <nav class="translation-tabs standalone" aria-label="{{ __('Template language') }}">
     @foreach ($languages as $code => $language)
-        <a @class(['translation-tab', 'active' => $templateLocale === $code]) href="{{ route('admin.settings.mail.template', ['template' => $template['key'], 'locale' => $code]) }}">
+        <a wire:navigate @class(['translation-tab', 'active' => $templateLocale === $code]) href="{{ route('admin.settings.mail.template', ['template' => $template['key'], 'locale' => $code]) }}">
             {{ $language['native_name'] }}
         </a>
     @endforeach
