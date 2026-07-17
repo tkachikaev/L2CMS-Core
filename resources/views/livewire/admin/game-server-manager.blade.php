@@ -23,7 +23,7 @@
                 @php
                     $driver = $server['driver'] !== null ? ($gameDrivers[$server['driver']] ?? null) : null;
                     $cardTestResult = $cardTestResults[$server['id']] ?? null;
-                    $maintenanceEnabled = $server['maintenance_enabled'];
+                    $cardMaintenanceEnabled = $server['maintenance_enabled'];
                     $cardConfigured = $server['database_status'] === 'configured';
                     $databasePending = $server['database_status'] === 'unknown';
                     $endpoint = $server['use_login_server_connection']
@@ -43,12 +43,12 @@
                         </div>
                         <span @class([
                             'status-badge',
-                            'status-badge-warning' => $maintenanceEnabled,
-                            'status-badge-success' => ! $maintenanceEnabled && $cardConfigured,
-                            'status-badge-muted' => ! $maintenanceEnabled && $databasePending,
-                            'status-badge-danger' => ! $maintenanceEnabled && ! $cardConfigured && ! $databasePending,
+                            'status-badge-warning' => $cardMaintenanceEnabled,
+                            'status-badge-success' => ! $cardMaintenanceEnabled && $cardConfigured,
+                            'status-badge-muted' => ! $cardMaintenanceEnabled && $databasePending,
+                            'status-badge-danger' => ! $cardMaintenanceEnabled && ! $cardConfigured && ! $databasePending,
                         ])>
-                            {{ $maintenanceEnabled ? __('Maintenance') : ($cardConfigured ? __('Configured') : ($databasePending ? __('Status pending') : __('Not configured'))) }}
+                            {{ $cardMaintenanceEnabled ? __('Maintenance') : ($cardConfigured ? __('Configured') : ($databasePending ? __('Status pending') : __('Not configured'))) }}
                         </span>
                     </div>
 
@@ -75,7 +75,7 @@
                             <dt>{{ __('Service status') }}</dt>
                             <dd>{{ $server['service_status'] === 'online' ? __('Running') : ($server['service_status'] === 'offline' ? __('Unavailable') : __('Status pending')) }}</dd>
                         </div>
-                        @if($maintenanceEnabled && $server['maintenance_message'] !== '')
+                        @if($cardMaintenanceEnabled && $server['maintenance_message'] !== '')
                             <div>
                                 <dt>{{ __('Maintenance message') }}</dt>
                                 <dd>{{ $server['maintenance_message'] }}</dd>
