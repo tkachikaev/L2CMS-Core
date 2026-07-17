@@ -168,7 +168,7 @@
                             <small>{{ __('The public website will show an orange maintenance status. Database and service monitoring will continue.') }}</small>
                         </span>
                         <span class="switch-control">
-                            <input type="checkbox" wire:model.live="maintenanceEnabled">
+                            <input type="checkbox" @checked($maintenanceEnabled) wire:change="setMaintenanceEnabled($event.target.checked)">
                             <span></span>
                         </span>
                     </label>

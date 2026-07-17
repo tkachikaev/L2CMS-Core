@@ -164,6 +164,14 @@ class GameServerManager extends Component
         $this->resetValidation();
     }
 
+    public function setMaintenanceEnabled(bool $enabled): void
+    {
+        $this->ensureAuthorized();
+        $this->maintenanceEnabled = $enabled;
+        $this->syncEnabledLanguageFields();
+        $this->resetValidation('maintenanceMessages');
+    }
+
     public function testStored(int $serverId): void
     {
         $this->ensureAuthorized();

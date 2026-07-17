@@ -242,7 +242,8 @@ class ReactiveServerManagementTest extends TestCase
         Livewire::test(GameServerManager::class)
             ->call('edit', $gameServer->id)
             ->assertDontSee('live_game_maintenance_message_ru', false)
-            ->set('maintenanceEnabled', true)
+            ->call('setMaintenanceEnabled', true)
+            ->assertSet('maintenanceEnabled', true)
             ->assertSee('live_game_maintenance_message_ru', false)
             ->set('maintenanceMessages.ru', 'Установка обновления до 15:30 МСК')
             ->call('save')
@@ -289,7 +290,8 @@ PHP);
 
             Livewire::test(GameServerManager::class)
                 ->call('edit', $gameServer->id)
-                ->set('maintenanceEnabled', true)
+                ->call('setMaintenanceEnabled', true)
+                ->assertSet('maintenanceEnabled', true)
                 ->assertSee('live_game_maintenance_message_de', false)
                 ->set('maintenanceMessages.de', 'Wartung bis 15:30 Uhr')
                 ->call('save');
