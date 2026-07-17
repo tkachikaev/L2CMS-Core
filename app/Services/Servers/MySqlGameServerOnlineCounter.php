@@ -23,18 +23,10 @@ final class MySqlGameServerOnlineCounter implements GameServerOnlineCounter
     {
         $gameServer->loadMissing('loginServer');
         $driver = $this->drivers->gameDriver((string) $gameServer->driver);
-        $definition = $driver['online_count'] ?? null;
-
-        if (! is_array($definition)) {
-            throw new RuntimeException('The selected GameServer driver does not provide online counting.');
-        }
-
-        $table = $this->identifier($definition['table'] ?? null);
-        $column = $this->identifier($definition['column'] ?? null);
-        $onlineValue = $definition['value'] ?? 1;
-        if (! is_int($onlineValue) && ! is_string($onlineValue)) {
-            throw new RuntimeException('The online counter contains an invalid comparison value.');
-        }
+        $definition = $this->onlineCountDefinition($driver['online_count'] ?? null);
+        $table = $this->identifier($definition['table']);
+        $column = $this->identifier($definition['column']);
+        $onlineValue = $definition['value'];
 
         $connection = $this->connectionValues($gameServer);
         $name = 'l2forge_online_'.Str::lower(Str::random(12));
@@ -110,6 +102,30 @@ final class MySqlGameServerOnlineCounter implements GameServerOnlineCounter
             'options' => [
                 PDO::ATTR_TIMEOUT => max(1, min(30, (int) config('cms.external_database.connect_timeout_seconds', 3))),
             ],
+        ];
+    }
+
+    /** @return array{table:string,column:string,value:int|string} */
+    private function onlineCountDefinition(mixed $value): array
+    {
+        if (! is_array($value)) {
+            throw new RuntimeException('The selected GameServer driver does not provide online counting.');
+        }
+
+        $table = $value['table'] ?? null;
+        $column = $value['column'] ?? null;
+        $onlineValue = $value['value'] ?? null;
+
+        if (! is_string($table)
+            || ! is_string($column)
+            || (! is_int($onlineValue) && ! is_string($onlineValue))) {
+            throw new RuntimeException('The online counter contains an invalid definition.');
+        }
+
+        return [
+            'table' => $table,
+            'column' => $column,
+            'value' => $onlineValue,
         ];
     }
 

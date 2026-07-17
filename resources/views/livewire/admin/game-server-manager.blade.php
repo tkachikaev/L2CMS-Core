@@ -270,11 +270,23 @@
     @if($confirmingDeleteId !== null)
         <div class="server-confirm-backdrop" wire:cloak>
             <div class="server-confirm-card" role="alertdialog" aria-modal="true">
-                <h2>{{ __('Delete game server?') }}</h2>
-                <p>{{ __('The server will be removed from settings and the public website. This action cannot be undone.') }}</p>
+                @if($deleteImpactRequiresConfirmation)
+                    <h2>{{ __('Delete the last game server?') }}</h2>
+                    <p>{{ __('This is the last GameServer connected to LoginServer :name.', ['name' => $deleteImpactLoginServerName ?: '—']) }}</p>
+                    <p><strong>{{ __('Game accounts that will be unavailable: :count', ['count' => $deleteImpactAccountCount]) }}</strong></p>
+                    <p>{{ __('The game accounts and characters will not be deleted. Their access in the personal account will be restored automatically after a replacement GameServer is connected to this LoginServer.') }}</p>
+                @else
+                    <h2>{{ __('Delete game server?') }}</h2>
+                    <p>{{ __('The server will be removed from settings and the public website. This action cannot be undone.') }}</p>
+                @endif
+                @if($deleteImpactWarning)
+                    <div class="notice notice-warning" role="alert">{{ $deleteImpactWarning }}</div>
+                @endif
                 <div>
                     <button class="button button-secondary" type="button" wire:click="cancelDelete">{{ __('Cancel') }}</button>
-                    <button class="button button-danger" type="button" wire:click="deleteServer" wire:loading.attr="disabled" wire:target="deleteServer">{{ __('Delete') }}</button>
+                    <button class="button button-danger" type="button" wire:click="deleteServer" wire:loading.attr="disabled" wire:target="deleteServer">
+                        {{ $deleteImpactRequiresConfirmation ? __('Delete and hide accounts (:count)', ['count' => $deleteImpactAccountCount]) : __('Delete') }}
+                    </button>
                 </div>
             </div>
         </div>

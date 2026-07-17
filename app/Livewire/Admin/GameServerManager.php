@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exceptions\GameServerDeletionConfirmationRequired;
 use App\Models\GameServer;
 use App\Models\GameServerTranslation;
 use App\Models\LoginServer;
 use App\Services\AuditLogger;
+use App\Services\GameServerDeletionImpact;
 use App\Services\GameServerSettings;
 use App\Services\Localization\LanguageManager;
 use App\Services\Servers\ServerConnectionTester;
@@ -25,6 +27,21 @@ class GameServerManager extends Component
 
     #[Locked]
     public ?int $confirmingDeleteId = null;
+
+    #[Locked]
+    public ?string $deleteImpactFingerprint = null;
+
+    #[Locked]
+    public bool $deleteImpactRequiresConfirmation = false;
+
+    #[Locked]
+    public int $deleteImpactAccountCount = 0;
+
+    #[Locked]
+    public ?string $deleteImpactLoginServerName = null;
+
+    #[Locked]
+    public ?string $deleteImpactWarning = null;
 
     /** @var array<string,string> */
     public array $translations = [];
@@ -121,7 +138,7 @@ class GameServerManager extends Component
         $this->connectionReport = null;
         $this->status = null;
         $this->showChecks = false;
-        $this->confirmingDeleteId = null;
+        $this->clearDeleteConfirmation();
         $this->drawerOpen = true;
     }
 
@@ -130,7 +147,7 @@ class GameServerManager extends Component
         $this->drawerOpen = false;
         $this->connectionReport = null;
         $this->showChecks = false;
-        $this->confirmingDeleteId = null;
+        $this->clearDeleteConfirmation();
         $this->resetValidation();
     }
 
@@ -250,18 +267,21 @@ class GameServerManager extends Component
         unset($this->cardTestResults[$server->id]);
         $this->databasePassword = '';
         $this->connectionReport = null;
-        $this->confirmingDeleteId = null;
+        $this->clearDeleteConfirmation();
     }
 
     public function confirmDelete(int $serverId): void
     {
         $this->ensureAuthorized();
+        $server = GameServer::query()->with('loginServer')->findOrFail($serverId);
+        $this->applyDeleteImpact(app(GameServerDeletionImpact::class)->analyze($server));
         $this->confirmingDeleteId = $serverId;
+        $this->deleteImpactWarning = null;
     }
 
     public function cancelDelete(): void
     {
-        $this->confirmingDeleteId = null;
+        $this->clearDeleteConfirmation();
     }
 
     public function deleteServer(): void
@@ -272,11 +292,19 @@ class GameServerManager extends Component
             return;
         }
 
-        $server = GameServer::query()->with('translations')->findOrFail($this->confirmingDeleteId);
+        $server = GameServer::query()->with(['translations', 'loginServer'])->findOrFail($this->confirmingDeleteId);
         $name = $server->name;
         $serverId = $server->id;
         $values = $this->auditValues($server);
-        app(GameServerSettings::class)->delete($server);
+
+        try {
+            $impact = app(GameServerSettings::class)->delete($server, $this->deleteImpactFingerprint);
+        } catch (GameServerDeletionConfirmationRequired $exception) {
+            $this->applyDeleteImpact($exception->impact);
+            $this->deleteImpactWarning = __('The deletion impact changed. Review the updated account count and confirm again.');
+
+            return;
+        }
 
         app(AuditLogger::class)->success(
             category: 'admin',
@@ -285,6 +313,12 @@ class GameServerManager extends Component
             details: [
                 'game_server_id' => $serverId,
                 'values' => $values,
+                'deletion_impact' => [
+                    'login_server_id' => $impact['login_server_id'],
+                    'replacement_game_server_id' => $impact['replacement_game_server_id'],
+                    'accounts_becoming_unavailable' => $impact['accounts_becoming_unavailable'],
+                    'unavailable_after_deletion' => $impact['unavailable_after_deletion'],
+                ],
             ],
         );
 
@@ -295,7 +329,7 @@ class GameServerManager extends Component
 
         unset($this->cardTestResults[$serverId]);
         $this->status = __('Game server :name deleted.', ['name' => $name]);
-        $this->confirmingDeleteId = null;
+        $this->clearDeleteConfirmation();
     }
 
     public function render(): View
@@ -545,7 +579,7 @@ class GameServerManager extends Component
     private function resetForm(): void
     {
         $this->editingId = null;
-        $this->confirmingDeleteId = null;
+        $this->clearDeleteConfirmation();
         $this->initializeTranslations();
         $this->serverRates = '';
         $this->serverChronicle = '';
@@ -565,6 +599,37 @@ class GameServerManager extends Component
         $this->connectionReport = null;
         $this->status = null;
         $this->showChecks = false;
+    }
+
+    /**
+     * @param array{
+     *     game_server_id:int,
+     *     login_server_id:int|null,
+     *     login_server_name:string|null,
+     *     replacement_game_server_id:int|null,
+     *     login_server_account_count:int,
+     *     accounts_becoming_unavailable:int,
+     *     unavailable_after_deletion:int,
+     *     requires_confirmation:bool,
+     *     fingerprint:string
+     * } $impact
+     */
+    private function applyDeleteImpact(array $impact): void
+    {
+        $this->deleteImpactFingerprint = $impact['fingerprint'];
+        $this->deleteImpactRequiresConfirmation = $impact['requires_confirmation'];
+        $this->deleteImpactAccountCount = $impact['accounts_becoming_unavailable'];
+        $this->deleteImpactLoginServerName = $impact['login_server_name'];
+    }
+
+    private function clearDeleteConfirmation(): void
+    {
+        $this->confirmingDeleteId = null;
+        $this->deleteImpactFingerprint = null;
+        $this->deleteImpactRequiresConfirmation = false;
+        $this->deleteImpactAccountCount = 0;
+        $this->deleteImpactLoginServerName = null;
+        $this->deleteImpactWarning = null;
     }
 
     private function nullableString(mixed $value): ?string

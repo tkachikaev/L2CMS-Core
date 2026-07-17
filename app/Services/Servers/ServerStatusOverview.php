@@ -6,7 +6,8 @@ use App\Models\GameServer;
 use App\Models\LoginServer;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Collection;
+use DateTimeInterface;
+use Throwable;
 
 final class ServerStatusOverview
 {
@@ -65,7 +66,10 @@ final class ServerStatusOverview
                 fn (array $server): bool => $server['state'] === 'unknown'
                     || ($server['state'] === 'online' && $server['players'] === null),
             ),
-            'checked_at' => $this->latestCheckedAt($games, $logins),
+            'checked_at' => $this->latestCheckedAt(
+                $games->pluck('checked_at')->values()->all(),
+                $logins->pluck('checked_at')->values()->all(),
+            ),
             'game_servers' => $games->all(),
             'login_servers' => $logins->all(),
         ];
@@ -107,7 +111,7 @@ final class ServerStatusOverview
             return $value;
         }
 
-        if ($value instanceof \DateTimeInterface) {
+        if ($value instanceof DateTimeInterface) {
             return CarbonImmutable::instance($value);
         }
 
@@ -117,26 +121,30 @@ final class ServerStatusOverview
 
         try {
             return CarbonImmutable::parse((string) $value);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }
 
-    /** @param Collection<int,array{checked_at:CarbonInterface|null}> ...$collections */
-    private function latestCheckedAt(Collection ...$collections): ?CarbonInterface
+    /** @param array<int,mixed> ...$dateGroups */
+    private function latestCheckedAt(array ...$dateGroups): ?CarbonInterface
     {
-        $dates = collect();
+        $latest = null;
 
-        foreach ($collections as $collection) {
-            $dates = $dates->merge($collection->pluck('checked_at'));
+        foreach ($dateGroups as $dates) {
+            foreach ($dates as $date) {
+                if (! $date instanceof CarbonInterface) {
+                    continue;
+                }
+
+                if (! $latest instanceof CarbonInterface
+                    || $date->getTimestamp() > $latest->getTimestamp()) {
+                    $latest = $date;
+                }
+            }
         }
 
-        $latest = $dates
-            ->filter(fn (mixed $date): bool => $date instanceof CarbonInterface)
-            ->sortByDesc(fn (CarbonInterface $date): int => $date->getTimestamp())
-            ->first();
-
-        return $latest instanceof CarbonInterface ? $latest : null;
+        return $latest;
     }
 
     private function statusStaleSeconds(): int

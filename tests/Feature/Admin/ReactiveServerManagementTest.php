@@ -3,11 +3,15 @@
 namespace Tests\Feature\Admin;
 
 use App\Contracts\ExternalDatabaseConnectionTester;
+use App\Exceptions\GameServerDeletionConfirmationRequired;
 use App\Livewire\Admin\GameServerManager;
 use App\Livewire\Admin\LoginServerManager;
 use App\Models\Admin;
 use App\Models\GameServer;
 use App\Models\LoginServer;
+use App\Models\User;
+use App\Models\UserGameAccount;
+use App\Services\GameServerSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
@@ -207,6 +211,122 @@ class ReactiveServerManagementTest extends TestCase
             ->assertSee('Игровой сервер «'.$server->name.'» удалён.');
 
         $this->assertDatabaseMissing('game_servers', ['id' => $server->id]);
+    }
+
+    public function test_last_game_server_deletion_shows_the_account_impact_and_requires_the_confirmed_fingerprint(): void
+    {
+        $loginServer = LoginServer::query()->create($this->loginServerValues());
+        $gameServer = GameServer::query()->firstOrFail();
+        $gameServer->update([
+            'login_server_id' => $loginServer->id,
+            'driver' => 'l2j_mobius_ct0_interlude',
+            'use_login_server_connection' => true,
+        ]);
+        $user = User::query()->create([
+            'name' => 'Player',
+            'email' => 'player-impact@example.com',
+            'password' => Hash::make('Password123'),
+        ]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Impact01',
+            'normalized_login' => 'impact01',
+        ]);
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        $this->expectException(GameServerDeletionConfirmationRequired::class);
+        app(GameServerSettings::class)->delete($gameServer);
+    }
+
+    public function test_admin_can_confirm_deletion_of_the_last_game_server_after_reviewing_affected_accounts(): void
+    {
+        $loginServer = LoginServer::query()->create($this->loginServerValues());
+        $gameServer = GameServer::query()->firstOrFail();
+        $gameServer->update([
+            'login_server_id' => $loginServer->id,
+            'driver' => 'l2j_mobius_ct0_interlude',
+            'use_login_server_connection' => true,
+        ]);
+        $user = User::query()->create([
+            'name' => 'Player',
+            'email' => 'player-delete@example.com',
+            'password' => Hash::make('Password123'),
+        ]);
+        $account = UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Delete01',
+            'normalized_login' => 'delete01',
+        ]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => null,
+            'game_login' => 'AlreadyHidden01',
+            'normalized_login' => 'alreadyhidden01',
+        ]);
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        Livewire::test(GameServerManager::class)
+            ->call('confirmDelete', $gameServer->id)
+            ->assertSet('deleteImpactRequiresConfirmation', true)
+            ->assertSet('deleteImpactAccountCount', 1)
+            ->assertSee('Это последний GameServer, подключённый к LoginServer')
+            ->assertSee('Игровых аккаунтов станет недоступно: 1')
+            ->call('deleteServer')
+            ->assertSet('confirmingDeleteId', null);
+
+        $this->assertDatabaseMissing('game_servers', ['id' => $gameServer->id]);
+        $this->assertNull($account->fresh()?->registration_game_server_id);
+    }
+
+    public function test_changed_deletion_impact_requires_a_fresh_confirmation(): void
+    {
+        $loginServer = LoginServer::query()->create($this->loginServerValues());
+        $gameServer = GameServer::query()->firstOrFail();
+        $gameServer->update([
+            'login_server_id' => $loginServer->id,
+            'driver' => 'l2j_mobius_ct0_interlude',
+            'use_login_server_connection' => true,
+        ]);
+        $user = User::query()->create([
+            'name' => 'Player',
+            'email' => 'player-change@example.com',
+            'password' => Hash::make('Password123'),
+        ]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Change01',
+            'normalized_login' => 'change01',
+        ]);
+        $this->actingAs($this->createAdmin(), 'admin');
+
+        $component = Livewire::test(GameServerManager::class)
+            ->call('confirmDelete', $gameServer->id)
+            ->assertSet('deleteImpactAccountCount', 1);
+
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Change02',
+            'normalized_login' => 'change02',
+        ]);
+
+        $component
+            ->call('deleteServer')
+            ->assertSet('confirmingDeleteId', $gameServer->id)
+            ->assertSet('deleteImpactAccountCount', 2)
+            ->assertSee('Последствия удаления изменились')
+            ->call('deleteServer')
+            ->assertSet('confirmingDeleteId', null);
+
+        $this->assertDatabaseMissing('game_servers', ['id' => $gameServer->id]);
     }
 
     public function test_delete_confirmation_buttons_use_a_non_reserved_livewire_action(): void

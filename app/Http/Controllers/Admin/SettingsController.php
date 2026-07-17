@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\GameServerDeletionConfirmationRequired;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveGameServerSettingsRequest;
 use App\Http\Requests\Admin\SaveGeneralSettingsRequest;
@@ -183,7 +184,16 @@ class SettingsController extends Controller
         $name = $gameServer->name;
         $gameServerId = $gameServer->id;
         $values = $this->gameServerAuditValues($gameServer);
-        $gameServerSettings->delete($gameServer);
+
+        try {
+            $impact = $gameServerSettings->delete($gameServer);
+        } catch (GameServerDeletionConfirmationRequired $exception) {
+            return redirect()
+                ->route('admin.settings.game-server')
+                ->with('warning', __('This GameServer cannot be deleted through the legacy endpoint because :count game accounts would become unavailable. Use the current server card confirmation.', [
+                    'count' => $exception->impact['accounts_becoming_unavailable'],
+                ]));
+        }
 
         $this->auditLogger->success(
             category: 'admin',
@@ -192,6 +202,12 @@ class SettingsController extends Controller
             details: [
                 'game_server_id' => $gameServerId,
                 'values' => $values,
+                'deletion_impact' => [
+                    'login_server_id' => $impact['login_server_id'],
+                    'replacement_game_server_id' => $impact['replacement_game_server_id'],
+                    'accounts_becoming_unavailable' => $impact['accounts_becoming_unavailable'],
+                    'unavailable_after_deletion' => $impact['unavailable_after_deletion'],
+                ],
             ],
         );
 

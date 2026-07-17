@@ -60,6 +60,10 @@
             <div class="notice notice-success" role="status">{{ session('status') }}</div>
         @endif
 
+        @if (session('warning'))
+            <div class="notice notice-warning" role="alert">{{ session('warning') }}</div>
+        @endif
+
         @if ($errors->any())
             <div class="notice notice-error" role="alert">
                 @foreach ($errors->all() as $error)

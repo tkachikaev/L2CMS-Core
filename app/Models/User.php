@@ -40,6 +40,12 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /** @return HasMany<UserGameAccount, $this> */
+    public function gameAccountsCountingTowardLimit(): HasMany
+    {
+        return $this->gameAccounts();
+    }
+
+    /** @return HasMany<UserGameAccount, $this> */
     public function availableGameAccounts(): HasMany
     {
         return $this->gameAccounts()

@@ -10,6 +10,7 @@ use App\Models\LoginServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\AuditLogger;
+use App\Services\GameAccounts\GameAccountQuota;
 use App\Services\GameAccounts\InterludeClassNames;
 use App\Services\GameAccountSettings;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,9 +25,16 @@ use Throwable;
 
 class GameAccountController extends Controller
 {
+    private const ERROR_LIMIT_REACHED = 'game_account_limit_reached';
+
+    private const ERROR_LINK_CONFLICT = 'game_account_link_conflict';
+
+    private const ERROR_SERVER_UNAVAILABLE = 'game_server_unavailable';
+
     public function __construct(
         private readonly GameAccountGateway $gateway,
         private readonly AuditLogger $auditLogger,
+        private readonly GameAccountQuota $quota,
     ) {}
 
     public function create(Request $request, GameAccountSettings $settings): View|RedirectResponse
@@ -41,7 +49,7 @@ class GameAccountController extends Controller
             return redirect()->to(public_route('account'))->with('warning', __('Creating game accounts is disabled.'));
         }
 
-        if ($user->availableGameAccounts()->count() >= $values['max_accounts']) {
+        if ($this->quota->reached($user, $values['max_accounts'])) {
             return redirect()->to(public_route('account'))->with('warning', __('You have reached the game account limit.'));
         }
 
@@ -74,7 +82,7 @@ class GameAccountController extends Controller
         $login = trim((string) $request->validated('game_login'));
         $normalized = Str::lower($login);
 
-        if ($user->availableGameAccounts()->count() >= $values['max_accounts']) {
+        if ($this->quota->reached($user, $values['max_accounts'])) {
             return back()->withErrors(['game_login' => __('You have reached the game account limit.')]);
         }
 
@@ -93,15 +101,31 @@ class GameAccountController extends Controller
             }
 
             $link = DB::transaction(function () use ($user, $loginServer, $gameServer, $login, $normalized, $values): UserGameAccount {
+                $lockedLoginServer = LoginServer::query()->lockForUpdate()->findOrFail($loginServer->id);
+                $lockedGameServer = GameServer::query()->lockForUpdate()->findOrFail($gameServer->id);
                 $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
-                if ($lockedUser->availableGameAccounts()->count() >= $values['max_accounts']) {
-                    throw new RuntimeException('game_account_limit_reached');
+
+                if ($lockedGameServer->login_server_id !== $lockedLoginServer->id
+                    || ! $lockedGameServer->connectionConfigured()
+                    || ! $this->gateway->supportsLoginServer($lockedLoginServer)) {
+                    throw new RuntimeException(self::ERROR_SERVER_UNAVAILABLE);
+                }
+
+                if ($this->quota->reached($lockedUser, $values['max_accounts'])) {
+                    throw new RuntimeException(self::ERROR_LIMIT_REACHED);
+                }
+
+                if (UserGameAccount::query()
+                    ->where('login_server_id', $lockedLoginServer->id)
+                    ->where('normalized_login', $normalized)
+                    ->exists()) {
+                    throw new RuntimeException(self::ERROR_LINK_CONFLICT);
                 }
 
                 return UserGameAccount::query()->create([
                     'user_id' => $lockedUser->id,
-                    'login_server_id' => $loginServer->id,
-                    'registration_game_server_id' => $gameServer->id,
+                    'login_server_id' => $lockedLoginServer->id,
+                    'registration_game_server_id' => $lockedGameServer->id,
                     'game_login' => $login,
                     'normalized_login' => $normalized,
                     'created_via_cms' => true,
@@ -135,6 +159,13 @@ class GameAccountController extends Controller
             return redirect()->to(public_route('game-accounts.show', ['gameAccount' => $link]))
                 ->with('status', __('Game account created.'));
         } catch (Throwable $exception) {
+            if ($exception instanceof RuntimeException) {
+                $knownError = $this->knownCreationError($exception->getMessage(), $request);
+                if ($knownError instanceof RedirectResponse) {
+                    return $knownError;
+                }
+            }
+
             Log::warning('Game account creation failed.', [
                 'exception' => $exception::class,
                 'login_server_id' => $loginServer->id,
@@ -167,9 +198,10 @@ class GameAccountController extends Controller
             ->with(['loginServer.gameServers.translations', 'registrationGameServer.translations'])
             ->findOrFail($gameAccount);
         $accountCount = $user->availableGameAccounts()->count();
+        $quotaAccountCount = $this->quota->count($user);
         $settingsValues = $settings->values();
         $canCreateAccount = $settingsValues['enabled']
-            && $accountCount < $settingsValues['max_accounts']
+            && $quotaAccountCount < $settingsValues['max_accounts']
             && $this->availableGameServers()->isNotEmpty();
         $summary = null;
         $summaryUnavailable = false;
@@ -213,6 +245,24 @@ class GameAccountController extends Controller
             'accountCount' => $accountCount,
             'canCreateAccount' => $canCreateAccount,
         ]);
+    }
+
+    private function knownCreationError(string $code, Request $request): ?RedirectResponse
+    {
+        $response = back()->withInput($request->except(['game_password', 'game_password_confirmation']));
+
+        return match ($code) {
+            self::ERROR_LIMIT_REACHED => $response->withErrors([
+                'game_login' => __('You have reached the game account limit.'),
+            ]),
+            self::ERROR_LINK_CONFLICT => $response->withErrors([
+                'game_login' => __('This game login is already linked to a CMS account.'),
+            ]),
+            self::ERROR_SERVER_UNAVAILABLE => $response->withErrors([
+                'game_server_id' => __('The selected game server is unavailable.'),
+            ]),
+            default => null,
+        };
     }
 
     private function gameAccountId(Request $request): int

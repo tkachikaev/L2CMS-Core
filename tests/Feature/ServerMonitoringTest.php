@@ -13,14 +13,14 @@ use App\Services\Servers\ServerMonitorSettings;
 use App\Services\Servers\ServerStatusOverview;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Hash;
+use Tests\Concerns\InteractsWithServerFixtures;
 use Tests\Fakes\FakeGameServerOnlineCounter;
 use Tests\Fakes\FakeServicePortProbe;
 use Tests\TestCase;
 
 class ServerMonitoringTest extends TestCase
 {
-    use RefreshDatabase;
+    use InteractsWithServerFixtures, RefreshDatabase;
 
     public function test_monitor_records_live_services_and_online_players(): void
     {
@@ -99,11 +99,9 @@ class ServerMonitoringTest extends TestCase
             'online_players' => 37,
             'online_checked_at' => now(),
         ]);
-        $admin = Admin::query()->create([
+        $admin = Admin::factory()->create([
             'name' => 'Monitor Admin',
             'email' => 'monitor@example.com',
-            'password' => Hash::make('CorrectPassword123'),
-            'is_active' => true,
         ]);
 
         $this->actingAs($admin, 'admin')
@@ -143,11 +141,9 @@ class ServerMonitoringTest extends TestCase
             'online_players' => 12,
             'online_checked_at' => now(),
         ]);
-        $admin = Admin::query()->create([
+        $admin = Admin::factory()->create([
             'name' => 'Monitor Admin',
             'email' => 'monitor-state@example.com',
-            'password' => Hash::make('CorrectPassword123'),
-            'is_active' => true,
         ]);
 
         $this->actingAs($admin, 'admin')
@@ -328,34 +324,19 @@ class ServerMonitoringTest extends TestCase
     /** @return array{LoginServer,GameServer} */
     private function servers(): array
     {
-        GameServer::query()->delete();
-        LoginServer::query()->delete();
-
-        $loginServer = LoginServer::query()->create([
-            'name' => 'Основной LoginServer',
-            'driver' => 'l2j_mobius',
-            'database_host' => 'db.example.test',
-            'database_port' => 3306,
-            'database_name' => 'login',
-            'database_username' => 'l2',
-            'database_password' => 'secret',
-            'database_charset' => 'utf8mb4',
-            'service_host' => 'login.example.test',
-            'service_port' => 2106,
-        ]);
-        $gameServer = GameServer::query()->create([
-            'name' => 'Interlude',
-            'rates' => 'x1',
-            'chronicle' => 'Interlude',
-            'mode' => 'PvP',
-            'sort_order' => 0,
-            'login_server_id' => $loginServer->id,
-            'driver' => 'l2j_mobius_ct0_interlude',
-            'use_login_server_connection' => true,
-            'service_host' => 'game.example.test',
-            'service_port' => 7777,
-        ]);
-
-        return [$loginServer, $gameServer];
+        return $this->freshMobiusServerPair(
+            [
+                'name' => 'Основной LoginServer',
+                'database_host' => 'db.example.test',
+                'database_name' => 'login',
+                'database_username' => 'l2',
+                'database_charset' => 'utf8mb4',
+            ],
+            [
+                'name' => 'Interlude',
+                'rates' => 'x1',
+                'sort_order' => 0,
+            ],
+        );
     }
 }

@@ -9,16 +9,18 @@ use App\Models\LoginServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\GameAccountSettings;
+use App\Services\GameServerDeletionImpact;
 use App\Services\GameServerSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
+use Tests\Concerns\InteractsWithServerFixtures;
 use Tests\Fakes\FakeGameAccountGateway;
+use Tests\Fakes\RaceInjectingGameAccountGateway;
 use Tests\TestCase;
 
 class GameAccountCabinetTest extends TestCase
 {
-    use RefreshDatabase;
+    use InteractsWithServerFixtures, RefreshDatabase;
 
     private FakeGameAccountGateway $gateway;
 
@@ -415,6 +417,96 @@ class GameAccountCabinetTest extends TestCase
         $this->assertDatabaseCount('user_game_accounts', 1);
     }
 
+    public function test_orphaned_game_account_still_counts_toward_the_limit(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        $this->settings(['max_accounts' => 1]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => null,
+            'game_login' => 'Hidden01',
+            'normalized_login' => 'hidden01',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/account')
+            ->assertOk()
+            ->assertSee('1 / 1')
+            ->assertSee('Некоторые игровые аккаунты временно недоступны')
+            ->assertDontSee('Создать игровой аккаунт');
+
+        $this->actingAs($user)
+            ->get('/account/game-accounts/create')
+            ->assertRedirect(public_route('account'))
+            ->assertSessionHas('warning', 'Вы достигли лимита игровых аккаунтов.');
+
+        $this->actingAs($user)->post('/account/game-accounts', [
+            'game_server_id' => $gameServer->id,
+            'game_login' => 'Second01',
+            'game_password' => 'StrongPass1',
+            'game_password_confirmation' => 'StrongPass1',
+        ])->assertSessionHasErrors('game_login');
+
+        $this->assertDatabaseCount('user_game_accounts', 1);
+        $this->assertSame([], $this->gateway->created);
+    }
+
+    public function test_creation_rechecks_the_quota_when_a_competing_link_appears(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        $this->settings(['max_accounts' => 1]);
+        $gateway = new RaceInjectingGameAccountGateway($user, $loginServer);
+        $this->app->instance(GameAccountGateway::class, $gateway);
+
+        $this->actingAs($user)->post('/account/game-accounts', [
+            'game_server_id' => $gameServer->id,
+            'game_login' => 'Second01',
+            'game_password' => 'StrongPass1',
+            'game_password_confirmation' => 'StrongPass1',
+        ])->assertSessionHasErrors('game_login');
+
+        $this->assertDatabaseCount('user_game_accounts', 1);
+        $this->assertDatabaseHas('user_game_accounts', [
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => null,
+            'normalized_login' => 'concurrent01',
+        ]);
+        $this->assertSame([], $gateway->created);
+    }
+
+    public function test_hidden_account_prevents_single_visible_account_from_bypassing_the_dashboard(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        $this->settings(['max_accounts' => 2]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Visible01',
+            'normalized_login' => 'visible01',
+        ]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => null,
+            'game_login' => 'Hidden02',
+            'normalized_login' => 'hidden02',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/account')
+            ->assertOk()
+            ->assertSee('2 / 2')
+            ->assertSee('Некоторые игровые аккаунты временно недоступны')
+            ->assertSee('Visible01')
+            ->assertDontSee('Создать игровой аккаунт');
+    }
+
     public function test_player_cannot_open_another_users_game_account(): void
     {
         $owner = $this->user('owner@example.com', 'owner');
@@ -601,7 +693,7 @@ class GameAccountCabinetTest extends TestCase
             'normalized_login' => 'removedworld01',
         ]);
 
-        app(GameServerSettings::class)->delete($gameServer);
+        $this->deleteGameServer($gameServer);
 
         $this->assertDatabaseHas('user_game_accounts', ['id' => $account->id]);
         $this->assertNull($account->fresh()->registration_game_server_id);
@@ -640,7 +732,7 @@ class GameAccountCabinetTest extends TestCase
             'normalized_login' => 'remainingworld01',
         ]);
 
-        app(GameServerSettings::class)->delete($gameServer);
+        $this->deleteGameServer($gameServer);
 
         $this->assertSame($replacement->id, $account->fresh()->registration_game_server_id);
 
@@ -667,7 +759,7 @@ class GameAccountCabinetTest extends TestCase
             'normalized_login' => 'restoredworld01',
         ]);
         $settings = app(GameServerSettings::class);
-        $settings->delete($gameServer);
+        $this->deleteGameServer($gameServer);
         $replacement = GameServer::query()->create([
             'name' => 'Interlude Reborn',
             'rates' => 'x7',
@@ -682,6 +774,12 @@ class GameAccountCabinetTest extends TestCase
         $settings->restoreOrphanedAccountLinks($replacement);
 
         $this->assertSame($replacement->id, $account->fresh()->registration_game_server_id);
+    }
+
+    private function deleteGameServer(GameServer $gameServer): void
+    {
+        $impact = app(GameServerDeletionImpact::class)->analyze($gameServer);
+        app(GameServerSettings::class)->delete($gameServer, $impact['fingerprint']);
     }
 
     /** @param array<string,mixed> $overrides */
@@ -703,41 +801,15 @@ class GameAccountCabinetTest extends TestCase
 
     private function user(string $email = 'player@example.com', string $name = 'player'): User
     {
-        $user = User::query()->create([
+        return User::factory()->create([
             'name' => $name,
             'email' => $email,
-            'password' => Hash::make('Password123'),
         ]);
-
-        $user->markEmailAsVerified();
-
-        return $user->refresh();
     }
 
     /** @return array{LoginServer,GameServer} */
     private function servers(): array
     {
-        $loginServer = LoginServer::query()->create([
-            'name' => 'Main LoginServer',
-            'driver' => 'l2j_mobius',
-            'database_host' => '127.0.0.1',
-            'database_port' => 3306,
-            'database_name' => 'l2j',
-            'database_username' => 'cms',
-            'database_password' => 'secret',
-            'database_charset' => 'utf8',
-        ]);
-        $gameServer = GameServer::query()->create([
-            'name' => 'Interlude x10',
-            'rates' => 'x10',
-            'chronicle' => 'Interlude',
-            'mode' => 'PvP',
-            'sort_order' => 1,
-            'login_server_id' => $loginServer->id,
-            'driver' => 'l2j_mobius_ct0_interlude',
-            'use_login_server_connection' => true,
-        ]);
-
-        return [$loginServer, $gameServer];
+        return $this->freshMobiusServerPair();
     }
 }

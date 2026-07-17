@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\GameServerDeletionConfirmationRequired;
 use App\Models\GameServer;
 use App\Models\GameServerTranslation;
 use App\Models\UserGameAccount;
@@ -13,7 +14,10 @@ use Throwable;
 
 final class GameServerSettings
 {
-    public function __construct(private readonly LanguageManager $languages) {}
+    public function __construct(
+        private readonly LanguageManager $languages,
+        private readonly GameServerDeletionImpact $deletionImpact,
+    ) {}
 
     /**
      * @return array<int, array{
@@ -103,11 +107,46 @@ final class GameServerSettings
         });
     }
 
-    public function delete(GameServer $server): void
+    /**
+     * @return array{
+     *     game_server_id:int,
+     *     login_server_id:int|null,
+     *     login_server_name:string|null,
+     *     replacement_game_server_id:int|null,
+     *     login_server_account_count:int,
+     *     accounts_becoming_unavailable:int,
+     *     unavailable_after_deletion:int,
+     *     requires_confirmation:bool,
+     *     fingerprint:string
+     * }
+     */
+    public function delete(GameServer $server, ?string $confirmedImpactFingerprint = null): array
     {
-        DB::transaction(function () use ($server): void {
-            $this->reassignLinkedAccountsBeforeDisconnect($server);
-            $server->delete();
+        return DB::transaction(function () use ($server, $confirmedImpactFingerprint): array {
+            $expectedLoginServerId = $server->login_server_id;
+            if ($expectedLoginServerId !== null) {
+                $server->loginServer()->lockForUpdate()->first();
+            }
+
+            $lockedServer = GameServer::query()
+                ->with('loginServer')
+                ->lockForUpdate()
+                ->findOrFail($server->id);
+            $impact = $this->deletionImpact->analyze($lockedServer);
+
+            if ($lockedServer->login_server_id !== $expectedLoginServerId) {
+                throw new GameServerDeletionConfirmationRequired($impact);
+            }
+            if ($impact['requires_confirmation']
+                && (! is_string($confirmedImpactFingerprint)
+                    || ! hash_equals($impact['fingerprint'], $confirmedImpactFingerprint))) {
+                throw new GameServerDeletionConfirmationRequired($impact);
+            }
+
+            $this->reassignLinkedAccountsBeforeDisconnect($lockedServer);
+            $lockedServer->delete();
+
+            return $impact;
         });
     }
 

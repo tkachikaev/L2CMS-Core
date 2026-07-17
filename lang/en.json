@@ -1365,5 +1365,14 @@
     "Server monitoring": "Server monitoring",
     "Server monitoring settings saved.": "Server monitoring settings saved.",
     "Server status refresh interval": "Server status refresh interval",
-    "Server monitoring settings changed": "Server monitoring settings changed"
+    "Server monitoring settings changed": "Server monitoring settings changed",
+    "Some game accounts are temporarily unavailable because their LoginServer has no configured GameServer. They remain safe and continue to count toward the account limit.": "Some game accounts are temporarily unavailable because their LoginServer has no configured GameServer. They remain safe and continue to count toward the account limit.",
+    "Delete the last game server?": "Delete the last game server?",
+    "This is the last GameServer connected to LoginServer :name.": "This is the last GameServer connected to LoginServer :name.",
+    "Game accounts that will be unavailable: :count": "Game accounts that will be unavailable: :count",
+    "The game accounts and characters will not be deleted. Their access in the personal account will be restored automatically after a replacement GameServer is connected to this LoginServer.": "The game accounts and characters will not be deleted. Their access in the personal account will be restored automatically after a replacement GameServer is connected to this LoginServer.",
+    "Delete and hide accounts (:count)": "Delete and hide accounts (:count)",
+    "The deletion impact changed. Review the updated account count and confirm again.": "The deletion impact changed. Review the updated account count and confirm again.",
+    "This GameServer cannot be deleted through the legacy endpoint because :count game accounts would become unavailable. Use the current server card confirmation.": "This GameServer cannot be deleted through the legacy endpoint because :count game accounts would become unavailable. Use the current server card confirmation.",
+    "Temporarily unavailable game accounts also count toward the limit.": "Temporarily unavailable game accounts also count toward the limit."
 }

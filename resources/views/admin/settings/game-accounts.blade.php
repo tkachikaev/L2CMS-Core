@@ -8,7 +8,7 @@
     <section class="form-card settings-narrow-card">
         <div class="settings-card-heading"><div><h2>{{ __('Game account creation') }}</h2><p>{{ __('These rules apply to accounts created by players from the separate player account interface.') }}</p></div></div>
         <label class="settings-toggle-row" for="creation_enabled"><span><strong>{{ __('Allow players to create game accounts') }}</strong><small>{{ __('Existing linked accounts remain visible when creation is disabled.') }}</small></span><span class="switch-control"><input name="creation_enabled" type="hidden" value="0"><input id="creation_enabled" name="creation_enabled" type="checkbox" value="1" @checked(old('creation_enabled',$settings['enabled']))><span aria-hidden="true"></span></span></label>
-        <label class="settings-field"><span>{{ __('Maximum accounts per CMS user') }}</span><input type="number" name="max_accounts" min="1" max="50" value="{{ old('max_accounts',$settings['max_accounts']) }}" required><small>{{ __('The limit is counted across all configured LoginServers.') }}</small></label>
+        <label class="settings-field"><span>{{ __('Maximum accounts per CMS user') }}</span><input type="number" name="max_accounts" min="1" max="50" value="{{ old('max_accounts',$settings['max_accounts']) }}" required><small>{{ __('The limit is counted across all configured LoginServers.') }} {{ __('Temporarily unavailable game accounts also count toward the limit.') }}</small></label>
     </section>
 
     <section class="form-card settings-narrow-card">

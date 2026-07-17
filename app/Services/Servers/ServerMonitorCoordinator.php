@@ -5,7 +5,7 @@ namespace App\Services\Servers;
 use App\Models\GameServer;
 use App\Models\LoginServer;
 use Carbon\CarbonInterface;
-use Illuminate\Cache\Lock;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;

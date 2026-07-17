@@ -4,6 +4,9 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
 use App\Models\GameServer;
+use App\Models\LoginServer;
+use App\Models\User;
+use App\Models\UserGameAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -154,6 +157,49 @@ class AdminGameServerSettingsTest extends TestCase
             ->assertOk()
             ->assertDontSee('Статус сервера')
             ->assertDontSee('Игровые серверы');
+    }
+
+    public function test_legacy_delete_endpoint_does_not_hide_player_accounts_without_impact_confirmation(): void
+    {
+        $admin = $this->createAdmin();
+        $server = GameServer::query()->firstOrFail();
+        $loginServer = LoginServer::query()->create([
+            'name' => 'Primary Login',
+            'driver' => 'l2j_mobius',
+            'database_host' => '127.0.0.1',
+            'database_port' => 3306,
+            'database_name' => 'l2j',
+            'database_username' => 'cms',
+            'database_password' => 'secret',
+            'database_charset' => 'utf8',
+        ]);
+        $server->update([
+            'login_server_id' => $loginServer->id,
+            'driver' => 'l2j_mobius_ct0_interlude',
+            'use_login_server_connection' => true,
+        ]);
+        $user = User::query()->create([
+            'name' => 'Player',
+            'email' => 'legacy-delete@example.com',
+            'password' => Hash::make('Password123'),
+        ]);
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $server->id,
+            'game_login' => 'Legacy01',
+            'normalized_login' => 'legacy01',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->delete(route('admin.settings.game-server.destroy', $server))
+            ->assertRedirect(route('admin.settings.game-server'))
+            ->assertSessionHas('warning');
+
+        $this->assertDatabaseHas('game_servers', ['id' => $server->id]);
+        $this->assertDatabaseHas('user_game_accounts', [
+            'registration_game_server_id' => $server->id,
+        ]);
     }
 
     public function test_only_server_name_is_required(): void
