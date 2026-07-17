@@ -206,11 +206,14 @@ class ServerMonitoringTest extends TestCase
             'database_status' => 'configured',
             'database_checked_at' => now(),
             'maintenance_enabled' => true,
-            'maintenance_until' => now()->addHours(2),
         ]);
         GameServerTranslation::query()->updateOrCreate(
             ['game_server_id' => $gameServer->id, 'locale' => 'ru'],
             ['name' => 'Interlude', 'maintenance_message' => 'Установка обновления'],
+        );
+        GameServerTranslation::query()->updateOrCreate(
+            ['game_server_id' => $gameServer->id, 'locale' => 'en'],
+            ['name' => 'Interlude', 'maintenance_message' => 'Installing an update'],
         );
 
         $overview = app(ServerStatusOverview::class)->get('ru');
@@ -220,6 +223,10 @@ class ServerMonitoringTest extends TestCase
         $this->assertSame(24, $overview['game_servers'][0]['players']);
         $this->assertNull($overview['game_servers'][0]['public_players']);
         $this->assertSame('Установка обновления', $overview['game_servers'][0]['maintenance_message']);
+        $this->assertSame(
+            'Installing an update',
+            app(ServerStatusOverview::class)->get('en')['game_servers'][0]['maintenance_message'],
+        );
 
         $this->postJson('/server-status/refresh')
             ->assertOk()

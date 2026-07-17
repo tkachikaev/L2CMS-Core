@@ -35,9 +35,7 @@ use Throwable;
 
 class SettingsController extends Controller
 {
-    public function __construct(private readonly AuditLogger $auditLogger)
-    {
-    }
+    public function __construct(private readonly AuditLogger $auditLogger) {}
 
     public function general(SiteSettings $siteSettings): View
     {

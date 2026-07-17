@@ -1387,14 +1387,10 @@
     "The setting applies to all game servers. Administrators will continue to see the online count.": "The setting applies to all game servers. Administrators will continue to see the online count.",
     "Show public online validation attribute": "Show public online validation attribute",
     "Maintenance": "Maintenance",
-    "Until :time": "Until :time",
-    "Until manually disabled": "Until manually disabled",
     "Maintenance mode": "Maintenance mode",
     "The public website will show an orange maintenance status. Database and service monitoring will continue.": "The public website will show an orange maintenance status. Database and service monitoring will continue.",
-    "Maintenance end time": "Maintenance end time",
-    "Optional. The time is informational and does not disable maintenance mode automatically.": "Optional. The time is informational and does not disable maintenance mode automatically.",
     "Maintenance message": "Maintenance message",
     "Installing an update": "Installing an update",
-    "Maintenance end time validation attribute": "Maintenance end time validation attribute",
-    "Maintenance message validation attribute": "Maintenance message validation attribute"
+    "Maintenance message validation attribute": "Maintenance message validation attribute",
+    "Maintenance messages are stored separately for every enabled language. Newly enabled languages appear automatically.": "Maintenance messages are stored separately for every enabled language. Newly enabled languages appear automatically."
 }

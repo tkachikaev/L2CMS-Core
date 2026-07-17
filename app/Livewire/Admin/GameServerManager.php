@@ -48,8 +48,6 @@ class GameServerManager extends Component
 
     public bool $maintenanceEnabled = false;
 
-    public string $maintenanceUntil = '';
-
     public string $serverRates = '';
 
     public string $serverChronicle = '';
@@ -96,6 +94,12 @@ class GameServerManager extends Component
         $this->initializeTranslations();
     }
 
+    public function hydrate(): void
+    {
+        $this->ensureAuthorized();
+        $this->syncEnabledLanguageFields();
+    }
+
     public function create(): void
     {
         $this->ensureAuthorized();
@@ -127,7 +131,6 @@ class GameServerManager extends Component
         }
 
         $this->maintenanceEnabled = (bool) $server->maintenance_enabled;
-        $this->maintenanceUntil = $server->maintenance_until?->format('Y-m-d\TH:i') ?? '';
         $this->serverRates = trim((string) $server->rates);
         $this->serverChronicle = trim((string) $server->chronicle);
         $this->serverMode = trim((string) $server->mode);
@@ -302,7 +305,6 @@ class GameServerManager extends Component
             'serverChronicle' => ['nullable', 'string', 'max:100'],
             'serverMode' => ['nullable', 'string', 'max:100'],
             'maintenanceEnabled' => ['required', 'boolean'],
-            'maintenanceUntil' => ['nullable', 'date_format:Y-m-d\TH:i'],
             'maintenanceMessages' => ['required', 'array'],
         ];
 
@@ -348,7 +350,6 @@ class GameServerManager extends Component
             'serverRates' => __('Server rates validation attribute'),
             'serverChronicle' => __('Chronicle validation attribute'),
             'serverMode' => __('server mode'),
-            'maintenanceUntil' => __('Maintenance end time validation attribute'),
         ];
 
         foreach (app(LanguageManager::class)->enabledCodes() as $locale) {
@@ -398,7 +399,6 @@ class GameServerManager extends Component
             'mode' => trim((string) ($validated['serverMode'] ?? '')),
             'translations' => $translations,
             'maintenance_enabled' => (bool) $validated['maintenanceEnabled'],
-            'maintenance_until' => $this->nullableString($validated['maintenanceUntil'] ?? null),
             'maintenance_messages' => $maintenanceMessages,
         ];
     }
@@ -442,9 +442,19 @@ class GameServerManager extends Component
     {
         $this->translations = [];
         $this->maintenanceMessages = [];
-        foreach (app(LanguageManager::class)->enabledCodes() as $locale) {
-            $this->translations[$locale] = '';
-            $this->maintenanceMessages[$locale] = '';
+        $this->syncEnabledLanguageFields();
+    }
+
+    private function syncEnabledLanguageFields(): void
+    {
+        $enabled = array_fill_keys(app(LanguageManager::class)->enabledCodes(), true);
+
+        $this->translations = array_intersect_key($this->translations, $enabled);
+        $this->maintenanceMessages = array_intersect_key($this->maintenanceMessages, $enabled);
+
+        foreach (array_keys($enabled) as $locale) {
+            $this->translations[$locale] ??= '';
+            $this->maintenanceMessages[$locale] ??= '';
         }
     }
 
@@ -454,7 +464,6 @@ class GameServerManager extends Component
         $this->clearDeleteConfirmation();
         $this->initializeTranslations();
         $this->maintenanceEnabled = false;
-        $this->maintenanceUntil = '';
         $this->serverRates = '';
         $this->serverChronicle = '';
         $this->serverMode = '';

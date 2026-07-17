@@ -76,9 +76,6 @@
                                     ? __('Online: :count', ['count' => number_format($currentServer['public_players'], 0, '.', ' ')])
                                     : __('Online temporarily unavailable') }}
                             </small>
-                            <small class="server-maintenance-until" data-monitor-maintenance-until @if($currentServer['availability_state'] !== 'maintenance' || !$currentServer['maintenance_until_label']) hidden @endif>
-                                {{ $currentServer['maintenance_until_label'] }}
-                            </small>
                             <small class="server-maintenance-message" data-monitor-maintenance-message @if($currentServer['availability_state'] !== 'maintenance' || $currentServer['maintenance_message'] === '') hidden @endif>
                                 {{ $currentServer['maintenance_message'] }}
                             </small>

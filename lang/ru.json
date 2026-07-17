@@ -1387,14 +1387,10 @@
     "The setting applies to all game servers. Administrators will continue to see the online count.": "Настройка применяется ко всем игровым серверам. Администраторы продолжат видеть онлайн.",
     "Show public online validation attribute": "показ публичного онлайна",
     "Maintenance": "На обслуживании",
-    "Until :time": "до :time",
-    "Until manually disabled": "до ручного отключения",
     "Maintenance mode": "Режим обслуживания",
     "The public website will show an orange maintenance status. Database and service monitoring will continue.": "На публичном сайте появится оранжевый статус обслуживания. Проверки базы данных и службы продолжатся.",
-    "Maintenance end time": "Окончание обслуживания",
-    "Optional. The time is informational and does not disable maintenance mode automatically.": "Необязательно. Время показывается игрокам и не отключает обслуживание автоматически.",
     "Maintenance message": "Сообщение об обслуживании",
     "Installing an update": "Установка обновления",
-    "Maintenance end time validation attribute": "время окончания обслуживания",
-    "Maintenance message validation attribute": "сообщение об обслуживании"
+    "Maintenance message validation attribute": "сообщение об обслуживании",
+    "Maintenance messages are stored separately for every enabled language. Newly enabled languages appear automatically.": "Сообщения сохраняются отдельно для каждого включённого языка. Новые включённые языки появляются автоматически."
 }

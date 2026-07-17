@@ -77,7 +77,6 @@ final class ServerStatusPayload
             'id' => (int) ($server['id'] ?? 0),
             'availability_state' => $state,
             'public_players' => $players,
-            'maintenance_until_label' => $server['maintenance_until_label'] ?? null,
             'maintenance_message' => (string) ($server['maintenance_message'] ?? ''),
             'public_state_label' => $this->publicStateLabel($state),
             'public_online_label' => $players !== null

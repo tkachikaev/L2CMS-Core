@@ -6,6 +6,7 @@ use App\Models\CmsSetting;
 use App\Models\GameServer;
 use App\Models\LoginServer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -52,6 +53,9 @@ class UpgradeGameServerMigrationTest extends TestCase
 
     public function test_maintenance_migration_preserves_existing_game_servers_and_translations(): void
     {
+        $simplification = require database_path('migrations/2026_07_17_000400_remove_game_server_maintenance_until.php');
+        $simplification->down();
+
         $migration = require database_path('migrations/2026_07_17_000300_add_game_server_maintenance_fields.php');
         $migration->down();
 
@@ -65,6 +69,7 @@ class UpgradeGameServerMigrationTest extends TestCase
         ]);
 
         $migration->up();
+        $simplification->up();
 
         $this->assertDatabaseHas('game_servers', [
             'id' => $gameServer->id,
@@ -76,6 +81,36 @@ class UpgradeGameServerMigrationTest extends TestCase
             'locale' => 'ru',
             'name' => 'Существующий сервер',
             'maintenance_message' => null,
+        ]);
+        $this->assertFalse(Schema::hasColumn('game_servers', 'maintenance_until'));
+    }
+
+    public function test_maintenance_simplification_removes_only_the_unused_end_time(): void
+    {
+        $migration = require database_path('migrations/2026_07_17_000400_remove_game_server_maintenance_until.php');
+        $migration->down();
+
+        $gameServer = GameServer::query()->firstOrFail();
+        $gameServer->update(['maintenance_enabled' => true]);
+        DB::table('game_servers')
+            ->where('id', $gameServer->id)
+            ->update(['maintenance_until' => now()->addHour()]);
+        $gameServer->translations()->updateOrCreate(
+            ['locale' => 'ru'],
+            ['name' => 'Interlude', 'maintenance_message' => 'Обслуживание до 15:30 МСК'],
+        );
+
+        $migration->up();
+
+        $this->assertFalse(Schema::hasColumn('game_servers', 'maintenance_until'));
+        $this->assertDatabaseHas('game_servers', [
+            'id' => $gameServer->id,
+            'maintenance_enabled' => 1,
+        ]);
+        $this->assertDatabaseHas('game_server_translations', [
+            'game_server_id' => $gameServer->id,
+            'locale' => 'ru',
+            'maintenance_message' => 'Обслуживание до 15:30 МСК',
         ]);
     }
 

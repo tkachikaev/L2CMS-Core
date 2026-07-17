@@ -29,8 +29,7 @@ final class HomeController
                         'availability_state' => 'unknown',
                         'players' => null,
                         'public_players' => null,
-                        'maintenance_until_label' => null,
-                        'maintenance_message' => $server['maintenance_message'] ?? null,
+                        'maintenance_message' => $server['maintenance_message'],
                         'checked_at' => null,
                     ];
                 }

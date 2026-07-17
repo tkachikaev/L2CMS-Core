@@ -41,7 +41,6 @@ class GameServerFactory extends Factory
             'online_players' => null,
             'online_checked_at' => null,
             'maintenance_enabled' => false,
-            'maintenance_until' => null,
         ];
     }
 

@@ -77,7 +77,7 @@ final class GameServerAdministration
     }
 
     /**
-     * @param  array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?: array<string, string>, maintenance_enabled?: bool, maintenance_until?: string|null, maintenance_messages?: array<string, string>}  $profileValues
+     * @param  array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?: array<string, string>, maintenance_enabled?: bool, maintenance_messages?: array<string, string>}  $profileValues
      * @param  array<string, mixed>|null  $connectionValues
      * @return array{server: GameServer, created: bool}
      */

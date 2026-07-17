@@ -12,7 +12,9 @@ use App\Models\LoginServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\GameServerSettings;
+use App\Services\Localization\LanguageManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\Fakes\FakeExternalDatabaseConnectionTester;
@@ -232,30 +234,74 @@ class ReactiveServerManagementTest extends TestCase
         $this->assertNotNull($gameServer->database_checked_at);
     }
 
-    public function test_game_server_maintenance_can_be_saved_from_the_livewire_drawer(): void
+    public function test_game_server_maintenance_message_is_visible_only_when_enabled_and_can_be_saved(): void
     {
         $gameServer = GameServer::query()->firstOrFail();
         $this->actingAs($this->createAdmin(), 'admin');
 
-        $maintenanceUntil = now()->addDay()->startOfMinute();
-
         Livewire::test(GameServerManager::class)
             ->call('edit', $gameServer->id)
+            ->assertDontSee('live_game_maintenance_message_ru', false)
             ->set('maintenanceEnabled', true)
-            ->set('maintenanceUntil', $maintenanceUntil->format('Y-m-d\TH:i'))
-            ->set('maintenanceMessages.ru', 'Установка обновления')
+            ->assertSee('live_game_maintenance_message_ru', false)
+            ->set('maintenanceMessages.ru', 'Установка обновления до 15:30 МСК')
             ->call('save')
             ->assertSee('На обслуживании')
             ->assertSee('status-badge-warning', false);
 
         $gameServer->refresh();
         $this->assertTrue($gameServer->maintenance_enabled);
-        $this->assertSame($maintenanceUntil->format('Y-m-d H:i'), $gameServer->maintenance_until?->format('Y-m-d H:i'));
         $this->assertDatabaseHas('game_server_translations', [
             'game_server_id' => $gameServer->id,
             'locale' => 'ru',
-            'maintenance_message' => 'Установка обновления',
+            'maintenance_message' => 'Установка обновления до 15:30 МСК',
         ]);
+    }
+
+    public function test_newly_enabled_language_appears_for_maintenance_messages_and_is_used_publicly(): void
+    {
+        $metadataDirectory = lang_path('de');
+        $metadataPath = $metadataDirectory.DIRECTORY_SEPARATOR.'language.php';
+        $jsonPath = lang_path('de.json');
+
+        File::ensureDirectoryExists($metadataDirectory);
+        File::put($metadataPath, <<<'PHP'
+<?php
+
+return [
+    'code' => 'de',
+    'name' => 'German',
+    'native_name' => 'Deutsch',
+    'direction' => 'ltr',
+    'fallback' => 'en',
+    'author' => 'Test pack',
+];
+PHP);
+        File::put($jsonPath, json_encode([], JSON_PRETTY_PRINT));
+
+        try {
+            $this->app->forgetInstance(LanguageManager::class);
+            $this->app->make(LanguageManager::class)->update(['ru', 'en', 'de'], 'ru', 'en');
+            $this->app->forgetInstance(LanguageManager::class);
+
+            $gameServer = GameServer::query()->firstOrFail();
+            $this->actingAs($this->createAdmin(), 'admin');
+
+            Livewire::test(GameServerManager::class)
+                ->call('edit', $gameServer->id)
+                ->set('maintenanceEnabled', true)
+                ->assertSee('live_game_maintenance_message_de', false)
+                ->set('maintenanceMessages.de', 'Wartung bis 15:30 Uhr')
+                ->call('save');
+
+            $this->get('/de')
+                ->assertOk()
+                ->assertSee('Wartung bis 15:30 Uhr');
+        } finally {
+            File::delete($jsonPath);
+            File::deleteDirectory($metadataDirectory);
+            $this->app->forgetInstance(LanguageManager::class);
+        }
     }
 
     public function test_unused_login_server_can_be_deleted_from_the_livewire_confirmation(): void

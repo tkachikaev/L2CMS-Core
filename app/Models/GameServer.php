@@ -41,7 +41,6 @@ use Throwable;
  * @property int|null $online_players
  * @property Carbon|null $online_checked_at
  * @property bool $maintenance_enabled
- * @property Carbon|null $maintenance_until
  * @property-read LoginServer|null $loginServer
  * @property-read Collection<int, GameServerTranslation> $translations
  */
@@ -76,7 +75,6 @@ class GameServer extends Model
         'online_players',
         'online_checked_at',
         'maintenance_enabled',
-        'maintenance_until',
     ];
 
     protected $hidden = [
@@ -99,7 +97,6 @@ class GameServer extends Model
             'online_players' => 'integer',
             'online_checked_at' => 'datetime',
             'maintenance_enabled' => 'boolean',
-            'maintenance_until' => 'datetime',
         ];
     }
 

@@ -75,14 +75,10 @@
                             <dt>{{ __('Service status') }}</dt>
                             <dd>{{ $server['service_status'] === 'online' ? __('Running') : ($server['service_status'] === 'offline' ? __('Unavailable') : __('Status pending')) }}</dd>
                         </div>
-                        @if($maintenanceEnabled)
+                        @if($maintenanceEnabled && $server['maintenance_message'] !== '')
                             <div>
-                                <dt>{{ __('Maintenance') }}</dt>
-                                <dd>
-                                    {{ $server['maintenance_until']?->isFuture()
-                                        ? __('Until :time', ['time' => $server['maintenance_until']->format('d.m.Y H:i T')])
-                                        : __('Until manually disabled') }}
-                                </dd>
+                                <dt>{{ __('Maintenance message') }}</dt>
+                                <dd>{{ $server['maintenance_message'] }}</dd>
                             </div>
                         @endif
                         @if($server['database_password_saved'])
@@ -178,26 +174,19 @@
                     </label>
 
                     @if($maintenanceEnabled)
-                        <div class="server-form-grid">
-                            <div class="form-group">
-                                <label for="live_game_maintenance_until">{{ __('Maintenance end time') }}</label>
-                                <input id="live_game_maintenance_until" type="datetime-local" wire:model="maintenanceUntil">
-                                <small>{{ __('Optional. The time is informational and does not disable maintenance mode automatically.') }}</small>
-                                @error('maintenanceUntil')<small class="field-error">{{ $message }}</small>@enderror
-                            </div>
-                        </div>
-
                         <div class="server-language-grid">
                             @foreach($languages as $code => $language)
-                                <div class="form-group">
+                                <div class="form-group" wire:key="maintenance-message-{{ $code }}">
                                     <label for="live_game_maintenance_message_{{ $code }}">
                                         {{ __('Maintenance message') }} — {{ $language['native_name'] }}
+                                        @if($code === $defaultLocale)<span class="compact-default-badge">{{ __('Default locale marker') }}</span>@endif
                                     </label>
                                     <input id="live_game_maintenance_message_{{ $code }}" type="text" maxlength="255" wire:model="maintenanceMessages.{{ $code }}" placeholder="{{ __('Installing an update') }}">
                                     @error('maintenanceMessages.'.$code)<small class="field-error">{{ $message }}</small>@enderror
                                 </div>
                             @endforeach
                         </div>
+                        <small>{{ __('Maintenance messages are stored separately for every enabled language. Newly enabled languages appear automatically.') }}</small>
                     @endif
                 </section>
 

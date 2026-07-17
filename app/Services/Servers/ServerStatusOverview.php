@@ -58,7 +58,6 @@ final class ServerStatusOverview
                 && $this->isFresh($server->online_checked_at, $this->onlineStaleSeconds())
                 ? max(0, (int) $server->online_players)
                 : null;
-            $maintenanceUntil = $this->date($server->maintenance_until);
 
             return [
                 'id' => (int) $server->id,
@@ -71,10 +70,6 @@ final class ServerStatusOverview
                 'players' => $players,
                 'public_players' => $publicOnlineVisible && $availabilityState === 'online' ? $players : null,
                 'maintenance_enabled' => $maintenanceEnabled,
-                'maintenance_until' => $maintenanceUntil,
-                'maintenance_until_label' => $maintenanceEnabled
-                    ? $this->maintenanceUntilLabel($maintenanceUntil)
-                    : null,
                 'maintenance_message' => $maintenanceEnabled
                     ? $server->maintenanceMessageFor($locale)
                     : '',
@@ -171,20 +166,6 @@ final class ServerStatusOverview
         }
 
         return 'unknown';
-    }
-
-    private function maintenanceUntilLabel(?CarbonInterface $until): ?string
-    {
-        if (! $until instanceof CarbonInterface || $until->isPast()) {
-            return null;
-        }
-
-        $local = $until->copy()->timezone((string) config('app.timezone', 'UTC'));
-        $formatted = $local->isToday()
-            ? $local->format('H:i T')
-            : $local->format('d.m.Y H:i T');
-
-        return __('Until :time', ['time' => $formatted]);
     }
 
     private function isFresh(mixed $value, int $seconds): bool

@@ -31,7 +31,6 @@ final class GameServerSettings
      *     show_mode: bool,
      *     translations: array<string,string>,
      *     maintenance_enabled: bool,
-     *     maintenance_until: mixed,
      *     maintenance_message: string,
      *     maintenance_messages: array<string,string>,
      *     login_server_id:int|null,
@@ -76,7 +75,7 @@ final class GameServerSettings
         return $this->all($locale)[0] ?? null;
     }
 
-    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?:bool, maintenance_until?:string|null, maintenance_messages?:array<string,string>} $values */
+    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?:bool, maintenance_messages?:array<string,string>} $values */
     public function create(array $values): GameServer
     {
         $this->ensureTableExists();
@@ -91,7 +90,6 @@ final class GameServerSettings
                 'chronicle' => $this->nullableString($values['chronicle'] ?? null),
                 'mode' => $this->nullableString($values['mode'] ?? null),
                 'maintenance_enabled' => (bool) ($values['maintenance_enabled'] ?? false),
-                'maintenance_until' => $this->nullableString($values['maintenance_until'] ?? null),
                 'sort_order' => $nextSortOrder,
             ]);
 
@@ -106,7 +104,7 @@ final class GameServerSettings
         });
     }
 
-    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?:bool, maintenance_until?:string|null, maintenance_messages?:array<string,string>} $values */
+    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?:bool, maintenance_messages?:array<string,string>} $values */
     public function update(GameServer $server, array $values): void
     {
         DB::transaction(function () use ($server, $values): void {
@@ -118,7 +116,6 @@ final class GameServerSettings
                 'chronicle' => $this->nullableString($values['chronicle'] ?? null),
                 'mode' => $this->nullableString($values['mode'] ?? null),
                 'maintenance_enabled' => (bool) ($values['maintenance_enabled'] ?? false),
-                'maintenance_until' => $this->nullableString($values['maintenance_until'] ?? null),
             ]);
 
             $this->saveTranslations(
@@ -238,7 +235,6 @@ final class GameServerSettings
             'show_mode' => $this->modeIsVisible($mode),
             'translations' => $translations,
             'maintenance_enabled' => (bool) $server->maintenance_enabled,
-            'maintenance_until' => $server->maintenance_until,
             'maintenance_message' => $server->maintenanceMessageFor($locale),
             'maintenance_messages' => $maintenanceMessages,
             'login_server_id' => $server->login_server_id,
@@ -274,8 +270,8 @@ final class GameServerSettings
     }
 
     /**
-     * @param array<string,mixed> $translations
-     * @param array<string,mixed> $maintenanceMessages
+     * @param  array<string, mixed>  $translations
+     * @param  array<string, mixed>  $maintenanceMessages
      */
     private function saveTranslations(
         GameServer $server,

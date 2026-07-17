@@ -33,7 +33,6 @@ final class ServerAuditValues
             'chronicle' => $server->chronicle,
             'mode' => $server->mode,
             'maintenance_enabled' => (bool) $server->maintenance_enabled,
-            'maintenance_until' => $server->maintenance_until?->toIso8601String(),
             'login_server_id' => $server->login_server_id,
             'driver' => $server->driver,
             'use_login_server_connection' => $server->use_login_server_connection,
