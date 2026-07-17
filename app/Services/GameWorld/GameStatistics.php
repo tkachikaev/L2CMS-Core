@@ -81,12 +81,14 @@ final class GameStatistics
             return ['available' => false, 'rows' => []];
         }
 
+        $limit = $this->sectionLimit($server, $section);
+
         $cacheKey = implode(':', [
             'game-statistics-v1',
             $server->id,
             $server->updated_at?->getTimestamp() ?? 0,
             $section,
-            $server->statistics_limit,
+            $limit ?? 'all',
             app()->getLocale(),
         ]);
 
@@ -97,12 +99,12 @@ final class GameStatistics
 
         try {
             /** @var list<array<string,mixed>> $rows */
-            $rows = Cache::remember($cacheKey, now()->addMinutes(self::CACHE_MINUTES), function () use ($server, $section): array {
+            $rows = Cache::remember($cacheKey, now()->addMinutes(self::CACHE_MINUTES), function () use ($server, $section, $limit): array {
                 $driver = $this->drivers->resolve($server);
                 $driverRows = match ($section) {
-                    'heroes' => $driver->heroes($server, (int) $server->statistics_limit),
+                    'heroes' => $driver->heroes($server),
                     'castles' => $driver->castleOwners($server),
-                    default => $driver->ranking($server, $section, (int) $server->statistics_limit),
+                    default => $driver->ranking($server, $section, $limit ?? 10),
                 };
 
                 return $section === 'castles'
@@ -122,6 +124,22 @@ final class GameStatistics
 
             return ['available' => false, 'rows' => []];
         }
+    }
+
+    private function sectionLimit(GameServer $server, string $section): ?int
+    {
+        return match ($section) {
+            'level' => $this->rankingLimit($server->statistics_level_limit),
+            'pvp' => $this->rankingLimit($server->statistics_pvp_limit),
+            'pk' => $this->rankingLimit($server->statistics_pk_limit),
+            'play_time' => $this->rankingLimit($server->statistics_play_time_limit),
+            default => null,
+        };
+    }
+
+    private function rankingLimit(mixed $value): int
+    {
+        return min(max((int) $value, 1), 100);
     }
 
     /** @param array<string,mixed> $row @return array<string,mixed> */

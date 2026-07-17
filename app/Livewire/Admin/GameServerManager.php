@@ -13,6 +13,7 @@ use App\Services\Servers\GameServerAdministration;
 use App\Services\Servers\ServerDriverRegistry;
 use App\Services\SiteSettings;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -20,6 +21,8 @@ use Livewire\Component;
 class GameServerManager extends Component
 {
     public bool $drawerOpen = false;
+
+    public string $activeTab = 'general';
 
     #[Locked]
     public ?int $editingId = null;
@@ -64,7 +67,13 @@ class GameServerManager extends Component
 
     public bool $statisticsCastlesEnabled = true;
 
-    public string $statisticsLimit = '50';
+    public string $statisticsLevelLimit = '10';
+
+    public string $statisticsPvpLimit = '10';
+
+    public string $statisticsPkLimit = '10';
+
+    public string $statisticsPlayTimeLimit = '10';
 
     public bool $showPublicOnline = true;
 
@@ -126,6 +135,7 @@ class GameServerManager extends Component
         $this->ensureAuthorized();
         $this->resetValidation();
         $this->resetForm();
+        $this->activeTab = 'general';
         $this->drawerOpen = true;
     }
 
@@ -159,7 +169,10 @@ class GameServerManager extends Component
         $this->statisticsPlayTimeEnabled = (bool) $server->statistics_play_time_enabled;
         $this->statisticsHeroesEnabled = (bool) $server->statistics_heroes_enabled;
         $this->statisticsCastlesEnabled = (bool) $server->statistics_castles_enabled;
-        $this->statisticsLimit = (string) $server->statistics_limit;
+        $this->statisticsLevelLimit = (string) $server->statistics_level_limit;
+        $this->statisticsPvpLimit = (string) $server->statistics_pvp_limit;
+        $this->statisticsPkLimit = (string) $server->statistics_pk_limit;
+        $this->statisticsPlayTimeLimit = (string) $server->statistics_play_time_limit;
         $this->serverRates = trim((string) $server->rates);
         $this->serverChronicle = trim((string) $server->chronicle);
         $this->serverMode = trim((string) $server->mode);
@@ -181,7 +194,17 @@ class GameServerManager extends Component
         $this->status = null;
         $this->showChecks = false;
         $this->clearDeleteConfirmation();
+        $this->activeTab = 'general';
         $this->drawerOpen = true;
+    }
+
+    public function setActiveTab(string $tab): void
+    {
+        $this->ensureAuthorized();
+
+        if (in_array($tab, ['general', 'statistics', 'miscellaneous'], true)) {
+            $this->activeTab = $tab;
+        }
     }
 
     public function closeDrawer(): void
@@ -196,6 +219,7 @@ class GameServerManager extends Component
     public function setMaintenanceEnabled(bool $enabled): void
     {
         $this->ensureAuthorized();
+        $this->activeTab = 'miscellaneous';
         $this->maintenanceEnabled = $enabled;
         $this->syncEnabledLanguageFields();
         $this->resetValidation('maintenanceMessages');
@@ -270,16 +294,29 @@ class GameServerManager extends Component
     public function save(): void
     {
         $this->ensureAuthorized();
-        $general = $this->validate($this->generalRules(), [], $this->generalAttributes());
+        try {
+            $general = $this->validate($this->generalRules(), [], $this->generalAttributes());
+        } catch (ValidationException $exception) {
+            $this->activateTabForErrors(array_keys($exception->errors()));
+
+            throw $exception;
+        }
         if ($this->statisticsCapabilities() !== [] && $this->statisticsEnabled && ! $this->hasEnabledStatisticsSection()) {
+            $this->activeTab = 'statistics';
             $this->addError('statisticsEnabled', __('Enable at least one public statistics section.'));
 
             return;
         }
 
-        $connection = $this->connectionEnabled
-            ? $this->validate($this->connectionRules(), [], $this->connectionAttributes())
-            : null;
+        try {
+            $connection = $this->connectionEnabled
+                ? $this->validate($this->connectionRules(), [], $this->connectionAttributes())
+                : null;
+        } catch (ValidationException $exception) {
+            $this->activateTabForErrors(array_keys($exception->errors()));
+
+            throw $exception;
+        }
         $server = $this->editingId !== null
             ? GameServer::query()->findOrFail($this->editingId)
             : null;
@@ -382,7 +419,10 @@ class GameServerManager extends Component
             'statisticsPlayTimeEnabled' => ['required', 'boolean'],
             'statisticsHeroesEnabled' => ['required', 'boolean'],
             'statisticsCastlesEnabled' => ['required', 'boolean'],
-            'statisticsLimit' => ['required', 'integer', 'between:10,100'],
+            'statisticsLevelLimit' => ['required', 'integer', 'between:1,100'],
+            'statisticsPvpLimit' => ['required', 'integer', 'between:1,100'],
+            'statisticsPkLimit' => ['required', 'integer', 'between:1,100'],
+            'statisticsPlayTimeLimit' => ['required', 'integer', 'between:1,100'],
         ];
 
         foreach ($languages->enabledCodes() as $locale) {
@@ -427,7 +467,10 @@ class GameServerManager extends Component
             'serverRates' => __('Server rates validation attribute'),
             'serverChronicle' => __('Chronicle validation attribute'),
             'serverMode' => __('server mode'),
-            'statisticsLimit' => __('Statistics row limit'),
+            'statisticsLevelLimit' => __('Level ranking limit'),
+            'statisticsPvpLimit' => __('PvP ranking limit'),
+            'statisticsPkLimit' => __('PK ranking limit'),
+            'statisticsPlayTimeLimit' => __('Play time ranking limit'),
         ];
 
         foreach (app(LanguageManager::class)->enabledCodes() as $locale) {
@@ -487,7 +530,10 @@ class GameServerManager extends Component
             'statistics_play_time_enabled' => (bool) $validated['statisticsPlayTimeEnabled'],
             'statistics_heroes_enabled' => (bool) $validated['statisticsHeroesEnabled'],
             'statistics_castles_enabled' => (bool) $validated['statisticsCastlesEnabled'],
-            'statistics_limit' => (int) $validated['statisticsLimit'],
+            'statistics_level_limit' => (int) $validated['statisticsLevelLimit'],
+            'statistics_pvp_limit' => (int) $validated['statisticsPvpLimit'],
+            'statistics_pk_limit' => (int) $validated['statisticsPkLimit'],
+            'statistics_play_time_limit' => (int) $validated['statisticsPlayTimeLimit'],
         ];
     }
 
@@ -524,6 +570,30 @@ class GameServerManager extends Component
         }
 
         return ['state' => 'success', 'message' => __('Database connection established.')];
+    }
+
+    /** @param list<int|string> $errors */
+    private function activateTabForErrors(array $errors): void
+    {
+        foreach ($errors as $error) {
+            $field = (string) $error;
+
+            if (str_starts_with($field, 'statistics')) {
+                $this->activeTab = 'statistics';
+
+                return;
+            }
+
+            if ($field === 'maintenanceEnabled'
+                || str_starts_with($field, 'maintenanceMessages.')
+                || in_array($field, ['serviceHost', 'servicePort'], true)) {
+                $this->activeTab = 'miscellaneous';
+
+                return;
+            }
+        }
+
+        $this->activeTab = 'general';
     }
 
     private function hasEnabledStatisticsSection(): bool
@@ -577,7 +647,10 @@ class GameServerManager extends Component
         $this->statisticsPlayTimeEnabled = true;
         $this->statisticsHeroesEnabled = true;
         $this->statisticsCastlesEnabled = true;
-        $this->statisticsLimit = '50';
+        $this->statisticsLevelLimit = '10';
+        $this->statisticsPvpLimit = '10';
+        $this->statisticsPkLimit = '10';
+        $this->statisticsPlayTimeLimit = '10';
         $this->serverRates = '';
         $this->serverChronicle = '';
         $this->serverMode = '';

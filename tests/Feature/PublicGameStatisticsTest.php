@@ -157,6 +157,122 @@ class PublicGameStatisticsTest extends TestCase
             ->assertSee('Timur');
     }
 
+    public function test_each_ranking_uses_its_own_limit_and_heroes_are_not_limited(): void
+    {
+        $server = $this->statisticsServer([
+            'statistics_level_limit' => 1,
+            'statistics_pvp_limit' => 2,
+            'statistics_pk_limit' => 1,
+            'statistics_play_time_limit' => 3,
+        ]);
+
+        DB::connection('statistics_test')->table('characters')->insert([
+            [
+                'account_name' => 'rank-a',
+                'charId' => 268474701,
+                'char_name' => 'RankAlpha',
+                'level' => 80,
+                'exp' => 999999999,
+                'classid' => 92,
+                'race' => 0,
+                'sex' => 0,
+                'title' => '',
+                'online' => 0,
+                'lastAccess' => 1784320151700,
+                'onlinetime' => 5000,
+                'pvpkills' => 9,
+                'pkkills' => 1,
+                'karma' => 0,
+                'nobless' => 1,
+                'clanid' => 0,
+                'accesslevel' => 0,
+                'deletetime' => 0,
+            ],
+            [
+                'account_name' => 'rank-b',
+                'charId' => 268474702,
+                'char_name' => 'RankBeta',
+                'level' => 79,
+                'exp' => 888888888,
+                'classid' => 92,
+                'race' => 0,
+                'sex' => 1,
+                'title' => '',
+                'online' => 0,
+                'lastAccess' => 1784320151700,
+                'onlinetime' => 4000,
+                'pvpkills' => 8,
+                'pkkills' => 8,
+                'karma' => 0,
+                'nobless' => 1,
+                'clanid' => 0,
+                'accesslevel' => 0,
+                'deletetime' => 0,
+            ],
+            [
+                'account_name' => 'rank-c',
+                'charId' => 268474703,
+                'char_name' => 'RankGamma',
+                'level' => 78,
+                'exp' => 777777777,
+                'classid' => 92,
+                'race' => 0,
+                'sex' => 0,
+                'title' => '',
+                'online' => 0,
+                'lastAccess' => 1784320151700,
+                'onlinetime' => 3000,
+                'pvpkills' => 7,
+                'pkkills' => 7,
+                'karma' => 0,
+                'nobless' => 0,
+                'clanid' => 0,
+                'accesslevel' => 0,
+                'deletetime' => 0,
+            ],
+        ]);
+        DB::connection('statistics_test')->table('heroes')->insert([
+            [
+                'charId' => 268474701,
+                'class_id' => 92,
+                'count' => 1,
+                'played' => 1,
+                'claimed' => 1,
+                'message' => '',
+            ],
+            [
+                'charId' => 268474702,
+                'class_id' => 92,
+                'count' => 1,
+                'played' => 1,
+                'claimed' => 1,
+                'message' => '',
+            ],
+        ]);
+
+        $this->get('/statistics/'.$server->id.'?section=level')
+            ->assertOk()
+            ->assertSee('RankAlpha')
+            ->assertDontSee('RankBeta');
+
+        $this->get('/statistics/'.$server->id.'?section=pvp')
+            ->assertOk()
+            ->assertSee('RankAlpha')
+            ->assertSee('RankBeta')
+            ->assertDontSee('RankGamma');
+
+        $this->get('/statistics/'.$server->id.'?section=pk')
+            ->assertOk()
+            ->assertSee('RankBeta')
+            ->assertDontSee('RankGamma');
+
+        $this->get('/statistics/'.$server->id.'?section=heroes')
+            ->assertOk()
+            ->assertSee('Эльфачка')
+            ->assertSee('RankAlpha')
+            ->assertSee('RankBeta');
+    }
+
     public function test_driver_returns_full_character_data_for_the_future_personal_account(): void
     {
         $server = $this->statisticsServer();
@@ -244,7 +360,10 @@ class PublicGameStatisticsTest extends TestCase
         return GameServer::factory()->for($loginServer)->create(array_merge([
             'name' => 'Interlude x5',
             'statistics_enabled' => true,
-            'statistics_limit' => 50,
+            'statistics_level_limit' => 10,
+            'statistics_pvp_limit' => 10,
+            'statistics_pk_limit' => 10,
+            'statistics_play_time_limit' => 10,
         ], $values));
     }
 

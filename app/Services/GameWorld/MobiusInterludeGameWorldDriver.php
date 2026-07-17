@@ -51,10 +51,10 @@ final class MobiusInterludeGameWorldDriver implements GameWorldDriver
         return $rows;
     }
 
-    public function heroes(GameServer $server, int $limit): array
+    public function heroes(GameServer $server): array
     {
         /** @var list<array<string,mixed>> $rows */
-        $rows = $this->database->run($server, function (Connection $connection) use ($limit): array {
+        $rows = $this->database->run($server, function (Connection $connection): array {
             return $this->charactersQuery($connection)
                 ->join('heroes', 'heroes.charId', '=', 'characters.charId')
                 ->addSelect([
@@ -64,7 +64,6 @@ final class MobiusInterludeGameWorldDriver implements GameWorldDriver
                 ])
                 ->orderByDesc('characters.level')
                 ->orderBy('characters.char_name')
-                ->limit($this->limit($limit))
                 ->get()
                 ->map(static fn (object $row): array => (array) $row)
                 ->all();

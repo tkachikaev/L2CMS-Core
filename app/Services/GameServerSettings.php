@@ -40,7 +40,10 @@ final class GameServerSettings
      *     statistics_play_time_enabled:bool,
      *     statistics_heroes_enabled:bool,
      *     statistics_castles_enabled:bool,
-     *     statistics_limit:int,
+     *     statistics_level_limit:int,
+     *     statistics_pvp_limit:int,
+     *     statistics_pk_limit:int,
+     *     statistics_play_time_limit:int,
      *     login_server_id:int|null,
      *     login_server_name:string|null,
      *     driver:string|null,
@@ -83,7 +86,7 @@ final class GameServerSettings
         return $this->all($locale)[0] ?? null;
     }
 
-    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?: bool, maintenance_messages?:array<string,string>, statistics_enabled?: bool, statistics_level_enabled?: bool, statistics_pvp_enabled?: bool, statistics_pk_enabled?: bool, statistics_play_time_enabled?: bool, statistics_heroes_enabled?: bool, statistics_castles_enabled?: bool, statistics_limit?: int} $values */
+    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?: bool, maintenance_messages?:array<string,string>, statistics_enabled?: bool, statistics_level_enabled?: bool, statistics_pvp_enabled?: bool, statistics_pk_enabled?: bool, statistics_play_time_enabled?: bool, statistics_heroes_enabled?: bool, statistics_castles_enabled?: bool, statistics_level_limit?: int, statistics_pvp_limit?: int, statistics_pk_limit?: int, statistics_play_time_limit?: int} $values */
     public function create(array $values): GameServer
     {
         $this->ensureTableExists();
@@ -105,7 +108,10 @@ final class GameServerSettings
                 'statistics_play_time_enabled' => (bool) ($values['statistics_play_time_enabled'] ?? true),
                 'statistics_heroes_enabled' => (bool) ($values['statistics_heroes_enabled'] ?? true),
                 'statistics_castles_enabled' => (bool) ($values['statistics_castles_enabled'] ?? true),
-                'statistics_limit' => $this->statisticsLimit($values['statistics_limit'] ?? 50),
+                'statistics_level_limit' => $this->statisticsLimit($values['statistics_level_limit'] ?? 10),
+                'statistics_pvp_limit' => $this->statisticsLimit($values['statistics_pvp_limit'] ?? 10),
+                'statistics_pk_limit' => $this->statisticsLimit($values['statistics_pk_limit'] ?? 10),
+                'statistics_play_time_limit' => $this->statisticsLimit($values['statistics_play_time_limit'] ?? 10),
                 'sort_order' => $nextSortOrder,
             ]);
 
@@ -120,7 +126,7 @@ final class GameServerSettings
         });
     }
 
-    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?: bool, maintenance_messages?:array<string,string>, statistics_enabled?: bool, statistics_level_enabled?: bool, statistics_pvp_enabled?: bool, statistics_pk_enabled?: bool, statistics_play_time_enabled?: bool, statistics_heroes_enabled?: bool, statistics_castles_enabled?: bool, statistics_limit?: int} $values */
+    /** @param array{name: string, rates?: string|null, chronicle?: string|null, mode?: string|null, translations?:array<string,string>, maintenance_enabled?: bool, maintenance_messages?:array<string,string>, statistics_enabled?: bool, statistics_level_enabled?: bool, statistics_pvp_enabled?: bool, statistics_pk_enabled?: bool, statistics_play_time_enabled?: bool, statistics_heroes_enabled?: bool, statistics_castles_enabled?: bool, statistics_level_limit?: int, statistics_pvp_limit?: int, statistics_pk_limit?: int, statistics_play_time_limit?: int} $values */
     public function update(GameServer $server, array $values): void
     {
         DB::transaction(function () use ($server, $values): void {
@@ -139,7 +145,10 @@ final class GameServerSettings
                 'statistics_play_time_enabled' => (bool) ($values['statistics_play_time_enabled'] ?? $server->statistics_play_time_enabled),
                 'statistics_heroes_enabled' => (bool) ($values['statistics_heroes_enabled'] ?? $server->statistics_heroes_enabled),
                 'statistics_castles_enabled' => (bool) ($values['statistics_castles_enabled'] ?? $server->statistics_castles_enabled),
-                'statistics_limit' => $this->statisticsLimit($values['statistics_limit'] ?? $server->statistics_limit),
+                'statistics_level_limit' => $this->statisticsLimit($values['statistics_level_limit'] ?? $server->statistics_level_limit),
+                'statistics_pvp_limit' => $this->statisticsLimit($values['statistics_pvp_limit'] ?? $server->statistics_pvp_limit),
+                'statistics_pk_limit' => $this->statisticsLimit($values['statistics_pk_limit'] ?? $server->statistics_pk_limit),
+                'statistics_play_time_limit' => $this->statisticsLimit($values['statistics_play_time_limit'] ?? $server->statistics_play_time_limit),
             ]);
 
             $this->saveTranslations(
@@ -268,7 +277,10 @@ final class GameServerSettings
             'statistics_play_time_enabled' => (bool) $server->statistics_play_time_enabled,
             'statistics_heroes_enabled' => (bool) $server->statistics_heroes_enabled,
             'statistics_castles_enabled' => (bool) $server->statistics_castles_enabled,
-            'statistics_limit' => (int) $server->statistics_limit,
+            'statistics_level_limit' => (int) $server->statistics_level_limit,
+            'statistics_pvp_limit' => (int) $server->statistics_pvp_limit,
+            'statistics_pk_limit' => (int) $server->statistics_pk_limit,
+            'statistics_play_time_limit' => (int) $server->statistics_play_time_limit,
             'login_server_id' => $server->login_server_id,
             'login_server_name' => $server->loginServer?->name,
             'driver' => $server->driver,
@@ -346,7 +358,7 @@ final class GameServerSettings
 
     private function statisticsLimit(mixed $value): int
     {
-        return min(max((int) $value, 10), 100);
+        return min(max((int) $value, 1), 100);
     }
 
     private function nullableString(?string $value): ?string

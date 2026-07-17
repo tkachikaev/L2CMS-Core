@@ -2125,7 +2125,7 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 }
 .server-drawer {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
     width: min(680px, calc(100vw - 44px));
     height: 100%;
     background: #f8fafc;
@@ -2337,8 +2337,87 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 .dashboard-monitor-name-wrap{display:flex;min-width:0;flex-direction:column}.dashboard-monitor-name-wrap small{overflow:hidden;color:#6b7280;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.dashboard-monitor-dot.configured{background:#d97706;box-shadow:0 0 0 3px #fef3c7}.dashboard-monitor-dot.not_configured{background:#ef4444;box-shadow:0 0 0 3px #fee2e2}.notice-info{border-color:#bfdbfe;background:#eff6ff;color:#1e40af}.security-cleanup-empty{margin:14px 0 0}.security-cleanup-empty p{margin:0}
 .dashboard-monitor-dot.maintenance{background:#f59e0b;box-shadow:0 0 0 3px #fef3c7}
 
-/* Game server public statistics 0.15.0 */
-.server-statistics-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}.server-statistics-options .server-connection-toggle{margin:0}.server-statistics-limit{max-width:260px;margin-top:18px}@media(max-width:760px){.server-statistics-options{grid-template-columns:1fr}}
+/* Game server settings tabs and statistics limits 0.16.0 */
+.server-drawer-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 18px 0;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+}
+.server-drawer-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 9px 14px;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: 9px 9px 0 0;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+}
+.server-drawer-tab > span { color: #94a3b8; font-size: 10px; letter-spacing: -1px; }
+.server-drawer-tab:hover { background: #f8fafc; color: #334155; }
+.server-drawer-tab.active {
+    margin-bottom: -1px;
+    border-color: var(--border);
+    background: #f8fafc;
+    color: #1d4ed8;
+}
+.server-drawer-tab.active > span { color: #2563eb; }
+.server-statistics-group {
+    margin-top: 18px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+}
+.server-statistics-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #f8fafc;
+}
+.server-statistics-heading h3 { margin: 0; font-size: 13px; }
+.server-statistics-heading p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+.server-statistics-heading > span { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.server-statistics-rows { display: grid; }
+.server-statistics-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 118px;
+    align-items: center;
+    gap: 14px;
+    min-height: 58px;
+    padding: 9px 14px;
+    border-bottom: 1px solid #eef2f7;
+}
+.server-statistics-row:last-child { border-bottom: 0; }
+.server-statistics-row .server-connection-toggle { margin: 0; border: 0; background: transparent; }
+.server-statistics-row.disabled { background: #f8fafc; opacity: .68; }
+.server-statistics-quantity input {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: #111827;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+.server-statistics-quantity input:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+.server-statistics-fixed-value { color: #64748b; font-size: 11px; font-weight: 700; text-align: right; }
+.server-statistics-cache-note { display: block; margin-top: 14px; color: var(--muted); line-height: 1.5; }
 .server-statistics-unavailable {
     padding: 16px 18px;
     border: 1px dashed #d1d5db;
@@ -2348,3 +2427,19 @@ a.admin-section-card:hover { border-color: #bfdbfe; box-shadow: 0 8px 24px rgba(
 .server-statistics-unavailable strong { display: block; color: #111827; }
 .server-statistics-unavailable p { margin: 5px 0 0; color: #6b7280; font-size: 13px; }
 
+@media (max-width: 760px) {
+    .server-drawer-tabs { overflow-x: auto; padding: 8px 12px 0; }
+    .server-drawer-tab { flex: 1 0 auto; justify-content: center; padding-inline: 10px; }
+    .server-statistics-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; padding-inline: 10px; }
+    .server-statistics-heading { padding-inline: 10px; }
+}
+
+
+/* Disabled subordinate public statistics settings 0.16.1 */
+.server-statistics-disabled {
+    opacity: 0.58;
+}
+
+.server-statistics-disabled input:disabled {
+    cursor: not-allowed;
+}

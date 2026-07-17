@@ -49,7 +49,12 @@ final class ServerAuditValues
                 'heroes' => (bool) $server->statistics_heroes_enabled,
                 'castles' => (bool) $server->statistics_castles_enabled,
             ],
-            'statistics_limit' => (int) $server->statistics_limit,
+            'statistics_limits' => [
+                'level' => (int) $server->statistics_level_limit,
+                'pvp' => (int) $server->statistics_pvp_limit,
+                'pk' => (int) $server->statistics_pk_limit,
+                'play_time' => (int) $server->statistics_play_time_limit,
+            ],
             'login_server_id' => $server->login_server_id,
             'driver' => $server->driver,
             'use_login_server_connection' => (bool) $server->use_login_server_connection,

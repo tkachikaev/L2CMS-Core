@@ -114,17 +114,24 @@ class UpgradeGameServerMigrationTest extends TestCase
         ]);
     }
 
-    public function test_public_statistics_migration_preserves_servers_and_keeps_publication_opt_in(): void
+    public function test_public_statistics_migrations_preserve_servers_and_split_the_existing_limit(): void
     {
-        $migration = require database_path('migrations/2026_07_17_000500_add_public_statistics_to_game_servers.php');
-        $migration->down();
+        $splitMigration = require database_path('migrations/2026_07_18_000000_split_game_server_statistics_limits.php');
+        $splitMigration->down();
+
+        $statisticsMigration = require database_path('migrations/2026_07_17_000500_add_public_statistics_to_game_servers.php');
+        $statisticsMigration->down();
 
         $gameServer = GameServer::query()->create([
             'name' => 'Existing GameServer',
             'sort_order' => 0,
         ]);
 
-        $migration->up();
+        $statisticsMigration->up();
+        DB::table('game_servers')
+            ->where('id', $gameServer->id)
+            ->update(['statistics_limit' => 25]);
+        $splitMigration->up();
 
         $this->assertDatabaseHas('game_servers', [
             'id' => $gameServer->id,
@@ -136,8 +143,12 @@ class UpgradeGameServerMigrationTest extends TestCase
             'statistics_play_time_enabled' => 1,
             'statistics_heroes_enabled' => 1,
             'statistics_castles_enabled' => 1,
-            'statistics_limit' => 50,
+            'statistics_level_limit' => 25,
+            'statistics_pvp_limit' => 25,
+            'statistics_pk_limit' => 25,
+            'statistics_play_time_limit' => 25,
         ]);
+        $this->assertFalse(Schema::hasColumn('game_servers', 'statistics_limit'));
     }
 
     public function test_legacy_071_settings_are_copied_to_the_first_game_server(): void

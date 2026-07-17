@@ -85,3 +85,21 @@ test('persisted sidebar keeps group state during navigation and history changes'
     await expect(page).toHaveURL(/\/admin\/settings\/game-server$/);
     await expect(siteGroup).toHaveAttribute('open', '');
 });
+
+test('game server settings keep fields separated by tabs', async ({ page }) => {
+    await page.goto('/admin/settings/game-server');
+    await page.getByRole('button', { name: 'Настроить' }).first().click();
+
+    const dialog = page.getByRole('dialog', { name: /L2Server|Игровой сервер|Настройки игрового сервера/ });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('tab', { name: 'Основное' })).toHaveAttribute('aria-selected', 'true');
+
+    await dialog.getByRole('tab', { name: 'Статистика' }).click();
+    await expect(dialog.getByRole('tab', { name: 'Статистика' })).toHaveAttribute('aria-selected', 'true');
+    await expect(dialog.getByText('Публичная статистика').first()).toBeVisible();
+
+    await dialog.getByRole('tab', { name: 'Разное' }).click();
+    await expect(dialog.getByRole('tab', { name: 'Разное' })).toHaveAttribute('aria-selected', 'true');
+    await expect(dialog.getByText('Режим обслуживания')).toBeVisible();
+    await expect(dialog.getByText('Дополнительные сетевые настройки')).toBeVisible();
+});

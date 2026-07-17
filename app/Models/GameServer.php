@@ -48,7 +48,10 @@ use Throwable;
  * @property bool $statistics_play_time_enabled
  * @property bool $statistics_heroes_enabled
  * @property bool $statistics_castles_enabled
- * @property int $statistics_limit
+ * @property int $statistics_level_limit
+ * @property int $statistics_pvp_limit
+ * @property int $statistics_pk_limit
+ * @property int $statistics_play_time_limit
  * @property-read LoginServer|null $loginServer
  * @property-read Collection<int, GameServerTranslation> $translations
  */
@@ -90,7 +93,10 @@ class GameServer extends Model
         'statistics_play_time_enabled',
         'statistics_heroes_enabled',
         'statistics_castles_enabled',
-        'statistics_limit',
+        'statistics_level_limit',
+        'statistics_pvp_limit',
+        'statistics_pk_limit',
+        'statistics_play_time_limit',
     ];
 
     protected $hidden = [
@@ -120,7 +126,10 @@ class GameServer extends Model
             'statistics_play_time_enabled' => 'boolean',
             'statistics_heroes_enabled' => 'boolean',
             'statistics_castles_enabled' => 'boolean',
-            'statistics_limit' => 'integer',
+            'statistics_level_limit' => 'integer',
+            'statistics_pvp_limit' => 'integer',
+            'statistics_pk_limit' => 'integer',
+            'statistics_play_time_limit' => 'integer',
         ];
     }
 
