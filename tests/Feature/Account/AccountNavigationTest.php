@@ -5,7 +5,6 @@ namespace Tests\Feature\Account;
 use App\Models\User;
 use App\Support\Themes\AccountThemeManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AccountNavigationTest extends TestCase
@@ -97,12 +96,9 @@ class AccountNavigationTest extends TestCase
 
     private function user(): User
     {
-        return User::query()->create([
+        return User::factory()->create([
             'name' => 'Player Navigation',
             'email' => 'player-navigation@example.test',
-            'email_verified_at' => now(),
-            'password' => Hash::make('CorrectPassword123!'),
-            'is_active' => true,
             'locale' => 'ru',
         ]);
     }

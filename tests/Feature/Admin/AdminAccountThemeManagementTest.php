@@ -66,12 +66,9 @@ class AdminAccountThemeManagementTest extends TestCase
 
     public function test_player_account_is_rendered_from_the_active_account_theme(): void
     {
-        $user = User::query()->create([
+        $user = User::factory()->create([
             'name' => 'Theme Player',
             'email' => 'theme-player@example.test',
-            'email_verified_at' => now(),
-            'password' => Hash::make('CorrectPassword123!'),
-            'is_active' => true,
             'locale' => 'ru',
         ]);
 
