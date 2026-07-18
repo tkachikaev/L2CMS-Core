@@ -101,6 +101,8 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                 $schema = $database->getSchemaBuilder();
                 $query = $database->table('characters')
                     ->where('characters.account_name', $login)
+                    ->where('characters.deletetime', 0)
+                    ->where('characters.accesslevel', 0)
                     ->orderByDesc('characters.level')
                     ->orderBy('characters.char_name');
 
@@ -109,6 +111,13 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                         ->addSelect('clan_data.clan_name as clan_name');
                 } else {
                     $query->selectRaw('NULL as clan_name');
+                }
+
+                if ($schema->hasTable('heroes')) {
+                    $query->leftJoin('heroes', 'heroes.charId', '=', 'characters.charId')
+                        ->selectRaw('CASE WHEN heroes.charId IS NULL THEN 0 ELSE 1 END as hero');
+                } else {
+                    $query->selectRaw('0 as hero');
                 }
 
                 if ($createdAtColumn !== null && $schema->hasColumn('characters', $createdAtColumn)) {
@@ -122,8 +131,16 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                     'characters.char_name',
                     'characters.level',
                     'characters.classid',
+                    'characters.race',
+                    'characters.sex',
+                    'characters.title',
                     'characters.online',
                     'characters.lastAccess',
+                    'characters.onlinetime',
+                    'characters.pvpkills',
+                    'characters.pkkills',
+                    'characters.karma',
+                    'characters.nobless',
                 ])->limit($limit)->get();
 
                 return $rows->map(fn (object $character): array => [
@@ -131,11 +148,20 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                     'name' => (string) $character->char_name,
                     'level' => (int) $character->level,
                     'class_id' => (int) $character->classid,
+                    'race' => (int) $character->race,
+                    'gender' => (int) $character->sex,
+                    'title' => trim((string) $character->title) !== '' ? (string) $character->title : null,
                     'online' => (int) $character->online === 1,
                     'clan' => isset($character->clan_name) && trim((string) $character->clan_name) !== ''
                         ? (string) $character->clan_name
                         : null,
                     'last_access' => is_numeric($character->lastAccess) ? (int) $character->lastAccess : 0,
+                    'play_time_seconds' => is_numeric($character->onlinetime) ? max(0, (int) $character->onlinetime) : 0,
+                    'pvp_kills' => is_numeric($character->pvpkills) ? max(0, (int) $character->pvpkills) : 0,
+                    'pk_kills' => is_numeric($character->pkkills) ? max(0, (int) $character->pkkills) : 0,
+                    'karma' => is_numeric($character->karma) ? max(0, (int) $character->karma) : 0,
+                    'noble' => (int) $character->nobless === 1,
+                    'hero' => (int) $character->hero === 1,
                     'created_at' => $this->parseCharacterCreatedAt($character->character_created_at ?? null),
                 ])->all();
             },

@@ -10,6 +10,8 @@ const databasePath = resolve(runtimeDirectory, `l2forge-browser-${process.pid}.s
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8765';
 const adminEmail = 'browser-admin@example.test';
 const adminPassword = 'BrowserPassword123!';
+const playerEmail = 'browser-player@example.test';
+const playerPassword = 'BrowserPlayerPassword123!';
 
 mkdirSync(dirname(databasePath), { recursive: true });
 writeFileSync(databasePath, '');
@@ -32,6 +34,10 @@ const environment = {
     PLAYWRIGHT_BASE_URL: baseUrl,
     PLAYWRIGHT_ADMIN_EMAIL: adminEmail,
     PLAYWRIGHT_ADMIN_PASSWORD: adminPassword,
+    BROWSER_TEST_PLAYER_EMAIL: playerEmail,
+    BROWSER_TEST_PLAYER_PASSWORD: playerPassword,
+    PLAYWRIGHT_PLAYER_EMAIL: playerEmail,
+    PLAYWRIGHT_PLAYER_PASSWORD: playerPassword,
 };
 
 const run = (command, args) => {

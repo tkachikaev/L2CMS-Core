@@ -3,16 +3,19 @@
 namespace Tests\Feature\Account;
 
 use App\Contracts\GameAccountGateway;
+use App\Livewire\Account\CharacterDirectory;
 use App\Models\AuditLog;
 use App\Models\GameServer;
 use App\Models\LoginServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
+use App\Models\UserCharacterPreference;
 use App\Services\GameAccountSettings;
 use App\Services\GameServerDeletionImpact;
 use App\Services\GameServerSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\Concerns\InteractsWithServerFixtures;
 use Tests\Fakes\FakeGameAccountGateway;
 use Tests\Fakes\RaceInjectingGameAccountGateway;
@@ -38,7 +41,7 @@ class GameAccountCabinetTest extends TestCase
         $this->get('/account/game-accounts/create')->assertRedirect(route('login'));
     }
 
-    public function test_single_game_account_opens_immediately_from_the_player_account(): void
+    public function test_single_game_account_stays_expanded_on_the_player_dashboard(): void
     {
         $user = $this->user();
         [$loginServer, $gameServer] = $this->servers();
@@ -62,20 +65,16 @@ class GameAccountCabinetTest extends TestCase
 
         $this->actingAs($user)
             ->get('/account')
-            ->assertRedirect(route('game-accounts.show', ['gameAccount' => $account]));
-
-        $this->actingAs($user)
-            ->get('/account/game-accounts/'.$account->id)
             ->assertOk()
             ->assertSee('Личный кабинет игрока')
+            ->assertSee('По серверам')
+            ->assertSee('Все персонажи')
             ->assertSee('PlayerOne')
             ->assertSee('Bubi')
-            ->assertSee('Interlude x10')
-            ->assertDontSee('Подробнее')
-            ->assertDontSee('Панель управления');
+            ->assertSee('Interlude x10');
     }
 
-    public function test_localized_player_account_redirects_to_the_single_localized_game_account(): void
+    public function test_localized_player_account_keeps_the_character_dashboard(): void
     {
         $user = $this->user();
         [$loginServer, $gameServer] = $this->servers();
@@ -89,10 +88,10 @@ class GameAccountCabinetTest extends TestCase
 
         $this->actingAs($user)
             ->get('/ru/account')
-            ->assertRedirect(route('localized.game-accounts.show', [
-                'locale' => 'ru',
-                'gameAccount' => $account,
-            ]));
+            ->assertOk()
+            ->assertSee('LocalizedOne')
+            ->assertSee('По серверам')
+            ->assertSee('Все персонажи');
     }
 
     public function test_player_account_keeps_the_dashboard_when_no_game_accounts_exist(): void
@@ -737,7 +736,9 @@ class GameAccountCabinetTest extends TestCase
 
         $this->actingAs($user)
             ->get('/account')
-            ->assertRedirect(route('game-accounts.show', ['gameAccount' => $account]));
+            ->assertOk()
+            ->assertSee('Interlude x50')
+            ->assertDontSee('Interlude x10');
 
         $this->actingAs($user)
             ->get('/account/game-accounts/'.$account->id)
@@ -773,6 +774,137 @@ class GameAccountCabinetTest extends TestCase
         $settings->restoreOrphanedAccountLinks($replacement);
 
         $this->assertSame($replacement->id, $account->fresh()->registration_game_server_id);
+    }
+
+    public function test_character_directory_switches_between_grouped_and_flat_views(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        $account = UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Directory01',
+            'normalized_login' => 'directory01',
+        ]);
+        $this->gateway->charactersByServer[$gameServer->id] = [[
+            'id' => 301,
+            'name' => 'DirectoryHero',
+            'level' => 80,
+            'class_id' => 88,
+            'race' => 0,
+            'gender' => 1,
+            'title' => 'Champion',
+            'online' => true,
+            'clan' => 'L2Forge',
+            'last_access' => 1784320000000,
+            'play_time_seconds' => 90000,
+            'pvp_kills' => 25,
+            'pk_kills' => 2,
+            'karma' => 0,
+            'noble' => true,
+            'hero' => true,
+            'created_at' => CarbonImmutable::parse('2024-04-05'),
+        ]];
+
+        Livewire::actingAs($user)
+            ->test(CharacterDirectory::class)
+            ->assertSet('viewMode', 'grouped')
+            ->assertSet('expandedServerIds', [$gameServer->id])
+            ->assertSet('expandedAccountIds', [$account->id])
+            ->assertSee('DirectoryHero')
+            ->assertSee('Герой')
+            ->assertSee('Дворянин')
+            ->assertSee('В игре')
+            ->call('setViewMode', 'all')
+            ->assertSet('viewMode', 'all')
+            ->assertSee('Interlude x10')
+            ->assertSee('Аккаунт: Directory01');
+
+        $this->assertSame('all', UserCharacterPreference::query()->where('user_id', $user->id)->value('view_mode'));
+    }
+
+    public function test_hidden_character_groups_are_persisted_but_remain_available_in_all_characters(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        $account = UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Hidden01',
+            'normalized_login' => 'hidden01',
+        ]);
+        $this->gateway->charactersByServer[$gameServer->id] = [[
+            'id' => 302,
+            'name' => 'StillAvailable',
+            'level' => 40,
+            'class_id' => 9,
+            'online' => false,
+            'clan' => null,
+            'last_access' => 0,
+            'created_at' => null,
+        ]];
+
+        Livewire::actingAs($user)
+            ->test(CharacterDirectory::class)
+            ->call('hideAccount', $account->id)
+            ->assertDontSee('StillAvailable')
+            ->assertSee('Показать скрытые группы')
+            ->call('setViewMode', 'all')
+            ->assertSee('StillAvailable')
+            ->assertSee('Скрытая группа')
+            ->set('showHiddenInAll', false)
+            ->assertDontSee('StillAvailable');
+
+        $preference = UserCharacterPreference::query()->where('user_id', $user->id)->firstOrFail();
+        $this->assertSame([$account->id], $preference->hidden_game_account_ids);
+    }
+
+    public function test_character_directory_filters_the_combined_list(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'Filter01',
+            'normalized_login' => 'filter01',
+        ]);
+        $this->gateway->charactersByServer[$gameServer->id] = [
+            [
+                'id' => 303,
+                'name' => 'OnlineTarget',
+                'level' => 60,
+                'class_id' => 88,
+                'online' => true,
+                'clan' => 'BlueClan',
+                'last_access' => 0,
+                'created_at' => null,
+            ],
+            [
+                'id' => 304,
+                'name' => 'OfflineTarget',
+                'level' => 59,
+                'class_id' => 88,
+                'online' => false,
+                'clan' => 'RedClan',
+                'last_access' => 0,
+                'created_at' => null,
+            ],
+        ];
+
+        Livewire::actingAs($user)
+            ->test(CharacterDirectory::class)
+            ->call('setViewMode', 'all')
+            ->set('onlineOnly', true)
+            ->assertSee('OnlineTarget')
+            ->assertDontSee('OfflineTarget')
+            ->set('onlineOnly', false)
+            ->set('search', 'RedClan')
+            ->assertDontSee('OnlineTarget')
+            ->assertSee('OfflineTarget');
     }
 
     private function deleteGameServer(GameServer $gameServer): void

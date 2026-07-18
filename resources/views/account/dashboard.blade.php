@@ -18,6 +18,12 @@
     <article><span>{{ __('Available worlds') }}</span><strong>{{ $availableServers }}</strong></article>
 </section>
 
+@if($accounts->isNotEmpty())
+    <section id="characters" class="account-section account-character-section">
+        <livewire:account.character-directory />
+    </section>
+@endif
+
 <section id="game-accounts" class="account-section">
     <div class="account-section-heading">
         <div><span class="account-eyebrow">{{ __('Game accounts') }}</span><h2>{{ __('My accounts') }}</h2></div>
@@ -74,3 +80,8 @@
     @endif
 </section>
 @endsection
+
+
+@push('framework-scripts')
+    @livewireScripts
+@endpush

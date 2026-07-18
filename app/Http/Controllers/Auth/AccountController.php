@@ -9,7 +9,6 @@ use App\Models\LoginServer;
 use App\Models\User;
 use App\Services\GameAccounts\GameAccountQuota;
 use App\Services\GameAccountSettings;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -20,7 +19,7 @@ class AccountController extends Controller
         GameAccountSettings $settings,
         GameAccountGateway $gateway,
         GameAccountQuota $quota,
-    ): View|RedirectResponse {
+    ): View {
         $user = $request->user();
         if (! $user instanceof User) {
             abort(401);
@@ -32,12 +31,6 @@ class AccountController extends Controller
             ->get();
 
         $quotaAccountCount = $quota->count($user);
-
-        if ($accounts->count() === 1 && $quotaAccountCount === 1) {
-            return redirect()->to(public_route('game-accounts.show', [
-                'gameAccount' => $accounts->firstOrFail(),
-            ]));
-        }
 
         $availableServers = GameServer::query()
             ->with('loginServer')

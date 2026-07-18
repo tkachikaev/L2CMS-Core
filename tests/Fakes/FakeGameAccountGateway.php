@@ -5,7 +5,6 @@ namespace Tests\Fakes;
 use App\Contracts\GameAccountGateway;
 use App\Models\GameServer;
 use App\Models\LoginServer;
-use Carbon\CarbonImmutable;
 use RuntimeException;
 
 class FakeGameAccountGateway implements GameAccountGateway
@@ -28,7 +27,7 @@ class FakeGameAccountGateway implements GameAccountGateway
     /** @var array<string,array{login:string,created_at:string|null,last_active:int,status:string}> */
     public array $summaries = [];
 
-    /** @var array<int,list<array{id:int,name:string,level:int,class_id:int,online:bool,clan:string|null,last_access:int,created_at:CarbonImmutable|null}>> */
+    /** @var array<int,list<array<string,mixed>>> */
     public array $charactersByServer = [];
 
     public function supportsLoginServer(LoginServer $loginServer): bool
