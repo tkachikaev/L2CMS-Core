@@ -14,24 +14,16 @@ if (-not (Test-Path '.env')) {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete 0.20.0 patch with file replacement enabled.'
+    throw 'VERSION is missing. Re-extract the complete 0.20.1 patch with file replacement enabled.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
-if ($cmsVersion -ne '0.20.0') {
+if ($cmsVersion -ne '0.20.1') {
     throw "Unexpected patch version: $cmsVersion"
 }
 
 $requiredFiles = @(
-    'app\Support\KaevCMS.php',
-    'database\migrations\2026_07_18_000200_rebrand_l2forge_to_kaevcms.php',
     'tests\Feature\BrandingTest.php',
-    'composer.json',
-    'composer.lock',
-    'package.json',
-    'package-lock.json',
-    'lang\ru.json',
-    'lang\en.json',
     'CHANGELOG.md',
     'README.md',
     'VERSION',
@@ -40,26 +32,16 @@ $requiredFiles = @(
 
 foreach ($requiredFile in $requiredFiles) {
     if (-not (Test-Path $requiredFile -PathType Leaf)) {
-        throw "Patch file is missing: $requiredFile. Re-extract the complete 0.20.0 patch with file replacement enabled."
+        throw "Patch file is missing: $requiredFile. Re-extract the complete 0.20.1 patch with file replacement enabled."
     }
 }
 
 Write-Host "KaevCMS $cmsVersion update"
-Write-Host 'Applying the KaevCMS rebrand and compatibility migration.'
+Write-Host 'Applying the console branding test fix.'
 Write-Host ''
 
-$obsoletePaths = @(
-    'app\Support\L2Forge.php'
-)
-
-foreach ($obsoletePath in $obsoletePaths) {
-    if (Test-Path $obsoletePath) {
-        Remove-Item $obsoletePath -Force -Recurse
-    }
-}
-
 Get-ChildItem -Path $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -ne 'apply-0.20.0.ps1' } |
+    Where-Object { $_.Name -ne 'apply-0.20.1.ps1' } |
     Remove-Item -Force -ErrorAction SilentlyContinue
 
 & "$PSScriptRoot\update.ps1" -SkipTests:$SkipTests

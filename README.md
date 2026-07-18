@@ -1,4 +1,4 @@
-# KaevCMS 0.20.0
+# KaevCMS 0.20.1
 
 **KaevCMS** — бесплатная open-source CMS для серверов Lineage II.
 

@@ -57,14 +57,23 @@ class BrandingTest extends TestCase
         $this->assertDatabaseHas('cms_settings', ['key' => 'mail.from_name', 'value' => 'KaevCMS']);
     }
 
-    public function test_new_console_brand_is_primary_and_legacy_about_alias_remains_available(): void
+    public function test_new_console_brand_is_primary(): void
     {
         $this->assertSame(0, Artisan::call('kaevcms:about'));
         $this->assertStringContainsString('KaevCMS', Artisan::output());
+    }
 
-        $this->assertSame(0, Artisan::call('l2forge:about'));
-        $this->assertStringContainsString('deprecated', Artisan::output());
-        $this->assertStringContainsString('kaevcms:about', Artisan::output());
+    public function test_legacy_about_aliases_remain_available(): void
+    {
+        foreach (['l2forge:about', 'cms:about'] as $legacyCommand) {
+            $this->assertSame(0, Artisan::call($legacyCommand));
+
+            $output = Artisan::output();
+
+            $this->assertStringContainsString('deprecated', $output);
+            $this->assertStringContainsString('kaevcms:about', $output);
+            $this->assertStringContainsString('KaevCMS', $output);
+        }
     }
 
     public function test_package_metadata_uses_kaevcms_name(): void
