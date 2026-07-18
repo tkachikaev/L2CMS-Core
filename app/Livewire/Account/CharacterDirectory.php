@@ -117,7 +117,7 @@ class CharacterDirectory extends Component
 
     public function render(): View
     {
-        return view('livewire.account.character-directory', [
+        return view('account-theme::livewire.character-directory', [
             'visibleServers' => $this->visibleServers(),
             'hiddenServers' => $this->hiddenServers(),
             'hiddenAccounts' => $this->hiddenAccounts(),

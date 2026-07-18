@@ -55,3 +55,22 @@ test('player shell persists during account navigation and browser history', asyn
     await expect(page).toHaveURL(/\/account$/);
     await expect(topbar).toHaveAttribute('data-persistence-probe', 'topbar-kept');
 });
+
+test('luxury player theme remains reactive after SPA navigation', async ({ page }) => {
+    await signIn(page);
+
+    await expect(page.locator('link[href*="account-themes/luxury/assets/css/app.css"]')).toHaveCount(1);
+    await expect(page.locator('.account-hero')).toBeVisible();
+    await expect(page.locator('.account-future-balance')).toContainText(/Монеты|Coins/);
+
+    await page.locator('.account-nav').getByRole('link', { name: 'Игровые аккаунты' }).click();
+    await expect(page).toHaveURL(/\/account\/game-accounts$/);
+    await expect(page.locator('.game-account-card').first()).toBeVisible();
+
+    await page.locator('.account-nav').getByRole('link', { name: 'Обзор' }).click();
+    await expect(page).toHaveURL(/\/account$/);
+
+    const allCharacters = page.getByRole('tab', { name: 'Все персонажи' });
+    await allCharacters.click();
+    await expect(allCharacters).toHaveAttribute('aria-selected', 'true');
+});

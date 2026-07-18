@@ -42,7 +42,7 @@ class AccountController extends Controller
                 && $gateway->supportsLoginServer($server->loginServer))
             ->count();
 
-        return view('account.dashboard', [
+        return view('account-theme::dashboard', [
             'user' => $user,
             'accounts' => $accounts,
             'quotaAccountCount' => $quotaAccountCount,

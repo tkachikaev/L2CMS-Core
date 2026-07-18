@@ -51,7 +51,7 @@ class GameAccountController extends Controller
         $quotaAccountCount = $this->quota->count($user);
         $values = $settings->values();
 
-        return view('account.game-accounts.index', [
+        return view('account-theme::game-accounts.index', [
             'user' => $user,
             'accounts' => $accounts,
             'quotaAccountCount' => $quotaAccountCount,
@@ -77,7 +77,7 @@ class GameAccountController extends Controller
             return redirect()->to(public_route('account'))->with('warning', __('You have reached the game account limit.'));
         }
 
-        return view('account.game-accounts.create', [
+        return view('account-theme::game-accounts.create', [
             'user' => $user,
             'settings' => $values,
             'gameServers' => $this->availableGameServers(),
@@ -260,7 +260,7 @@ class GameAccountController extends Controller
             }
         }
 
-        return view('account.game-accounts.show', [
+        return view('account-theme::game-accounts.show', [
             'user' => $user,
             'account' => $account,
             'summary' => $summary,

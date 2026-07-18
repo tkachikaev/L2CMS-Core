@@ -9,6 +9,7 @@ use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
 use App\Services\SiteSettings;
 use App\Support\L2Forge;
+use App\Support\Themes\AccountThemeManager;
 use App\Support\Themes\ThemeManager;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,13 @@ if (! function_exists('theme_asset')) {
     function theme_asset(string $path): string
     {
         return app(ThemeManager::class)->asset($path);
+    }
+}
+
+if (! function_exists('account_theme_asset')) {
+    function account_theme_asset(string $path): string
+    {
+        return app(AccountThemeManager::class)->asset($path);
     }
 }
 

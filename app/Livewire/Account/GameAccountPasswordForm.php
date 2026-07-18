@@ -93,7 +93,7 @@ class GameAccountPasswordForm extends Component
 
     public function render(): View
     {
-        return view('livewire.account.game-account-password-form');
+        return view('account-theme::livewire.game-account-password-form');
     }
 
     private function account(): UserGameAccount

@@ -1,0 +1,9 @@
+{
+  "name": "L2 Obsidian Luxury",
+  "slug": "luxury",
+  "version": "1.0.0",
+  "author": "L2Forge Community",
+  "cms_min": "0.19.0",
+  "description": "Премиальный тёмный шаблон личного кабинета с постоянной Livewire-оболочкой, каталогом персонажей и адаптивным интерфейсом.",
+  "preview": "assets/images/preview.svg"
+}

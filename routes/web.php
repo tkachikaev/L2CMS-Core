@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\GameAccountController;
 use App\Http\Controllers\Account\GameAccountPasswordController;
 use App\Http\Controllers\Admin\AccountSecurityController as AdminAccountSecurityController;
+use App\Http\Controllers\Admin\AccountThemeController as AdminAccountThemeController;
 use App\Http\Controllers\Admin\AdministratorController as AdminAdministratorController;
 use App\Http\Controllers\Admin\AdministratorTwoFactorController as AdminAdministratorTwoFactorController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
@@ -212,6 +213,11 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::post('/themes/{theme}/activate', [AdminThemeController::class, 'activate'])
             ->where('theme', '[a-z0-9][a-z0-9_-]*')
             ->name('themes.activate');
+
+        Route::get('/account-themes', [AdminAccountThemeController::class, 'index'])->name('account-themes.index');
+        Route::post('/account-themes/{theme}/activate', [AdminAccountThemeController::class, 'activate'])
+            ->where('theme', '[a-z0-9][a-z0-9_-]*')
+            ->name('account-themes.activate');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');

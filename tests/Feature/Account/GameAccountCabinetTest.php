@@ -224,7 +224,7 @@ class GameAccountCabinetTest extends TestCase
             ->assertSee('role="alert"', false)
             ->assertDontSee('<div class="account-notice error"', false);
 
-        $accountCss = file_get_contents(public_path('assets/account/css/app.css'));
+        $accountCss = file_get_contents(public_path('account-themes/luxury/assets/css/app.css'));
         $this->assertIsString($accountCss);
         $this->assertStringContainsString('.account-field-control>.account-field-error{position:absolute', $accountCss);
     }

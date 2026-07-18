@@ -18,7 +18,7 @@
         </div>
     </details>
 
-    <details class="admin-menu-group" data-admin-menu-group="site" @if (request()->routeIs('admin.settings.general*', 'admin.settings.languages*', 'admin.themes.*')) open @endif>
+    <details class="admin-menu-group" data-admin-menu-group="site" @if (request()->routeIs('admin.settings.general*', 'admin.settings.languages*', 'admin.themes.*', 'admin.account-themes.*')) open @endif>
         <summary class="admin-menu-group-summary">
             <span>{{ __('Site') }}</span>
             <span class="admin-menu-group-chevron" aria-hidden="true">⌄</span>
@@ -32,6 +32,9 @@
             </a>
             <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.themes.index') }}">
                 <span>{{ __('Themes') }}</span>
+            </a>
+            <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.account-themes.index') }}">
+                <span>{{ __('Player account themes') }}</span>
             </a>
         </div>
     </details>
