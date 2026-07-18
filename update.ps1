@@ -18,6 +18,48 @@ Write-Host "KaevCMS $cmsVersion update"
 Write-Host "Project: $PSScriptRoot"
 Write-Host ''
 
+function Remove-ObsoleteReleaseArtifacts {
+    param(
+        [Parameter(Mandatory = $true)][string]$CurrentVersion
+    )
+
+    $currentApplyScript = "apply-$CurrentVersion.ps1"
+    $obsoleteApplyScripts = Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction Stop |
+        Where-Object { $_.Name -ne $currentApplyScript }
+
+    foreach ($obsoleteApplyScript in $obsoleteApplyScripts) {
+        Remove-Item -LiteralPath $obsoleteApplyScript.FullName -Force -ErrorAction Stop
+
+        if (Test-Path -LiteralPath $obsoleteApplyScript.FullName) {
+            throw "Unable to remove obsolete apply script: $($obsoleteApplyScript.Name)"
+        }
+
+        Write-Host "Removed obsolete apply script: $($obsoleteApplyScript.Name)"
+    }
+
+    $obsoletePaths = @(
+        'preview',
+        'resources\views\admin\settings\placeholder.blade.php'
+    )
+
+    foreach ($obsoletePath in $obsoletePaths) {
+        $fullPath = Join-Path $PSScriptRoot $obsoletePath
+        if (-not (Test-Path -LiteralPath $fullPath)) {
+            continue
+        }
+
+        Remove-Item -LiteralPath $fullPath -Recurse -Force -ErrorAction Stop
+
+        if (Test-Path -LiteralPath $fullPath) {
+            throw "Unable to remove obsolete release artifact: $obsoletePath"
+        }
+
+        Write-Host "Removed obsolete release artifact: $obsoletePath"
+    }
+}
+
+Remove-ObsoleteReleaseArtifacts -CurrentVersion $cmsVersion
+
 function Write-Utf8NoBom {
     param(
         [Parameter(Mandatory = $true)][string]$Path,

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Mail\MailDeliveryMonitor;
+use App\Services\MailSettings;
 use App\Services\Servers\ServerMonitorCoordinator;
 use App\Services\Servers\ServerStatusOverview;
 use App\Services\Servers\ServerStatusPayload;
@@ -16,11 +18,15 @@ class DashboardController extends Controller
     public function __invoke(
         ServerStatusOverview $statuses,
         ServerMonitorCoordinator $monitorCoordinator,
+        MailSettings $mailSettings,
+        MailDeliveryMonitor $mailDeliveries,
     ): View {
         return view('admin.dashboard', [
             'admin' => Auth::guard('admin')->user(),
             'monitor' => $statuses->get(),
             'monitorRefreshDue' => $monitorCoordinator->isDue(),
+            'mailSettings' => $mailSettings->values(),
+            'mailDelivery' => $mailDeliveries->overview(),
         ]);
     }
 

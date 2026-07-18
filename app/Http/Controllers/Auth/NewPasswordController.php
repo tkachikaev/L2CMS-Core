@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\PasswordChangedNotification;
 use App\Rules\PasswordWithinHasherLimit;
 use App\Services\AuditLogger;
+use App\Services\Mail\MailDeliveryDispatcher;
 use App\Services\MailSettings;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -21,11 +22,21 @@ use Throwable;
 
 class NewPasswordController extends Controller
 {
-    public function create(Request $request, string $token): View
+    public function create(Request $request): View|RedirectResponse
     {
+        $token = (string) $request->route('token', '');
+        $email = Str::lower(trim((string) $request->query('email', '')));
+        $user = $email === '' ? null : User::query()->where('email', $email)->first();
+
+        if (! $user instanceof User || ! Password::broker('users')->tokenExists($user, $token)) {
+            return redirect()
+                ->to(public_route('password.request'))
+                ->withErrors(['email' => __('The password reset link is invalid or has expired.')]);
+        }
+
         return view('theme::auth.reset-password', [
             'token' => $token,
-            'email' => (string) $request->query('email', ''),
+            'email' => $email,
         ]);
     }
 
@@ -33,6 +44,7 @@ class NewPasswordController extends Controller
         Request $request,
         AuditLogger $auditLogger,
         MailSettings $mailSettings,
+        MailDeliveryDispatcher $mailDelivery,
     ): RedirectResponse {
         $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
 
@@ -72,6 +84,10 @@ class NewPasswordController extends Controller
         );
 
         if ($status !== Password::PASSWORD_RESET) {
+            Log::warning('Password reset request was rejected.', [
+                'status' => $status,
+            ]);
+
             return back()->withInput($request->only('email'))->withErrors([
                 'email' => __('The password reset link is invalid or has expired.'),
             ]);
@@ -79,7 +95,7 @@ class NewPasswordController extends Controller
 
         if ($changedUser instanceof User && $mailSettings->isReady()) {
             try {
-                $changedUser->notify(new PasswordChangedNotification);
+                $mailDelivery->send($changedUser, new PasswordChangedNotification, 'password_changed');
                 $auditLogger->success(
                     category: 'mail',
                     action: 'mail.password_changed_sent',

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Auth\Passwords\UtcPasswordBrokerManager;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
@@ -10,6 +11,7 @@ use App\Services\RegistrationSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
@@ -134,6 +136,100 @@ class PublicUserAuthenticationTest extends TestCase
             'password' => 'Password123',
         ])->assertRedirect(route('account'));
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_reset_form_rejects_invalid_token_before_password_is_entered(): void
+    {
+        $user = User::query()->create([
+            'name' => 'player',
+            'email' => 'player@example.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('Password123'),
+        ]);
+
+        $this->get('/reset-password/invalid-token?email='.$user->email)
+            ->assertRedirect('/forgot-password')
+            ->assertSessionHasErrors('email');
+    }
+
+    public function test_localized_reset_form_uses_the_reset_token_instead_of_the_locale_route_parameter(): void
+    {
+        $user = User::query()->create([
+            'name' => 'player',
+            'email' => 'player@example.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('Password123'),
+        ]);
+        $token = Password::broker('users')->createToken($user);
+
+        $this->get('/ru/reset-password/'.$token.'?email='.$user->email)
+            ->assertOk()
+            ->assertSee('name="token" type="hidden" value="'.$token.'"', false);
+
+        $this->post('/ru/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'NewPassword123',
+            'password_confirmation' => 'NewPassword123',
+        ])->assertRedirect('/ru/login');
+
+        $this->assertTrue(Hash::check('NewPassword123', $user->fresh()->password));
+    }
+
+    public function test_reset_form_locks_email_to_the_address_bound_to_the_token(): void
+    {
+        $user = User::query()->create([
+            'name' => 'player',
+            'email' => 'player@example.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('Password123'),
+        ]);
+        $token = Password::broker('users')->createToken($user);
+
+        $this->get('/reset-password/'.$token.'?email='.$user->email)
+            ->assertOk()
+            ->assertSee('name="email" type="hidden" value="player@example.com"', false)
+            ->assertSee('id="reset_email"', false)
+            ->assertSee('readonly', false);
+    }
+
+    public function test_password_reset_token_remains_valid_when_web_and_worker_timezones_differ(): void
+    {
+        $user = User::query()->create([
+            'name' => 'player',
+            'email' => 'player@example.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('Password123'),
+        ]);
+        $originalPhpTimezone = date_default_timezone_get();
+        $originalAppTimezone = (string) config('app.timezone');
+
+        try {
+            date_default_timezone_set('Pacific/Honolulu');
+            config()->set('app.timezone', 'Pacific/Honolulu');
+            $token = Password::broker('users')->createToken($user);
+
+            date_default_timezone_set('Pacific/Kiritimati');
+            config()->set('app.timezone', 'Pacific/Kiritimati');
+
+            $this->assertInstanceOf(UtcPasswordBrokerManager::class, app('auth.password'));
+            $this->assertTrue(Password::broker('users')->tokenExists($user, $token));
+
+            $this->get('/reset-password/'.$token.'?email='.$user->email)
+                ->assertOk();
+
+            $this->post('/reset-password', [
+                'token' => $token,
+                'email' => $user->email,
+                'password' => 'NewPassword123',
+                'password_confirmation' => 'NewPassword123',
+            ])->assertRedirect(route('login'));
+
+            $this->assertTrue(Hash::check('NewPassword123', $user->fresh()->password));
+        } finally {
+            date_default_timezone_set($originalPhpTimezone);
+            config()->set('app.timezone', $originalAppTimezone);
+        }
     }
 
     public function test_password_reset_notification_can_be_requested_without_revealing_unknown_email(): void

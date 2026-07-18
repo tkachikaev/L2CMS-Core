@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\GameAccountSettingsController as AdminGameAccount
 use App\Http\Controllers\Admin\GameServerConnectionController as AdminGameServerConnectionController;
 use App\Http\Controllers\Admin\GameServerController as AdminGameServerController;
 use App\Http\Controllers\Admin\LoginServerController as AdminLoginServerController;
+use App\Http\Controllers\Admin\MailDeliveryController as AdminMailDeliveryController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -271,6 +272,15 @@ Route::prefix('admin')->name('admin.')->middleware('admin.headers')->group(funct
         Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])
             ->middleware('throttle:5,1')
             ->name('settings.mail.test');
+        Route::get('/settings/mail/delivery', [AdminMailDeliveryController::class, 'index'])
+            ->name('settings.mail.delivery');
+        Route::put('/settings/mail/delivery-mode', [AdminMailDeliveryController::class, 'update'])
+            ->name('settings.mail.delivery-mode.update');
+        Route::post('/settings/mail/delivery-probe', [AdminMailDeliveryController::class, 'probe'])
+            ->middleware('throttle:4,1')
+            ->name('settings.mail.delivery-probe');
+        Route::get('/settings/mail/delivery-probe/status', [AdminMailDeliveryController::class, 'probeStatus'])
+            ->name('settings.mail.delivery-probe.status');
         Route::get('/settings/mail/custom', [AdminSettingsController::class, 'customMail'])
             ->name('settings.mail.custom');
         Route::post('/settings/mail/custom', [AdminSettingsController::class, 'sendCustomMail'])

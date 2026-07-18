@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Auth\Passwords\UtcPasswordBrokerManager;
 use App\Services\AdminLoginService;
 use App\Services\AdminTwoFactorAuthentication;
 use App\Services\AuditLogger;
@@ -9,6 +10,8 @@ use App\Services\GameAccountSettings;
 use App\Services\GameServerSettings;
 use App\Services\Localization\LanguageManager;
 use App\Services\Localization\LocalizedContentResolver;
+use App\Services\Mail\MailDeliveryDispatcher;
+use App\Services\Mail\MailDeliveryMonitor;
 use App\Services\MailSettings;
 use App\Services\MailTemplateSettings;
 use App\Services\News\NewsHtmlSanitizer;
@@ -32,12 +35,15 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->extend('auth.password', fn ($manager, $app): UtcPasswordBrokerManager => new UtcPasswordBrokerManager($app));
         $this->app->singleton(AdminLoginService::class);
         $this->app->singleton(AdminTwoFactorAuthentication::class);
         $this->app->singleton(AuditLogger::class);
         $this->app->singleton(GameAccountSettings::class);
         $this->app->singleton(GameServerSettings::class);
         $this->app->singleton(MailSettings::class);
+        $this->app->singleton(MailDeliveryMonitor::class);
+        $this->app->singleton(MailDeliveryDispatcher::class);
         $this->app->singleton(MailTemplateSettings::class);
         $this->app->singleton(LanguageManager::class);
         $this->app->singleton(LocalizedContentResolver::class);

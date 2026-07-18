@@ -167,6 +167,7 @@ class AdminPanelTest extends TestCase
         $scripts = [
             'custom-mail.js',
             'localization.js',
+            'mail-delivery.js',
             'mail-templates.js',
             'news-actions.js',
             'news-editor.js',

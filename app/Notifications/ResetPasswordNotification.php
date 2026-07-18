@@ -14,6 +14,11 @@ class ResetPasswordNotification extends Notification
 
     public function __construct(private readonly string $token) {}
 
+    public function token(): string
+    {
+        return $this->token;
+    }
+
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {

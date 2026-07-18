@@ -169,11 +169,12 @@ final class SystemInformation
         }
 
         $queue = (string) config('queue.default');
+        $workerless = in_array($queue, ['sync', 'background', 'deferred'], true);
         $components[] = [
             'label' => __('Queues'),
-            'state' => $queue === 'sync' ? 'success' : 'neutral',
+            'state' => $workerless ? 'success' : 'neutral',
             'status' => $queue === 'sync' ? __('Synchronous mode') : __('Driver: :driver', ['driver' => $queue]),
-            'details' => $queue === 'sync'
+            'details' => $workerless
                 ? __('A separate queue worker is not required')
                 : __('A queue worker must be running for background processing'),
         ];

@@ -74,6 +74,7 @@
             </div>
         </section>
 
+        <div class="dashboard-monitor-side">
         <section class="dashboard-monitor-card">
             <header>
                 <h2>{{ __('Login servers') }}</h2>
@@ -92,6 +93,44 @@
                 @endforelse
             </div>
         </section>
+
+        <section class="dashboard-monitor-card">
+            <header>
+                <h2>{{ __('Mail delivery') }}</h2>
+                <a wire:navigate href="{{ route('admin.settings.mail') }}">{{ __('Settings') }}</a>
+            </header>
+            <div class="dashboard-mail-card-body">
+                <div class="dashboard-mail-status">
+                    <span>{{ __('Mode') }}</span>
+                    @if($mailSettings['delivery_mode'] === 'background')
+                        <span class="status-badge {{ $mailSettings['background_supported'] ? 'status-badge-success' : 'status-badge-danger' }}">{{ __('Asynchronous') }}</span>
+                    @elseif($mailSettings['delivery_mode'] === 'database')
+                        <span class="status-badge {{ $mailSettings['database_supported'] ? 'status-badge-success' : 'status-badge-danger' }}">{{ __('Asynchronous with database queue') }}</span>
+                    @else
+                        <span class="status-badge status-badge-muted">{{ __('Synchronous') }}</span>
+                    @endif
+                </div>
+
+                <div class="dashboard-mail-metrics">
+                    <div class="dashboard-mail-metric"><span>{{ __('Waiting') }}</span><strong>{{ $mailDelivery['pending'] }}</strong></div>
+                    <div class="dashboard-mail-metric"><span>{{ __('Errors in 7 days') }}</span><strong>{{ $mailDelivery['failed_recent'] }}</strong></div>
+                </div>
+
+                <div class="dashboard-mail-meta">
+                    <span>{{ $mailDelivery['oldest_pending_at'] ? __('Oldest waiting: :time', ['time' => $mailDelivery['oldest_pending_at']->diffForHumans()]) : __('No emails are waiting.') }}</span>
+                    <span>{{ $mailDelivery['last_sent_at'] ? __('Last successful email: :time', ['time' => $mailDelivery['last_sent_at']->diffForHumans()]) : __('No successful automatic emails recorded yet.') }}</span>
+                </div>
+
+                @if($mailDelivery['stale'])
+                    <p class="dashboard-mail-warning">{{ __('An email has been waiting for more than two minutes. Check the delivery mode and SMTP settings.') }}</p>
+                @elseif($mailSettings['delivery_mode'] === 'background' && ! $mailSettings['background_supported'])
+                    <p class="dashboard-mail-warning">{{ __('The selected asynchronous mode has not passed its support test. Switch to synchronous mode.') }}</p>
+                @elseif($mailSettings['delivery_mode'] === 'database' && ! $mailSettings['database_supported'])
+                    <p class="dashboard-mail-warning">{{ __('The selected asynchronous mode has not passed its support test. Switch to synchronous mode.') }}</p>
+                @endif
+            </div>
+        </section>
+        </div>
     </div>
 </div>
 @endsection

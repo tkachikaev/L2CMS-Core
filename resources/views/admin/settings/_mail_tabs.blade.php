@@ -3,6 +3,10 @@
         {{ __('Connection') }}
     </a>
 
+    <a wire:navigate @class(['mail-template-tab', 'active' => request()->routeIs('admin.settings.mail.delivery')]) href="{{ route('admin.settings.mail.delivery') }}">
+        {{ __('Delivery') }}
+    </a>
+
     @foreach ($mailTemplates as $templateKey => $item)
         <a wire:navigate
             @class([

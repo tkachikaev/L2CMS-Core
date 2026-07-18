@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$SkipTests
 )
 
@@ -14,38 +14,42 @@ if (-not (Test-Path '.env')) {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete 0.20.2 patch with file replacement enabled.'
+    throw 'VERSION is missing. Re-extract the complete 0.21.8 patch with file replacement enabled.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
-if ($cmsVersion -ne '0.20.2') {
+if ($cmsVersion -ne '0.21.8') {
     throw "Unexpected patch version: $cmsVersion"
 }
 
 $requiredFiles = @(
-    'app\Services\GameAccounts\AccountCharacterDirectory.php',
-    'tests\Fakes\FakeGameAccountGateway.php',
-    'tests\Feature\Account\GameAccountCabinetTest.php',
-    'docs\PLAYER_ACCOUNT.md',
+    'tests\Feature\ReleaseMetadataTest.php',
     'CHANGELOG.md',
     'README.md',
     'VERSION',
     'update.ps1'
 )
-
 foreach ($requiredFile in $requiredFiles) {
     if (-not (Test-Path $requiredFile -PathType Leaf)) {
-        throw "Patch file is missing: $requiredFile. Re-extract the complete 0.20.2 patch with file replacement enabled."
+        throw "Patch file is missing: $requiredFile. Re-extract the complete 0.21.8 patch with file replacement enabled."
+    }
+}
+
+$currentApplyScript = "apply-$cmsVersion.ps1"
+$obsoleteApplyScripts = Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction Stop |
+    Where-Object { $_.Name -ne 'apply-0.21.8.ps1' }
+
+foreach ($obsoleteApplyScript in $obsoleteApplyScripts) {
+    Remove-Item -LiteralPath $obsoleteApplyScript.FullName -Force -ErrorAction Stop
+
+    if (Test-Path -LiteralPath $obsoleteApplyScript.FullName) {
+        throw "Unable to remove obsolete apply script: $($obsoleteApplyScript.Name)"
     }
 }
 
 Write-Host "KaevCMS $cmsVersion update"
-Write-Host 'Adding cache and failure cooldown protection to the player character directory.'
+Write-Host 'Cleaning obsolete release artifacts before running the update checks.'
 Write-Host ''
-
-Get-ChildItem -Path $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -ne 'apply-0.20.2.ps1' } |
-    Remove-Item -Force -ErrorAction SilentlyContinue
 
 & "$PSScriptRoot\update.ps1" -SkipTests:$SkipTests
 

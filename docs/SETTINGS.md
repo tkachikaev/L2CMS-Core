@@ -72,7 +72,7 @@ sort_order  — порядок отображения
 
 Реквизиты LoginServer хранятся в таблице `login_servers`. Поля подключения GameServer находятся в `game_servers`. Пароли шифруются через `APP_KEY`, не возвращаются в HTML и не попадают в аудит.
 
-Рабочие драйверы версии 0.12.0:
+Текущие рабочие драйверы:
 
 ```text
 LoginServer: L2J Mobius — Interlude и новее

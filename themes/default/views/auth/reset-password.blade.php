@@ -12,8 +12,10 @@
             @csrf
             <input name="token" type="hidden" value="{{ $token }}">
 
-            <label for="email">Email
-                <input id="email" name="email" type="email" maxlength="255" required autocomplete="email" value="{{ old('email', $email) }}">
+            <input name="email" type="hidden" value="{{ $email }}">
+            <label for="reset_email">Email
+                <input id="reset_email" type="email" maxlength="255" readonly autocomplete="off" value="{{ $email }}">
+                <small>{{ __('The reset link is valid only for this email address.') }}</small>
             </label>
 
             <label for="password">{{ __('New password') }}

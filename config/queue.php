@@ -6,6 +6,12 @@ return [
         'sync' => [
             'driver' => 'sync',
         ],
+        'background' => [
+            'driver' => 'background',
+        ],
+        'deferred' => [
+            'driver' => 'deferred',
+        ],
         'database' => [
             'driver' => 'database',
             'connection' => env('DB_QUEUE_CONNECTION'),
