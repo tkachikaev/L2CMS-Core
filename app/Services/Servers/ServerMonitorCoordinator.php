@@ -69,7 +69,7 @@ final class ServerMonitorCoordinator
     private function lock(): ?Lock
     {
         try {
-            return Cache::lock('l2forge:server-monitor:refresh', $this->lockSeconds());
+            return Cache::lock('kaevcms:server-monitor:refresh', $this->lockSeconds());
         } catch (Throwable $exception) {
             Log::warning('Server monitor lock could not be created.', [
                 'exception' => $exception::class,

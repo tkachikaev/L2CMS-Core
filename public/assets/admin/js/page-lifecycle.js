@@ -43,7 +43,7 @@
         registry.forEach(cleanupEntry);
     };
 
-    window.L2ForgeAdmin = Object.assign(window.L2ForgeAdmin ?? {}, {
+    window.KaevCMSAdmin = Object.assign(window.KaevCMSAdmin ?? {}, {
         registerPage(name, initialize) {
             if (typeof name !== 'string' || name === '' || typeof initialize !== 'function') {
                 return;

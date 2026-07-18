@@ -1,6 +1,6 @@
 # Production-развёртывание
 
-Этот раздел описывает минимальную конфигурацию одного экземпляра L2Forge CMS. Горизонтальное масштабирование и отказоустойчивый кластер требуют отдельной инфраструктуры.
+Этот раздел описывает минимальную конфигурацию одного экземпляра KaevCMS. Горизонтальное масштабирование и отказоустойчивый кластер требуют отдельной инфраструктуры.
 
 ## Обязательные настройки `.env`
 
@@ -60,8 +60,8 @@ DB_DATABASE=database/database.sqlite
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=l2forge
-DB_USERNAME=l2forge
+DB_DATABASE=kaevcms
+DB_USERNAME=kaevcms
 DB_PASSWORD=change_me
 ```
 
@@ -90,7 +90,7 @@ QUEUE_CONNECTION=sync
 ### Linux cron
 
 ```cron
-* * * * * cd /var/www/l2forge && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/kaevcms && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ### Windows Task Scheduler
@@ -112,7 +112,7 @@ artisan schedule:run
 Рабочая папка:
 
 ```text
-C:\Projects\CMS\L2Forge-CMS
+C:\Projects\CMS\KaevCMS
 ```
 
 Однократный ручной запуск `php artisan schedule:run` не создаёт постоянное расписание. Без cron или Task Scheduler мониторинг на видимых страницах продолжит работать, но очистка журналов и проверки в периоды без посетителей выполняться не будут.

@@ -182,7 +182,7 @@ class AdminPanelTest extends TestCase
         foreach ($scripts as $script) {
             $contents = file_get_contents(public_path('assets/admin/js/'.$script));
             $this->assertIsString($contents);
-            $this->assertStringContainsString('window.L2ForgeAdmin.registerPage', $contents, $script);
+            $this->assertStringContainsString('window.KaevCMSAdmin.registerPage', $contents, $script);
         }
 
         foreach (File::allFiles(resource_path('views/admin')) as $view) {

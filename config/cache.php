@@ -25,5 +25,5 @@ return [
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
     ],
-    'prefix' => env('CACHE_PREFIX', 'l2forge_cache_'),
+    'prefix' => env('CACHE_PREFIX', 'kaevcms_cache_'),
 ];

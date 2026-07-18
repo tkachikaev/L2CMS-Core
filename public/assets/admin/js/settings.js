@@ -68,8 +68,8 @@
         })();
     };
 
-    if (window.L2ForgeAdmin?.registerPage) {
-        window.L2ForgeAdmin.registerPage('settings', initialize);
+    if (window.KaevCMSAdmin?.registerPage) {
+        window.KaevCMSAdmin.registerPage('settings', initialize);
     } else {
         initialize();
     }

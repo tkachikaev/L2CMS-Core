@@ -512,11 +512,11 @@ class ServerMonitoringTest extends TestCase
         $this->app->instance(ServicePortProbe::class, $ports);
         $this->app->instance(GameServerOnlineCounter::class, new FakeGameServerOnlineCounter);
 
-        $this->assertSame(0, Artisan::call('l2forge:servers-monitor'));
+        $this->assertSame(0, Artisan::call('kaevcms:servers-monitor'));
         $this->assertStringContainsString('still fresh', Artisan::output());
         $this->assertSame(0, $loginServer->fresh()?->monitor_failures);
 
-        $this->assertSame(0, Artisan::call('l2forge:servers-monitor', ['--force' => true]));
+        $this->assertSame(0, Artisan::call('kaevcms:servers-monitor', ['--force' => true]));
         $this->assertSame(1, $loginServer->fresh()?->monitor_failures);
         $this->assertSame(1, $gameServer->fresh()?->monitor_failures);
     }

@@ -1,6 +1,6 @@
 # Administrative panel
 
-The administrative interface is part of L2Forge Core and is never rendered through a public theme.
+The administrative interface is part of KaevCMS Core and is never rendered through a public theme.
 
 ## Single entry point
 
@@ -40,7 +40,7 @@ Navigation groups are collapsed by default. The group containing the current pag
 
 Internal panel links use Livewire `wire:navigate`, so the document body is replaced without a full browser reload. The sidebar is wrapped in Livewire `@persist`, keeps its own scroll position with `wire:navigate:scroll`, and uses `wire:current` for active links because server-side route classes cannot be refreshed inside persisted DOM. Sidebar destinations use hover prefetching, while ordinary content links keep the gentler default strategy. Stable scrollbar space, fixed shell dimensions and a short opacity transition prevent layout jumps during page swaps.
 
-`public/assets/admin/js/page-lifecycle.js` is loaded once from `<head>` and owns the `livewire:navigating` / `livewire:navigated` lifecycle. Page-specific scripts register one named initializer through `window.L2ForgeAdmin.registerPage(...)` and are marked `data-navigate-once`; the lifecycle reruns them for the new DOM and invokes returned cleanup callbacks before leaving the page. This prevents duplicated handlers and fixes widgets that must work after returning through SPA navigation or browser history. The navigation shell script is also loaded once and tracked by version. Livewire assets are loaded by the shared layout, and the built-in progress bar uses the panel accent color.
+`public/assets/admin/js/page-lifecycle.js` is loaded once from `<head>` and owns the `livewire:navigating` / `livewire:navigated` lifecycle. Page-specific scripts register one named initializer through `window.KaevCMSAdmin.registerPage(...)` and are marked `data-navigate-once`; the lifecycle reruns them for the new DOM and invokes returned cleanup callbacks before leaving the page. This prevents duplicated handlers and fixes widgets that must work after returning through SPA navigation or browser history. The navigation shell script is also loaded once and tracked by version. Livewire assets are loaded by the shared layout, and the built-in progress bar uses the panel accent color.
 
 The panel language switcher is independent of the public theme. Russian and English are built in; the selected locale is stored in the administrator account.
 

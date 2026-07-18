@@ -8,7 +8,7 @@ use App\Services\Localization\LocalizedContentResolver;
 use App\Services\MailSettings;
 use App\Services\RegistrationSettings;
 use App\Services\SiteSettings;
-use App\Support\L2Forge;
+use App\Support\KaevCMS;
 use App\Support\Themes\AccountThemeManager;
 use App\Support\Themes\ThemeManager;
 use Illuminate\Support\Facades\Route;
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 if (! function_exists('cms_version')) {
     function cms_version(): string
     {
-        return L2Forge::version();
+        return KaevCMS::version();
     }
 }
 

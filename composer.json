@@ -1,14 +1,14 @@
 {
-  "name": "l2forge/cms",
+  "name": "kaevcms/cms",
   "type": "project",
-  "description": "L2Forge CMS — open-source CMS for Lineage II servers.",
+  "description": "KaevCMS — open-source CMS for Lineage II servers.",
   "keywords": [
     "lineage2",
     "l2j",
     "mobius",
     "cms",
     "laravel",
-    "l2forge"
+    "kaevcms"
   ],
   "license": "MIT",
   "require": {

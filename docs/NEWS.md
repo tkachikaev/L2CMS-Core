@@ -1,6 +1,6 @@
 # News management
 
-L2Forge CMS includes formatted news, preview before saving, deletion from the news list, pagination, cover images and inline images.
+KaevCMS includes formatted news, preview before saving, deletion from the news list, pagination, cover images and inline images.
 
 ## Administrator routes
 
@@ -74,8 +74,8 @@ The red delete action is located next to the edit action in the administrator ne
 Cover and inline images uploaded before an abandoned edit can remain on disk. Files older than 24 hours and not referenced by any active or soft-deleted news item can be inspected and removed with:
 
 ```powershell
-php artisan l2forge:news-media-clean --dry-run
-php artisan l2forge:news-media-clean
+php artisan kaevcms:news-media-clean --dry-run
+php artisan kaevcms:news-media-clean
 ```
 
 Use `--hours=48` to keep recent unreferenced files for a longer period.

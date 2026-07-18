@@ -9,10 +9,12 @@ use Illuminate\Console\Command;
 
 class CleanupAuditLogsCommand extends Command
 {
-    protected $signature = 'l2forge:logs-clean
+    protected $signature = 'kaevcms:logs-clean
         {--days= : Delete audit entries older than the specified number of days}
         {--admin-login-days= : Delete administrator login entries older than the specified number of days}
         {--dry-run : Show the number of entries without deleting them}';
+
+    protected $aliases = ['l2forge:logs-clean'];
 
     protected $description = 'Remove expired audit and administrator login log entries';
 

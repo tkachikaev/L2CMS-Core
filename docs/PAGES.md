@@ -93,8 +93,8 @@ public/uploads/pages/content
 Изображение, загруженное в редактор, может остаться без ссылки, если администратор закрыл форму без сохранения. Старые неиспользуемые файлы удаляются командами:
 
 ```powershell
-php artisan l2forge:page-media-clean --dry-run
-php artisan l2forge:page-media-clean
+php artisan kaevcms:page-media-clean --dry-run
+php artisan kaevcms:page-media-clean
 ```
 
 По умолчанию сохраняются файлы моложе 24 часов. Параметр `--hours` позволяет изменить этот срок.

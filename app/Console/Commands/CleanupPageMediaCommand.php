@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\File;
 
 class CleanupPageMediaCommand extends Command
 {
-    protected $signature = 'l2forge:page-media-clean
+    protected $signature = 'kaevcms:page-media-clean
         {--hours=24 : Keep unreferenced files newer than this many hours}
         {--dry-run : Show what would be removed without deleting files}';
+
+    protected $aliases = ['l2forge:page-media-clean'];
 
     protected $description = 'Remove old unreferenced content images from page uploads';
 

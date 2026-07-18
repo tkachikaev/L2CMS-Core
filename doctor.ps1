@@ -129,7 +129,7 @@ function Test-DirectoriesWritable {
             continue
         }
 
-        $writeTestPath = Join-Path $absolutePath ('.l2forge-write-test-' + [Guid]::NewGuid().ToString('N') + '.tmp')
+        $writeTestPath = Join-Path $absolutePath ('.kaevcms-write-test-' + [Guid]::NewGuid().ToString('N') + '.tmp')
 
         try {
             $utf8 = New-Object System.Text.UTF8Encoding($false)
@@ -153,7 +153,7 @@ $versionFilePresent = Test-Path -LiteralPath $versionPath -PathType Leaf
 $cmsVersion = if ($versionFilePresent) { (Get-Content -LiteralPath $versionPath -Raw).Trim() } else { 'missing' }
 $versionFormatOk = $versionFilePresent -and $cmsVersion -match '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$'
 
-Write-Host "L2Forge CMS $cmsVersion environment check"
+Write-Host "KaevCMS $cmsVersion environment check"
 Write-Host "Project: $script:projectRoot"
 Write-Host ''
 

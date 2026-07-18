@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Support\L2Forge;
+use App\Support\KaevCMS;
 use App\Support\PasswordHashing;
 use Composer\Composer;
 use Illuminate\Database\DatabaseManager;
@@ -28,7 +28,7 @@ final class SystemInformation
 
         $information = [
             'cms' => [
-                'version' => L2Forge::version(),
+                'version' => KaevCMS::version(),
             ],
             'software' => [
                 'php' => PHP_VERSION,
@@ -300,7 +300,7 @@ final class SystemInformation
         $written = false;
 
         try {
-            $testFile = rtrim($path, '/\\').DIRECTORY_SEPARATOR.'.l2forge-system-check-'.bin2hex(random_bytes(8));
+            $testFile = rtrim($path, '/\\').DIRECTORY_SEPARATOR.'.kaevcms-system-check-'.bin2hex(random_bytes(8));
             $written = file_put_contents($testFile, 'ok', LOCK_EX) !== false && is_file($testFile);
         } catch (Throwable) {
             $written = false;
@@ -365,7 +365,7 @@ final class SystemInformation
         $security = $information['security'];
 
         return implode(PHP_EOL, [
-            __('L2Forge CMS: :value', ['value' => $information['cms']['version']]),
+            __('KaevCMS: :value', ['value' => $information['cms']['version']]),
             __('Laravel: :value', ['value' => $software['laravel']]),
             __('PHP: :value', ['value' => $software['php']]),
             __('Composer: :value', ['value' => $software['composer']]),

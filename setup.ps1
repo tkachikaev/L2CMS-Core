@@ -132,7 +132,7 @@ function Get-EnvValue {
 }
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete L2Forge CMS release.'
+    throw 'VERSION is missing. Re-extract the complete KaevCMS release.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
@@ -140,7 +140,7 @@ if ($cmsVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') {
     throw "VERSION contains an invalid release number: $cmsVersion"
 }
 
-Write-Host "L2Forge CMS $cmsVersion setup"
+Write-Host "KaevCMS $cmsVersion setup"
 Write-Host "Project: $PSScriptRoot"
 Write-Host ''
 
@@ -153,7 +153,7 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
 }
 
 if (-not (Test-Path 'composer.lock')) {
-    throw 'composer.lock is missing. Re-extract the complete L2Forge CMS release. Setup will not install unpinned dependency versions.'
+    throw 'composer.lock is missing. Re-extract the complete KaevCMS release. Setup will not install unpinned dependency versions.'
 }
 
 $phpVersionText = (& php -r "echo PHP_VERSION;").Trim()
@@ -245,11 +245,25 @@ $fixedEnvContent = [regex]::Replace(
     '(?m)^GAME_SERVER_NAME=([^"\r\n]*\s+[^\r\n]*)$',
     'GAME_SERVER_NAME="$1"'
 )
-$fixedEnvContent = [regex]::Replace(
-    $fixedEnvContent,
-    '(?m)^APP_NAME="?L2CMS"?$',
-    'APP_NAME="L2Forge CMS"'
+
+$legacyBrandDefaults = @(
+    @{ Pattern = '(?m)^APP_NAME=(?:"L2Forge CMS"|L2Forge CMS|"?L2CMS"?)[ \t]*\r?$'; Replacement = 'APP_NAME="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_NAME=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_NAME="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_NAME_RU=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_NAME_RU="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_NAME_EN=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_NAME_EN="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_FOOTER_TEXT=(?:"© 2026 L2Forge-CMS"|© 2026 L2Forge-CMS|"© 2026 L2Forge CMS"|© 2026 L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_FOOTER_TEXT="© 2026 KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_FOOTER_TEXT_RU=(?:"© 2026 L2Forge-CMS"|© 2026 L2Forge-CMS|"© 2026 L2Forge CMS"|© 2026 L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_FOOTER_TEXT_RU="© 2026 KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_FOOTER_TEXT_EN=(?:"© 2026 L2Forge-CMS"|© 2026 L2Forge-CMS|"© 2026 L2Forge CMS"|© 2026 L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_FOOTER_TEXT_EN="© 2026 KaevCMS"' },
+    @{ Pattern = '(?m)^MAIL_FROM_NAME=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'MAIL_FROM_NAME="KaevCMS"' }
 )
+
+foreach ($legacyBrandDefault in $legacyBrandDefaults) {
+    $fixedEnvContent = [regex]::Replace(
+        $fixedEnvContent,
+        $legacyBrandDefault.Pattern,
+        $legacyBrandDefault.Replacement
+    )
+}
 
 if ($fixedEnvContent -ne $envContent) {
     Write-Utf8NoBom -Path '.env' -Content $fixedEnvContent
@@ -306,7 +320,7 @@ if (-not $appKeyMatch.Success -or [string]::IsNullOrWhiteSpace($appKeyMatch.Grou
 
 Invoke-Checked 'Clearing Laravel caches' { php artisan optimize:clear }
 Invoke-Checked 'Running database migrations and seeders' { php artisan migrate --seed --force }
-Invoke-Checked 'Refreshing server monitoring snapshot' { php artisan l2forge:servers-monitor --force }
+Invoke-Checked 'Refreshing server monitoring snapshot' { php artisan kaevcms:servers-monitor --force }
 Invoke-Checked 'Application smoke check' { php artisan about }
 
 if (-not $SkipTests) {
@@ -315,6 +329,6 @@ if (-not $SkipTests) {
 
 Write-Host ''
 Write-Host 'Setup completed successfully.' -ForegroundColor Green
-Write-Host 'Create the first administrator with: php artisan l2forge:admin-create'
+Write-Host 'Create the first administrator with: php artisan kaevcms:admin-create'
 Write-Host 'Start the local site with: .\serve.ps1'
 Write-Host 'Admin panel: http://127.0.0.1:8000/admin'

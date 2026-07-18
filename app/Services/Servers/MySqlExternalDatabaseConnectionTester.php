@@ -26,7 +26,7 @@ final class MySqlExternalDatabaseConnectionTester implements ExternalDatabaseCon
      */
     public function test(array $connection, array $requirements, bool $driverReady): array
     {
-        $connectionName = 'l2forge_external_'.Str::lower(Str::random(12));
+        $connectionName = 'kaevcms_external_'.Str::lower(Str::random(12));
         $configuration = [
             'driver' => 'mysql',
             'host' => $connection['host'],

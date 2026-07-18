@@ -373,7 +373,7 @@ class AdminNewsManagementTest extends TestCase
             'is_published' => false,
         ]);
 
-        $this->artisan('l2forge:news-media-clean', ['--hours' => 1])
+        $this->artisan('kaevcms:news-media-clean', ['--hours' => 1])
             ->assertSuccessful();
 
         $this->assertFileExists($this->absoluteUploadPath($paths['referenced_content']));

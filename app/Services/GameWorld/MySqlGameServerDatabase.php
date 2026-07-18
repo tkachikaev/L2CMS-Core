@@ -26,7 +26,7 @@ final class MySqlGameServerDatabase implements GameServerDatabaseGateway
     public function run(GameServer $server, callable $callback): mixed
     {
         $server->loadMissing('loginServer');
-        $connectionName = 'l2forge_game_data_'.Str::lower(Str::random(12));
+        $connectionName = 'kaevcms_game_data_'.Str::lower(Str::random(12));
 
         try {
             $connection = DB::connectUsing(

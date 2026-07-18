@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-final class L2Forge
+final class KaevCMS
 {
     public static function version(): string
     {

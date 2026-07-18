@@ -366,7 +366,7 @@ class SettingsController extends Controller
 
         try {
             Mail::raw(
-                __('This is a test email from L2Forge CMS.')."\n\n".__('If you received it, the SMTP settings are working correctly.'),
+                __('This is a test email from KaevCMS.')."\n\n".__('If you received it, the SMTP settings are working correctly.'),
                 function (Message $message) use ($address): void {
                     $message->to($address)->subject(__('Mail test — :site', ['site' => site_name()]));
                 }

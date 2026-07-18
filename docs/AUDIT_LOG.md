@@ -1,6 +1,6 @@
 # Журнал действий
 
-Журнал действий предназначен для владельцев и администраторов L2Forge CMS. Он показывает важные изменения в панели управления, события пользователей сайта, отправку почты и системные операции.
+Журнал действий предназначен для владельцев и администраторов KaevCMS. Он показывает важные изменения в панели управления, события пользователей сайта, отправку почты и системные операции.
 
 Адрес раздела:
 
@@ -118,20 +118,20 @@ ADMIN_LOGIN_LOG_RETENTION_DAYS=30
 Проверить количество устаревших записей без удаления:
 
 ```powershell
-php artisan l2forge:logs-clean --dry-run
+php artisan kaevcms:logs-clean --dry-run
 ```
 
 Удалить записи старше установленных сроков:
 
 ```powershell
-php artisan l2forge:logs-clean
+php artisan kaevcms:logs-clean
 ```
 
 Можно временно указать другие сроки:
 
 ```powershell
-php artisan l2forge:logs-clean --days=180 --admin-login-days=60 --dry-run
-php artisan l2forge:logs-clean --days=180 --admin-login-days=60
+php artisan kaevcms:logs-clean --days=180 --admin-login-days=60 --dry-run
+php artisan kaevcms:logs-clean --days=180 --admin-login-days=60
 ```
 
 Удаление выполняется порциями по 1000 строк, чтобы не создавать длительную блокировку большой таблицы. После реальной очистки в журнал добавляется системная запись с количеством удалённых строк из обеих таблиц.

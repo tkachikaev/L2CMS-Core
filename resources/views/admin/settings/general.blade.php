@@ -63,7 +63,7 @@
                         <div class="form-group">
                             <label for="footer_text_{{ $code }}">{{ __('Footer text') }}</label>
                             <input id="footer_text_{{ $code }}" name="translations[{{ $code }}][footer_text]" type="text" maxlength="255" value="{{ old('translations.'.$code.'.footer_text', $values['footer_text']) }}">
-                            <small>{{ __('Example: © 2026 L2Forge-CMS.') }}</small>
+                            <small>{{ __('Example: © 2026 KaevCMS.') }}</small>
                         </div>
                     </div>
                 @endforeach

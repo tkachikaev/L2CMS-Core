@@ -1,12 +1,12 @@
 @extends('admin.layouts.panel')
 
 @section('title', __('System information'))
-@section('description', __('Versions, environment and L2Forge CMS component status.'))
+@section('description', __('Versions, environment and KaevCMS component status.'))
 
 @section('content')
 <section class="system-overview">
     <div>
-        <span class="system-eyebrow">L2Forge CMS</span>
+        <span class="system-eyebrow">KaevCMS</span>
         <strong>{{ __('Version :version', ['version' => $system['cms']['version']]) }}</strong>
         <p>{!! __('The version is read from the <code>VERSION</code> file in the project root.') !!}</p>
     </div>

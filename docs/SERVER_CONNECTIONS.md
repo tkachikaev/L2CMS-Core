@@ -146,13 +146,13 @@ game_server.connection_tested
 Команда:
 
 ```powershell
-php artisan l2forge:servers-monitor
+php artisan kaevcms:servers-monitor
 ```
 
 выполняет проверку, только если сохранённый снимок устарел согласно интервалу из панели. Для безусловного ручного обновления используется:
 
 ```powershell
-php artisan l2forge:servers-monitor --force
+php artisan kaevcms:servers-monitor --force
 ```
 
 Один цикл проверки:

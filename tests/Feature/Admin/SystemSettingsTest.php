@@ -4,7 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
 use App\Services\Servers\ServerMonitorSettings;
-use App\Support\L2Forge;
+use App\Support\KaevCMS;
 use App\Support\PasswordHashing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -35,7 +35,7 @@ class SystemSettingsTest extends TestCase
             ->assertOk()
             ->assertSee('Состояние компонентов')
             ->assertSee('Расширения PHP')
-            ->assertSee(L2Forge::version())
+            ->assertSee(KaevCMS::version())
             ->assertSee(PHP_VERSION)
             ->assertSee(app()->version())
             ->assertSee('Тип хеша')
@@ -132,10 +132,10 @@ class SystemSettingsTest extends TestCase
         $versionPath = base_path('VERSION');
 
         $this->assertFileExists($versionPath);
-        $this->assertSame(trim((string) file_get_contents($versionPath)), L2Forge::version());
+        $this->assertSame(trim((string) file_get_contents($versionPath)), KaevCMS::version());
         $this->assertMatchesRegularExpression(
             '/\A\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?\z/',
-            L2Forge::version(),
+            KaevCMS::version(),
         );
     }
 }

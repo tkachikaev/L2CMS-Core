@@ -32,8 +32,8 @@
         })();
     };
 
-    if (window.L2ForgeAdmin?.registerPage) {
-        window.L2ForgeAdmin.registerPage('localization', initialize);
+    if (window.KaevCMSAdmin?.registerPage) {
+        window.KaevCMSAdmin.registerPage('localization', initialize);
     } else {
         initialize();
     }

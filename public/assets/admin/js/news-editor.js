@@ -294,8 +294,8 @@
         })();
     };
 
-    if (window.L2ForgeAdmin?.registerPage) {
-        window.L2ForgeAdmin.registerPage('news-editor', initialize);
+    if (window.KaevCMSAdmin?.registerPage) {
+        window.KaevCMSAdmin.registerPage('news-editor', initialize);
     } else {
         initialize();
     }

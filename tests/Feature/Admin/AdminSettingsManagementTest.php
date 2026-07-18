@@ -23,6 +23,11 @@ class AdminSettingsManagementTest extends TestCase
         $this->uploadRoot = storage_path('framework/testing/settings-uploads');
         File::deleteDirectory($this->uploadRoot);
         config()->set('cms.settings.uploads_path', $this->uploadRoot);
+        config()->set('app.name', 'KaevCMS');
+        config()->set('cms.site_defaults.name', 'KaevCMS');
+        config()->set('cms.site_defaults.footer_text', '© 2026 KaevCMS');
+        config()->set('cms.site_defaults.translations.ru.name', 'KaevCMS');
+        config()->set('cms.site_defaults.translations.ru.footer_text', '© 2026 KaevCMS');
     }
 
     protected function tearDown(): void
@@ -48,7 +53,7 @@ class AdminSettingsManagementTest extends TestCase
             ->assertSee('Основные')
             ->assertSee('Игровые серверы')
             ->assertSee('Логин серверы')
-            ->assertSee('© 2026 L2Forge-CMS')
+            ->assertSee('© 2026 KaevCMS')
             ->assertSee('translation-tab-label', false)
             ->assertSee('translation-tab-default', false)
             ->assertSee('Сохранить настройки');
@@ -98,11 +103,11 @@ class AdminSettingsManagementTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->post('/admin/settings', [
                 '_method' => 'PUT',
-                'site_name' => 'L2Forge CMS',
+                'site_name' => 'KaevCMS',
                 'site_description' => '',
                 'timezone' => 'UTC',
                 'admin_email' => '',
-                'footer_text' => '© 2026 L2Forge-CMS',
+                'footer_text' => '© 2026 KaevCMS',
                 'remove_logo' => '0',
                 'remove_favicon' => '0',
             ])
@@ -125,7 +130,7 @@ class AdminSettingsManagementTest extends TestCase
                 'site_description' => '',
                 'timezone' => 'UTC',
                 'admin_email' => '',
-                'footer_text' => '© 2026 L2Forge-CMS',
+                'footer_text' => '© 2026 KaevCMS',
                 'logo' => $this->pngUpload('logo.png'),
                 'favicon' => $this->pngUpload('favicon.png'),
                 'remove_logo' => '0',

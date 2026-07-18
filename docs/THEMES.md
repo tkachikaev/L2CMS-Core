@@ -1,6 +1,6 @@
-# L2Forge Themes
+# KaevCMS Themes
 
-Public themes are stored separately from L2Forge Core.
+Public themes are stored separately from KaevCMS Core.
 
 Если активная тема не содержит отдельный шаблон страницы авторизации, новостей или служебной страницы, CMS использует соответствующее представление стандартной темы как безопасный визуальный fallback. Макет `layouts/app.blade.php` и главная `home.blade.php` по-прежнему обязательны для самой темы.
 
@@ -52,7 +52,7 @@ The `slug` must match the directory name and may contain lowercase Latin letters
 
 Themes are activated in `/admin/themes`. The selected slug is written to the `cms_settings` table. `CMS_THEME` in `.env` is only a fallback.
 
-L2Forge CMS refuses to activate a theme that is invalid or incompatible.
+KaevCMS refuses to activate a theme that is invalid or incompatible.
 
 
 ## News templates
@@ -82,7 +82,7 @@ Do not render `$news->body` directly. Themes are responsible only for visual sty
 
 ## Настройки сайта в теме
 
-Начиная с L2Forge CMS 0.7.0 тема может использовать безопасные функции:
+Начиная с KaevCMS 0.7.0 тема может использовать безопасные функции:
 
 ```blade
 {{ site_name() }}

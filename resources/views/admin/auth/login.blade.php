@@ -73,7 +73,7 @@
     <aside class="login-art" aria-hidden="true">
         <div class="ornament"></div>
         <div class="art-content">
-            <span>L2FORGE CMS</span>
+            <span>KAEVCMS</span>
             <strong>{{ __('Project management') }}</strong>
             <p>{{ __('News, settings, themes and modules are managed from one control panel.') }}</p>
         </div>

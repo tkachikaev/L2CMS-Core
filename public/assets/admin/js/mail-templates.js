@@ -13,7 +13,7 @@
             let activeField = fields.find((field) => field.name === 'body') || fields[0] || null;
 
             const demoValues = {
-                site_name: document.querySelector('.admin-brand strong')?.textContent?.trim() || 'L2Forge CMS',
+                site_name: document.querySelector('.admin-brand strong')?.textContent?.trim() || 'KaevCMS',
                 site_url: window.location.origin,
                 username: 'TestPlayer',
                 user_email: 'player@example.com',
@@ -75,8 +75,8 @@
         })();
     };
 
-    if (window.L2ForgeAdmin?.registerPage) {
-        window.L2ForgeAdmin.registerPage('mail-templates', initialize);
+    if (window.KaevCMSAdmin?.registerPage) {
+        window.KaevCMSAdmin.registerPage('mail-templates', initialize);
     } else {
         initialize();
     }

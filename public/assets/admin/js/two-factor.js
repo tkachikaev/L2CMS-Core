@@ -6,7 +6,7 @@
 
         (function () {
             function renderQrCode(element) {
-                if (!window.L2ForgeQRCode) {
+                if (!window.KaevCMSQRCode) {
                     return;
                 }
 
@@ -15,7 +15,7 @@
                     return;
                 }
 
-                var qr = new window.L2ForgeQRCode(-1, 1);
+                var qr = new window.KaevCMSQRCode(-1, 1);
                 qr.addData(value);
                 qr.make();
 
@@ -106,8 +106,8 @@
         })();
     };
 
-    if (window.L2ForgeAdmin?.registerPage) {
-        window.L2ForgeAdmin.registerPage('two-factor', initialize);
+    if (window.KaevCMSAdmin?.registerPage) {
+        window.KaevCMSAdmin.registerPage('two-factor', initialize);
     } else {
         initialize();
     }

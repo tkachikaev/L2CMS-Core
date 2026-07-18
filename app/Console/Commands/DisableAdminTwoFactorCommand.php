@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 
 class DisableAdminTwoFactorCommand extends Command
 {
-    protected $signature = 'l2forge:admin-2fa:disable {email : Administrator email} {--force : Skip confirmation}';
+    protected $signature = 'kaevcms:admin-2fa:disable {email : Administrator email} {--force : Skip confirmation}';
+
+    protected $aliases = ['l2forge:admin-2fa:disable'];
 
     protected $description = 'Disable two-factor authentication for an administrator';
 

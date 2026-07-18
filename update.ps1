@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
 if (-not (Test-Path 'VERSION')) {
-    throw 'VERSION is missing. Re-extract the complete L2Forge CMS release or patch.'
+    throw 'VERSION is missing. Re-extract the complete KaevCMS release or patch.'
 }
 
 $cmsVersion = (Get-Content 'VERSION' -Raw).Trim()
@@ -14,7 +14,7 @@ if ($cmsVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') {
     throw "VERSION contains an invalid release number: $cmsVersion"
 }
 
-Write-Host "L2Forge CMS $cmsVersion update"
+Write-Host "KaevCMS $cmsVersion update"
 Write-Host "Project: $PSScriptRoot"
 Write-Host ''
 
@@ -139,7 +139,7 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
 }
 
 if (-not (Test-Path 'composer.lock')) {
-    throw 'composer.lock is missing. Re-extract the complete L2Forge CMS release or patch. Update will not install unpinned dependency versions.'
+    throw 'composer.lock is missing. Re-extract the complete KaevCMS release or patch. Update will not install unpinned dependency versions.'
 }
 
 $directories = @(
@@ -160,16 +160,39 @@ foreach ($directory in $directories) {
 }
 
 $envContent = [System.IO.File]::ReadAllText((Resolve-Path '.env'))
-$updatedEnvContent = [regex]::Replace(
-    $envContent,
-    '(?m)^APP_NAME="?L2CMS"?$',
-    'APP_NAME="L2Forge CMS"'
+$updatedEnvContent = $envContent
+
+$legacyBrandDefaults = @(
+    @{ Pattern = '(?m)^APP_NAME=(?:"L2Forge CMS"|L2Forge CMS|"?L2CMS"?)[ \t]*\r?$'; Replacement = 'APP_NAME="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_NAME=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_NAME="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_NAME_RU=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_NAME_RU="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_NAME_EN=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_NAME_EN="KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_FOOTER_TEXT=(?:"© 2026 L2Forge-CMS"|© 2026 L2Forge-CMS|"© 2026 L2Forge CMS"|© 2026 L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_FOOTER_TEXT="© 2026 KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_FOOTER_TEXT_RU=(?:"© 2026 L2Forge-CMS"|© 2026 L2Forge-CMS|"© 2026 L2Forge CMS"|© 2026 L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_FOOTER_TEXT_RU="© 2026 KaevCMS"' },
+    @{ Pattern = '(?m)^SITE_FOOTER_TEXT_EN=(?:"© 2026 L2Forge-CMS"|© 2026 L2Forge-CMS|"© 2026 L2Forge CMS"|© 2026 L2Forge CMS)[ \t]*\r?$'; Replacement = 'SITE_FOOTER_TEXT_EN="© 2026 KaevCMS"' },
+    @{ Pattern = '(?m)^MAIL_FROM_NAME=(?:"L2Forge CMS"|L2Forge CMS)[ \t]*\r?$'; Replacement = 'MAIL_FROM_NAME="KaevCMS"' }
 )
+
+foreach ($legacyBrandDefault in $legacyBrandDefaults) {
+    $updatedEnvContent = [regex]::Replace(
+        $updatedEnvContent,
+        $legacyBrandDefault.Pattern,
+        $legacyBrandDefault.Replacement
+    )
+}
+
 $updatedEnvContent = [regex]::Replace(
     $updatedEnvContent,
-    '(?m)^QUEUE_CONNECTION=database[ \t]*\r?$',
+    '(?m)^QUEUE_CONNECTION=database[ 	]*\r?$',
     'QUEUE_CONNECTION=sync'
 )
+
+if (-not [regex]::IsMatch($updatedEnvContent, '(?m)^\s*SESSION_COOKIE\s*=')) {
+    $updatedEnvContent = $updatedEnvContent.TrimEnd([char[]]"`r`n") +
+        [Environment]::NewLine +
+        'SESSION_COOKIE=l2forge_session' +
+        [Environment]::NewLine
+}
 
 if ($updatedEnvContent -ne $envContent) {
     Write-Utf8NoBom -Path '.env' -Content $updatedEnvContent
@@ -208,7 +231,7 @@ if ($LASTEXITCODE -ne 0) { throw "artisan optimize:clear failed with exit code $
 php artisan migrate --force
 if ($LASTEXITCODE -ne 0) { throw "artisan migrate failed with exit code $LASTEXITCODE." }
 
-php artisan l2forge:servers-monitor --force
+php artisan kaevcms:servers-monitor --force
 if ($LASTEXITCODE -ne 0) { throw "server monitoring refresh failed with exit code $LASTEXITCODE." }
 
 if (-not $SkipTests) {
@@ -216,4 +239,4 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw "artisan test failed with exit code $LASTEXITCODE." }
 }
 
-Write-Host "L2Forge CMS $cmsVersion update completed successfully." -ForegroundColor Green
+Write-Host "KaevCMS $cmsVersion update completed successfully." -ForegroundColor Green

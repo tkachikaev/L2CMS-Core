@@ -1,6 +1,6 @@
 @extends('admin.layouts.panel')
 @section('title', __('Administrators'))
-@section('description', __('Accounts with full access to the L2Forge CMS control panel.'))
+@section('description', __('Accounts with full access to the KaevCMS control panel.'))
 @section('content')
 <div class="administrators-toolbar">
     <div class="content-stat"><span>{{ __('Total') }}</span><strong>{{ $totalCount }}</strong></div>

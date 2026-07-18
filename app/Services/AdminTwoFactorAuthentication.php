@@ -22,7 +22,7 @@ class AdminTwoFactorAuthentication
 
     public function provisioningUri(Admin $admin, string $secret): string
     {
-        $issuer = (string) config('app.name', 'L2Forge CMS');
+        $issuer = (string) config('app.name', 'KaevCMS');
         $label = rawurlencode($issuer.':'.$admin->email);
 
         return 'otpauth://totp/'.$label.'?'.http_build_query([

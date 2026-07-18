@@ -3,7 +3,7 @@
 namespace App\Support\Themes;
 
 use App\Services\CmsSettings;
-use App\Support\L2Forge;
+use App\Support\KaevCMS;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
 use RuntimeException;
@@ -220,7 +220,7 @@ final class ThemeManager
 
     private function isCompatible(?string $minimum, ?string $maximum): bool
     {
-        $cmsVersion = L2Forge::version();
+        $cmsVersion = KaevCMS::version();
 
         if ($minimum !== null && version_compare($cmsVersion, $minimum, '<')) {
             return false;

@@ -30,7 +30,7 @@ foreach ($directory in $requiredDirectories) {
     New-Item -Path $directory -ItemType Directory -Force | Out-Null
 }
 
-Write-Host "Starting L2Forge CMS at http://${HostAddress}:$Port"
+Write-Host "Starting KaevCMS at http://${HostAddress}:$Port"
 Write-Host 'Keep this window open. Press Ctrl+C to stop the site.'
 php artisan serve --host=$HostAddress --port=$Port
 

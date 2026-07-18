@@ -1,5 +1,5 @@
 {
-  "name": "l2forge-cms-browser-tests",
+  "name": "kaevcms-browser-tests",
   "private": true,
   "scripts": {
     "browser:install": "playwright install chromium",

@@ -55,12 +55,12 @@ final class PageHtmlSanitizer
         try {
             $document = new DOMDocument('1.0', 'UTF-8');
             $document->loadHTML(
-                '<?xml encoding="UTF-8"><!doctype html><html><body><div id="l2forge-page-root">'.$html.'</div></body></html>',
+                '<?xml encoding="UTF-8"><!doctype html><html><body><div id="kaevcms-page-root">'.$html.'</div></body></html>',
                 LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING
             );
 
             $xpath = new DOMXPath($document);
-            $root = $xpath->query('//*[@id="l2forge-page-root"]')->item(0);
+            $root = $xpath->query('//*[@id="kaevcms-page-root"]')->item(0);
             if (! $root instanceof DOMElement) {
                 return '';
             }

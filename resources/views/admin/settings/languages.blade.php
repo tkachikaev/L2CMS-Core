@@ -11,7 +11,7 @@
     <div class="form-section-heading">
         <div>
             <h2>{{ __('Installed languages') }}</h2>
-            <p>{{ __('Russian and English are included with L2Forge CMS. Additional packs are discovered in the lang directory.') }}</p>
+            <p>{{ __('Russian and English are included with KaevCMS. Additional packs are discovered in the lang directory.') }}</p>
         </div>
     </div>
 

@@ -7,8 +7,10 @@ use Illuminate\Console\Command;
 
 final class MonitorServersCommand extends Command
 {
-    protected $signature = 'l2forge:servers-monitor
+    protected $signature = 'kaevcms:servers-monitor
         {--force : Refresh even when the saved server status is still fresh}';
+
+    protected $aliases = ['l2forge:servers-monitor'];
 
     protected $description = 'Check LoginServer and GameServer ports and refresh online player counts';
 

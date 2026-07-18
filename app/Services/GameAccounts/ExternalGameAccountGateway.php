@@ -238,7 +238,7 @@ final class ExternalGameAccountGateway implements GameAccountGateway
      */
     private function withConnection(array $values, Closure $callback): mixed
     {
-        $name = 'l2forge_game_account_'.Str::lower(Str::random(12));
+        $name = 'kaevcms_game_account_'.Str::lower(Str::random(12));
         $configuration = [
             'driver' => 'mysql',
             'host' => $values['host'],

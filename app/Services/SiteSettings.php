@@ -248,16 +248,16 @@ final class SiteSettings
     /** @return array{name: string, description: string, timezone: string, admin_email: string, footer_text: string, show_public_online: bool} */
     private function defaults(): array
     {
-        $applicationName = trim((string) config('app.name', 'L2Forge CMS'));
+        $applicationName = trim((string) config('app.name', 'KaevCMS'));
         $siteName = trim((string) config('cms.site_defaults.name', $applicationName));
         $timezone = (string) config('cms.site_defaults.timezone', config('app.timezone', 'UTC'));
 
         return [
-            'name' => $siteName !== '' ? $siteName : ($applicationName !== '' ? $applicationName : 'L2Forge CMS'),
+            'name' => $siteName !== '' ? $siteName : ($applicationName !== '' ? $applicationName : 'KaevCMS'),
             'description' => (string) config('cms.site_defaults.description', ''),
             'timezone' => $this->normalizeTimezone($timezone, 'UTC'),
             'admin_email' => (string) config('cms.site_defaults.admin_email', ''),
-            'footer_text' => (string) config('cms.site_defaults.footer_text', '© 2026 L2Forge-CMS'),
+            'footer_text' => (string) config('cms.site_defaults.footer_text', '© 2026 KaevCMS'),
             'show_public_online' => (bool) config('cms.site_defaults.show_public_online', true),
         ];
     }

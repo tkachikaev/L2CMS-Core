@@ -1,13 +1,13 @@
 # Administrator authentication
 
-L2Forge CMS uses a separate `admins` table and a separate Laravel session guard named `admin`. Gaming accounts and future website user accounts are not administrators.
+KaevCMS uses a separate `admins` table and a separate Laravel session guard named `admin`. Gaming accounts and future website user accounts are not administrators.
 
 ## First administrator
 
 After migrations have completed, create the first administrator interactively:
 
 ```powershell
-php artisan l2forge:admin-create
+php artisan kaevcms:admin-create
 ```
 
 The command does not accept a password argument, so the password is not written to PowerShell history or the process command line.
@@ -59,7 +59,7 @@ Enabling or disabling 2FA invalidates the administrator’s other active session
 Emergency console reset:
 
 ```powershell
-php artisan l2forge:admin-2fa:disable admin@example.com
+php artisan kaevcms:admin-2fa:disable admin@example.com
 ```
 
 The reset removes the secret and recovery codes and invalidates existing sessions for that administrator.

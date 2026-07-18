@@ -6,5 +6,5 @@ return [
     'native_name' => 'Русский',
     'direction' => 'ltr',
     'fallback' => 'en',
-    'author' => 'L2Forge CMS',
+    'author' => 'KaevCMS',
 ];

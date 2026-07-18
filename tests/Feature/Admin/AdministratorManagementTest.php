@@ -252,7 +252,7 @@ class AdministratorManagementTest extends TestCase
             'two_factor_confirmed_at' => now(),
         ])->save();
 
-        $this->artisan('l2forge:admin-2fa:disable', [
+        $this->artisan('kaevcms:admin-2fa:disable', [
             'email' => $admin->email,
             '--force' => true,
         ])->assertSuccessful();

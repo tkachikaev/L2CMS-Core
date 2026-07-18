@@ -1,11 +1,18 @@
 (() => {
-    const storageKey = 'l2forge.admin.menu.groups';
+    const storageKey = 'kaevcms.admin.menu.groups';
+    const legacyStorageKey = 'l2forge.admin.menu.groups';
     const initializedAttribute = 'data-admin-navigation-ready';
     const synchronizingAttribute = 'data-admin-menu-synchronizing';
 
     const loadSavedState = () => {
         try {
-            const parsedState = JSON.parse(window.localStorage.getItem(storageKey) ?? '{}');
+            const savedValue = window.localStorage.getItem(storageKey) ?? window.localStorage.getItem(legacyStorageKey);
+            const parsedState = JSON.parse(savedValue ?? '{}');
+
+            if (savedValue !== null && window.localStorage.getItem(storageKey) === null) {
+                window.localStorage.setItem(storageKey, savedValue);
+                window.localStorage.removeItem(legacyStorageKey);
+            }
 
             if (parsedState && typeof parsedState === 'object' && !Array.isArray(parsedState)) {
                 return parsedState;

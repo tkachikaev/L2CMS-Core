@@ -1,4 +1,4 @@
-/* QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT License. Bundled for L2Forge CMS. */
+/* QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT License. Bundled for KaevCMS. */
 (function (global) {
 'use strict';
 var modules = {};
@@ -1267,5 +1267,5 @@ function localRequire(name) {
     modules[name](module, module.exports, localRequire);
     return module.exports;
 }
-global.L2ForgeQRCode = localRequire('index');
+global.KaevCMSQRCode = localRequire('index');
 })(window);

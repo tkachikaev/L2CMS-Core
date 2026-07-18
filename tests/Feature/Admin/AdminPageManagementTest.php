@@ -402,7 +402,7 @@ PHP);
             'seo_description' => null,
         ]);
 
-        $this->artisan('l2forge:page-media-clean', ['--hours' => 1])
+        $this->artisan('kaevcms:page-media-clean', ['--hours' => 1])
             ->assertSuccessful();
 
         $this->assertFileExists($this->absoluteUploadPath($referencedPath));

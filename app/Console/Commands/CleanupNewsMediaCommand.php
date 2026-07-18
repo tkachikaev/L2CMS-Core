@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\File;
 
 class CleanupNewsMediaCommand extends Command
 {
-    protected $signature = 'l2forge:news-media-clean
+    protected $signature = 'kaevcms:news-media-clean
         {--hours=24 : Keep unreferenced files newer than this many hours}
         {--dry-run : Show what would be removed without deleting files}';
+
+    protected $aliases = ['l2forge:news-media-clean'];
 
     protected $description = 'Remove old unreferenced cover and content images from news uploads';
 

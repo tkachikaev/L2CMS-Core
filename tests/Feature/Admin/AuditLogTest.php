@@ -159,12 +159,12 @@ class AuditLogTest extends TestCase
             '--admin-login-days' => 30,
         ];
 
-        $this->artisan('l2forge:logs-clean', [...$options, '--dry-run' => true])
+        $this->artisan('kaevcms:logs-clean', [...$options, '--dry-run' => true])
             ->assertExitCode(0);
         $this->assertDatabaseHas('audit_logs', ['action' => 'old.event']);
         $this->assertDatabaseHas('admin_login_logs', ['email' => 'old@example.com']);
 
-        $this->artisan('l2forge:logs-clean', $options)
+        $this->artisan('kaevcms:logs-clean', $options)
             ->assertExitCode(0);
 
         $this->assertDatabaseMissing('audit_logs', ['action' => 'old.event']);

@@ -21,7 +21,7 @@ class MySqlExternalDatabaseConnectionTesterTest extends TestCase
         DB::shouldReceive('connectUsing')
             ->once()
             ->with(
-                Mockery::on(fn (string $name): bool => str_starts_with($name, 'l2forge_external_')),
+                Mockery::on(fn (string $name): bool => str_starts_with($name, 'kaevcms_external_')),
                 Mockery::on(fn (array $configuration): bool => $configuration['driver'] === 'mysql'
                     && $configuration['host'] === '127.0.0.1'
                     && $configuration['password'] === 'SecretDatabasePassword'),
@@ -30,7 +30,7 @@ class MySqlExternalDatabaseConnectionTesterTest extends TestCase
             ->andReturn($database);
         DB::shouldReceive('purge')
             ->once()
-            ->with(Mockery::on(fn (string $name): bool => str_starts_with($name, 'l2forge_external_')));
+            ->with(Mockery::on(fn (string $name): bool => str_starts_with($name, 'kaevcms_external_')));
 
         $report = app(MySqlExternalDatabaseConnectionTester::class)->test([
             'host' => '127.0.0.1',

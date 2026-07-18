@@ -23,7 +23,7 @@ class AdminTwoFactorAuthenticationTest extends TestCase
 
     public function test_provisioning_uri_contains_local_secret_and_standard_totp_parameters(): void
     {
-        config()->set('app.name', 'L2Forge CMS');
+        config()->set('app.name', 'KaevCMS');
         $service = app(AdminTwoFactorAuthentication::class);
         $administrator = new Admin(['email' => 'admin@example.com']);
         $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
@@ -33,7 +33,7 @@ class AdminTwoFactorAuthenticationTest extends TestCase
 
         $this->assertStringStartsWith('otpauth://totp/', $uri);
         $this->assertSame($secret, $query['secret'] ?? null);
-        $this->assertSame('L2Forge CMS', $query['issuer'] ?? null);
+        $this->assertSame('KaevCMS', $query['issuer'] ?? null);
         $this->assertSame('SHA1', $query['algorithm'] ?? null);
         $this->assertSame('6', $query['digits'] ?? null);
         $this->assertSame('30', $query['period'] ?? null);

@@ -54,7 +54,7 @@ final class MailSettings
             self::KEY_USERNAME => '',
             self::KEY_PASSWORD => '',
             self::KEY_FROM_ADDRESS => '',
-            self::KEY_FROM_NAME => (string) config('app.name', 'L2Forge CMS'),
+            self::KEY_FROM_NAME => (string) config('app.name', 'KaevCMS'),
             self::KEY_ADMIN_EMAIL => '',
             self::KEY_TESTED_AT => null,
         ];
@@ -83,7 +83,7 @@ final class MailSettings
             'password_saved' => $passwordSaved,
             'password_valid' => $passwordValid,
             'from_address' => $fromAddress,
-            'from_name' => $fromName !== '' ? $fromName : (string) config('app.name', 'L2Forge CMS'),
+            'from_name' => $fromName !== '' ? $fromName : (string) config('app.name', 'KaevCMS'),
             'admin_email' => $adminEmail,
             'tested_at' => $testedAt !== '' ? $testedAt : null,
             'configured' => $configured,

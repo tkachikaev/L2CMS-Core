@@ -6,7 +6,7 @@ import process from 'node:process';
 
 const root = resolve(import.meta.dirname, '../..');
 const runtimeDirectory = resolve(root, 'storage/framework/testing/browser');
-const databasePath = resolve(runtimeDirectory, `l2forge-browser-${process.pid}.sqlite`);
+const databasePath = resolve(runtimeDirectory, `kaevcms-browser-${process.pid}.sqlite`);
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8765';
 const adminEmail = 'browser-admin@example.test';
 const adminPassword = 'BrowserPassword123!';

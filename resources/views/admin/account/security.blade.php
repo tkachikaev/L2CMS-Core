@@ -27,7 +27,7 @@
         </div>
         <div class="recovery-code-actions">
             <button class="button button-secondary" type="button" data-copy-recovery-codes>{{ __('Copy codes') }}</button>
-            <button class="button button-secondary" type="button" data-download-recovery-codes data-filename="l2forge-recovery-codes.txt">{{ __('Download codes') }}</button>
+            <button class="button button-secondary" type="button" data-download-recovery-codes data-filename="kaevcms-recovery-codes.txt">{{ __('Download codes') }}</button>
         </div>
     </section>
 @endif
