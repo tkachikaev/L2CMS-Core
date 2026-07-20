@@ -38,6 +38,12 @@ final class AdminAccessPolicy
                 : new AdminAccessDecision(AdminPermission::AppearanceManage);
         }
 
+        if (str_starts_with($name, 'admin.modules.') || str_starts_with($name, 'admin.module-pages.')) {
+            return $isRead
+                ? new AdminAccessDecision(AdminPermission::ModulesView, AdminPermission::ModulesManage)
+                : new AdminAccessDecision(AdminPermission::ModulesManage);
+        }
+
         if (str_starts_with($name, 'admin.users.')) {
             return new AdminAccessDecision(AdminPermission::UsersManage);
         }

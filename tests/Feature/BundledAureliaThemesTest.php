@@ -43,6 +43,16 @@ class BundledAureliaThemesTest extends TestCase
         $this->assertFileExists(public_path('account-themes/kaev-aurelia/assets/css/app.css'));
         $this->assertFileExists(public_path('account-themes/kaev-aurelia/assets/js/navigation.js'));
         $this->assertFileExists(public_path('account-themes/kaev-aurelia/assets/images/hero.webp'));
+
+        $accountCss = $this->readFile(public_path('account-themes/kaev-aurelia/assets/css/app.css'));
+        $this->assertStringContainsString(
+            '.account-character-avatar { width: 48px; height: 48px; position: relative; display: grid; place-items: center; flex-shrink: 0; overflow: hidden;',
+            $accountCss,
+        );
+        $this->assertStringContainsString(
+            '.account-character-avatar > span { display: block; line-height: 1; transform: translateY(1px); }',
+            $accountCss,
+        );
     }
 
     public function test_public_aurelia_theme_can_be_activated_and_renders_its_own_shell(): void

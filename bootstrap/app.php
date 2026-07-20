@@ -3,6 +3,7 @@
 use App\Http\Middleware\AdminSecurityHeaders;
 use App\Http\Middleware\EnforceAdminAccess;
 use App\Http\Middleware\EnsureAdminPath;
+use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\RedirectAuthenticatedAdmin;
 use App\Http\Middleware\RequireActiveSiteUser;
 use App\Http\Middleware\RequireAdminAuthentication;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.path' => EnsureAdminPath::class,
             'admin.guest' => RedirectAuthenticatedAdmin::class,
             'admin.headers' => AdminSecurityHeaders::class,
+            'module.enabled' => EnsureModuleEnabled::class,
             'site.active' => RequireActiveSiteUser::class,
             'site.verified' => RequireConfiguredEmailVerification::class,
         ]);

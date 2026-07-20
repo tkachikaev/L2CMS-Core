@@ -38,6 +38,7 @@ enum AdminRole: string
                 AdminPermission::UsersManage,
                 AdminPermission::AppearanceView,
                 AdminPermission::AppearanceManage,
+                AdminPermission::ModulesView,
                 AdminPermission::ServersView,
                 AdminPermission::ServersManage,
                 AdminPermission::MailView,

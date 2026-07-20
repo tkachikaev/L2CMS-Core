@@ -435,7 +435,8 @@ dd { margin: 0; }
 .account-character-list { display: grid; }
 .account-character-row { display: grid; grid-template-columns: 48px minmax(220px, 1fr) auto; align-items: center; gap: 14px; padding: 15px 17px; border-top: 1px solid var(--account-line-soft); background: rgba(255, 255, 255, 0.012); transition: background 0.15s ease; }
 .account-character-row:hover { background: rgba(255, 255, 255, 0.024); }
-.account-character-avatar { width: 48px; height: 48px; position: relative; border-radius: 15px; background: linear-gradient(145deg, #7e887f, #e5e9e2); color: #26302a; }
+.account-character-avatar { width: 48px; height: 48px; position: relative; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; border-radius: 15px; background: linear-gradient(145deg, #7e887f, #e5e9e2); color: #26302a; }
+.account-character-avatar > span { display: block; line-height: 1; transform: translateY(1px); }
 .account-character-avatar.hero { background: linear-gradient(145deg, var(--account-gold-bright), var(--account-gold-dark)); color: #17120a; }
 .account-character-identity { min-width: 0; display: flex; flex-direction: column; }
 .account-character-name { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }

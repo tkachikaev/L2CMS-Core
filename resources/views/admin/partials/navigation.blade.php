@@ -80,7 +80,7 @@
         <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.logs.index') }}"><span>{{ __('Audit log') }}</span></a>
     @endif
 
-    @if($admin->isOwner())
-        <span class="admin-menu-item disabled" aria-disabled="true"><span>{{ __('Modules') }}</span><small>{{ __('Coming soon') }}</small></span>
+    @if($admin->hasPermission(\App\Auth\AdminPermission::ModulesView))
+        <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.modules.index') }}"><span>{{ __('Modules') }}</span></a>
     @endif
 </nav>

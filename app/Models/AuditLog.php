@@ -40,6 +40,7 @@ class AuditLog extends Model
             'mail' => __('Mail'),
             'game_account' => __('Game accounts'),
             'system' => __('System'),
+            'module' => __('Modules'),
             default => str($category)->replace(['_', '-', '.'], ' ')->headline()->toString(),
         };
     }
@@ -93,6 +94,11 @@ class AuditLog extends Model
             'login_server.deleted' => __('LoginServer deleted'),
             'login_server.connection_tested' => __('LoginServer database connection tested'),
             'theme.activated' => __('Theme activated'),
+            'module.enabled' => __('Module enabled'),
+            'module.update_approved' => __('Module update approved'),
+            'module.disabled' => __('Module disabled'),
+            'module.enable_failed' => __('Module enable failed'),
+            'module.disable_failed' => __('Module disable failed'),
             'user.registered' => __('User registered'),
             'user.email_verified' => __('Verified email'),
             'user.password_changed' => __('Password changed'),
@@ -130,6 +136,7 @@ class AuditLog extends Model
             'admin' => __('Administrator'),
             'user' => __('User'),
             'system' => __('System'),
+            'module' => __('Modules'),
             null, '' => __('Unauthenticated'),
             default => str((string) $this->actor_type)->replace(['_', '-'], ' ')->headline()->toString(),
         };

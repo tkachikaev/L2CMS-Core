@@ -1,15 +1,36 @@
-# Modules
+# KaevCMS modules
 
-Каталог зарезервирован под независимые модули KaevCMS.
+Each module is stored in its own directory and must contain a valid `module.json` manifest.
 
-На текущем этапе загрузчик модулей ещё не реализован: файлы из `modules/` не подключаются автоматически, не регистрируют маршруты, миграции, представления или языковые пакеты. Поэтому размещать здесь рабочую функциональность пока нельзя.
+Minimal manifest:
 
-Планируемый контракт модулей должен включать:
+```json
+{
+  "schema": 1,
+  "id": "example-module",
+  "name": "Example Module",
+  "version": "1.0.0",
+  "author": "Module author",
+  "description": "Example KaevCMS extension.",
+  "cms_min": "0.24.0",
+  "cms_max": null
+}
+```
 
-- manifest и проверку совместимости с версией CMS;
-- безопасное включение и отключение;
-- собственные маршруты, миграции, представления, настройки и переводы;
-- разрешения администратора и события общего журнала;
-- отделение удаления файлов модуля от сохранённых пользовательских данных.
+Optional runtime entry points:
 
-До появления этого контракта новые функции остаются в ядре или проектируются как будущие модули без подключения к runtime.
+```json
+{
+  "namespace": "Vendor\\ExampleModule\\",
+  "autoload": "src",
+  "bootstrap": "bootstrap.php",
+  "views": "resources/views",
+  "lang": "lang",
+  "routes": {
+    "web": "routes/web.php",
+    "admin": "routes/admin.php"
+  }
+}
+```
+
+An enabled module is trusted PHP code. KaevCMS validates the manifest and prevents path traversal, but it cannot sandbox PHP. Install modules only from trusted sources.

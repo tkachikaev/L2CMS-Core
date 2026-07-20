@@ -143,6 +143,15 @@ test('settings use one sidebar entry and local tabs', async ({ page }) => {
     await expect(page.locator('.mail-template-tabs .admin-tab.active')).toHaveCSS('background-color', 'rgb(37, 99, 235)');
 });
 
+test('module foundation is available from the administrator sidebar', async ({ page }) => {
+    await page.getByRole('link', { name: 'Модули', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/admin\/modules$/);
+    await expect(page.getByRole('heading', { name: 'Модули' }).first()).toBeVisible();
+    await expect(page.getByText('Основа системы модулей')).toBeVisible();
+    await expect(page.getByText(/Модули не найдены/)).toBeVisible();
+});
+
 test('login server settings keep network fields on a separate tab and footer fixed after connection test', async ({ page }) => {
     await gotoWithLocalNetworkRetry(page, '/admin/settings/login-server');
     await page.getByRole('button', { name: 'Настроить' }).first().click();

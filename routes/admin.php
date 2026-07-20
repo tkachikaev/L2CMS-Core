@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\LanguageSettingsController as AdminLanguageSettin
 use App\Http\Controllers\Admin\LoginServerController as AdminLoginServerController;
 use App\Http\Controllers\Admin\MailDeliveryController as AdminMailDeliveryController;
 use App\Http\Controllers\Admin\MailSettingsController as AdminMailSettingsController;
+use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -112,6 +113,16 @@ Route::prefix('{adminPath}')->name('admin.')->middleware(['admin.path', 'admin.h
         Route::post('/account-themes/{theme}/activate', [AdminAccountThemeController::class, 'activate'])
             ->where('theme', '[a-z0-9][a-z0-9_-]*')
             ->name('account-themes.activate');
+
+        Route::get('/modules', [AdminModuleController::class, 'index'])->name('modules.index');
+        Route::post('/modules/{module}/enable', [AdminModuleController::class, 'enable'])
+            ->where('module', '[a-z0-9][a-z0-9-]{0,99}')
+            ->middleware('throttle:10,1')
+            ->name('modules.enable');
+        Route::delete('/modules/{module}/disable', [AdminModuleController::class, 'disable'])
+            ->where('module', '[a-z0-9][a-z0-9-]{0,99}')
+            ->middleware('throttle:10,1')
+            ->name('modules.disable');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');

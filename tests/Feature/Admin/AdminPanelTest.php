@@ -198,6 +198,8 @@ class AdminPanelTest extends TestCase
                 'Modules',
             ])
             ->assertSee('data-admin-menu-group="appearance"', false)
+            ->assertSee('/admin/modules', false)
+            ->assertDontSee(__('Coming soon'))
             ->assertSee('data-admin-settings-link', false)
             ->assertDontSee('data-admin-menu-group="system"', false)
             ->assertSee('admin-menu-group-summary', false)

@@ -10,6 +10,8 @@ enum AdminPermission: string
     case UsersManage = 'users.manage';
     case AppearanceView = 'appearance.view';
     case AppearanceManage = 'appearance.manage';
+    case ModulesView = 'modules.view';
+    case ModulesManage = 'modules.manage';
     case ServersView = 'servers.view';
     case ServersManage = 'servers.manage';
     case MailView = 'mail.view';

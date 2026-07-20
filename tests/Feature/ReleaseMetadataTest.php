@@ -40,14 +40,17 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.23.11'", $applyScript);
-        $this->assertStringContainsString("'app\\Livewire\\Admin\\LoginServerManager.php'", $applyScript);
-        $this->assertStringContainsString("'docs\\MAIL.md'", $applyScript);
-        $this->assertStringContainsString("'docs\\PRODUCTION.md'", $applyScript);
-        $this->assertStringContainsString("'scripts\\composer-audit-support.ps1'", $applyScript);
-        $this->assertStringContainsString("'tests\\powershell\\composer-audit-policy.ps1'", $applyScript);
-        $this->assertStringContainsString("'themes\\kaev-aurelia\\theme.json'", $applyScript);
-        $this->assertStringContainsString("'account-themes\\kaev-aurelia\\theme.json'", $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.23.12'", $applyScript);
+        $this->assertStringContainsString("'app\\Providers\\ModuleServiceProvider.php'", $applyScript);
+        $this->assertStringContainsString("'app\\Http\\Middleware\\EnsureModuleEnabled.php'", $applyScript);
+        $this->assertStringContainsString("'app\\Support\\Modules\\ModuleManager.php'", $applyScript);
+        $this->assertStringContainsString("'app\\Support\\Modules\\ModuleRuntime.php'", $applyScript);
+        $this->assertStringContainsString("'app\\Support\\Modules\\ModuleValidator.php'", $applyScript);
+        $this->assertStringContainsString("'database\\migrations\\2026_07_20_000200_create_cms_modules_table.php'", $applyScript);
+        $this->assertStringContainsString("'resources\\schemas\\module.schema.json'", $applyScript);
+        $this->assertStringContainsString("'resources\\views\\admin\\modules\\index.blade.php'", $applyScript);
+        $this->assertStringContainsString("'docs\\MODULES.md'", $applyScript);
+        $this->assertStringContainsString("'tests\\Feature\\Modules\\ModuleFoundationTest.php'", $applyScript);
         $this->assertStringContainsString("'tests\\Feature\\BundledAureliaThemesTest.php'", $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
@@ -57,7 +60,10 @@ class ReleaseMetadataTest extends TestCase
     {
         $updateScript = $this->readReleaseFile('update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.23.11'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.23.12'", $updateScript);
+        $this->assertStringContainsString("\$expectedToVersion = '0.24.0'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.23.12.ps1'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplySha256 = 'e564cd67e2ecb7cfd5666cbd9099365903c8aab8f2988b41c6120e28425fae44'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
@@ -69,6 +75,9 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringNotContainsString('function Set-EnvValue', $updateScript);
         $this->assertStringContainsString('Clear-KaevCmsBootstrapCache -ProjectRoot $PSScriptRoot', $updateScript);
         $this->assertStringContainsString('composer install --no-interaction --prefer-dist --no-scripts', $updateScript);
+        $this->assertStringContainsString('$composerDependenciesChanged', $updateScript);
+        $this->assertStringContainsString('Composer install was skipped', $updateScript);
+        $this->assertStringContainsString('$actualComposerLockSha256 -ne $currentComposerLockSha256', $updateScript);
         $this->assertStringContainsString('php artisan queue:restart', $updateScript);
         $this->assertStringContainsString('php artisan kaevcms:maintenance-status --no-ansi', $updateScript);
         $this->assertStringContainsString('php artisan down --retry=60', $updateScript);
@@ -178,6 +187,36 @@ class ReleaseMetadataTest extends TestCase
         $workflow = $this->readReleaseFile('.github/workflows/quality.yml');
         $this->assertStringContainsString('composer audit --locked --no-interaction', $workflow);
         $this->assertStringContainsString('npm audit --audit-level=high', $workflow);
+    }
+
+    public function test_module_foundation_release_artifacts_are_shipped(): void
+    {
+        $this->assertFileExists(app_path('Providers/ModuleServiceProvider.php'));
+        $this->assertFileExists(app_path('Http/Middleware/EnsureModuleEnabled.php'));
+        $this->assertFileExists(app_path('Support/Modules/ModuleManager.php'));
+        $this->assertFileExists(app_path('Support/Modules/ModuleRuntime.php'));
+        $this->assertFileExists(app_path('Support/Modules/ModuleValidator.php'));
+        $this->assertFileExists(database_path('migrations/2026_07_20_000200_create_cms_modules_table.php'));
+        $this->assertFileExists(resource_path('schemas/module.schema.json'));
+        $this->assertFileExists(resource_path('views/admin/modules/index.blade.php'));
+        $this->assertFileExists(base_path('modules/README.md'));
+        $this->assertFileExists(base_path('docs/MODULES.md'));
+
+        $schema = json_decode(
+            $this->readReleaseFile('resources/schemas/module.schema.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertFalse($schema['additionalProperties']);
+        $this->assertSame(['schema', 'id', 'name', 'version', 'author'], $schema['required']);
+        $this->assertSame(1, $schema['properties']['schema']['const']);
+
+        $runtime = $this->readReleaseFile('app/Support/Modules/ModuleRuntime.php');
+        $this->assertStringContainsString("array_intersect(['route:cache', 'optimize'], \$arguments)", $runtime);
+
+        $aureliaCss = $this->readReleaseFile('public/account-themes/kaev-aurelia/assets/css/app.css');
+        $this->assertStringContainsString('display: grid; place-items: center;', $aureliaCss);
+        $this->assertStringContainsString('.account-character-avatar > span', $aureliaCss);
     }
 
     public function test_obsolete_preview_and_settings_placeholder_are_not_shipped(): void

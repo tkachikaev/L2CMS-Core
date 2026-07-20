@@ -5,10 +5,12 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$expectedFromVersion = '0.23.11'
-$expectedToVersion = '0.23.12'
-$legacyApplyScriptName = 'apply-0.23.11.ps1'
-$legacyApplySha256 = '237184b9b849a91681d4ad25310fae49145fee8126d66ae665acbac724b850bc'
+$expectedFromVersion = '0.23.12'
+$expectedToVersion = '0.24.0'
+$legacyApplyScriptName = 'apply-0.23.12.ps1'
+$legacyApplySha256 = 'e564cd67e2ecb7cfd5666cbd9099365903c8aab8f2988b41c6120e28425fae44'
+$previousComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
+$currentComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 
 $supportScript = Join-Path $PSScriptRoot 'scripts\release-update-support.ps1'
 if (-not (Test-Path -LiteralPath $supportScript -PathType Leaf)) {
@@ -177,16 +179,20 @@ if ($cmsVersion -ne $expectedToVersion) {
 if (-not (Test-Path '.env' -PathType Leaf)) {
     throw '.env is missing. Run .\setup.ps1 for a new installation.'
 }
+if (-not (Test-Path 'composer.lock' -PathType Leaf)) {
+    throw 'composer.lock is missing. Re-extract the complete KaevCMS release or patch.'
+}
+$actualComposerLockSha256 = (Get-FileHash -LiteralPath 'composer.lock' -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualComposerLockSha256 -ne $currentComposerLockSha256) {
+    throw 'composer.lock does not match this KaevCMS release. Re-extract the complete release or patch.'
+}
+$composerDependenciesChanged = $previousComposerLockSha256 -ne $currentComposerLockSha256
 if (-not (Get-Command php -ErrorAction SilentlyContinue)) {
     throw 'PHP was not found in PATH.'
 }
 if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
     throw 'Composer was not found in PATH.'
 }
-if (-not (Test-Path 'composer.lock' -PathType Leaf)) {
-    throw 'composer.lock is missing. Update will not install unpinned dependency versions.'
-}
-
 $directories = @(
     'bootstrap\cache',
     'storage\app\kaevcms',
@@ -276,8 +282,12 @@ try {
         Write-UpdateStage -Message 'Application was already in maintenance mode; it will remain there.'
     }
 
-    Invoke-Checked 'Installing pinned PHP dependencies without Laravel scripts' {
-        composer install --no-interaction --prefer-dist --no-scripts
+    if ($composerDependenciesChanged -or -not (Test-Path 'vendor\autoload.php' -PathType Leaf)) {
+        Invoke-Checked 'Installing pinned PHP dependencies without Laravel scripts' {
+            composer install --no-interaction --prefer-dist --no-scripts
+        }
+    } else {
+        Write-UpdateStage -Message 'composer.lock is unchanged and vendor is present; Composer install was skipped.'
     }
 
     Invoke-Checked 'Rebuilding optimized autoload and discovering packages' {

@@ -3609,3 +3609,36 @@ a.admin-data-card:hover {
 .queue-empty-state{margin:0}
 @media(max-width:1050px){.queue-runtime-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.queue-runtime-metrics>div:nth-child(3){border-top:1px solid var(--border);border-left:0}.queue-runtime-metrics>div:nth-child(4){border-top:1px solid var(--border)}.queue-management-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.queue-runtime-metrics{grid-template-columns:1fr}.queue-runtime-metrics>div+div{border-top:1px solid var(--border);border-left:0}.queue-list-row{grid-template-columns:10px minmax(0,1fr)}.queue-list-row>.status-badge{grid-column:2;justify-self:start}.queue-failed-actions{align-items:stretch;flex-direction:column}.queue-failed-actions form,.queue-failed-actions button{width:100%}}
+
+
+/* Module foundation 0.24.0 */
+.module-foundation-notice {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+.module-grid .module-card { min-height: 250px; }
+.module-mark { flex-basis: 150px; min-height: 100%; }
+.module-mark .theme-preview-placeholder span { border-radius: 999px; }
+.module-meta { margin-bottom: 14px; }
+.module-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 14px;
+}
+.module-capabilities span {
+    padding: 5px 9px;
+    border: 1px solid var(--admin-border);
+    border-radius: 999px;
+    background: var(--admin-surface-muted);
+    color: var(--admin-text-muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+.module-actions form { width: auto; }
+@media (max-width: 760px) {
+    .module-mark { min-height: 130px; }
+    .module-actions form { width: 100%; }
+    .module-actions form .button { width: 100%; }
+}

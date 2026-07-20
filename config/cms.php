@@ -7,6 +7,19 @@ return [
     'account_theme' => env('CMS_ACCOUNT_THEME', 'luxury'),
     'account_themes_path' => base_path('account-themes'),
     'installed_version_marker' => storage_path('app/kaevcms/installed-version.json'),
+    'modules_path' => base_path('modules'),
+
+    'modules' => [
+        'runtime_retry_seconds' => 60,
+        'reserved_ids' => [
+            'admin',
+            'api',
+            'core',
+            'kaevcms',
+            'modules',
+            'system',
+        ],
+    ],
 
     'news' => [
         'uploads_path' => env('NEWS_UPLOADS_PATH', public_path('uploads')),

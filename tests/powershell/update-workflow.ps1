@@ -21,27 +21,27 @@ try {
     New-Item -Path (Join-Path $tempRoot 'bootstrap\cache') -ItemType Directory -Force | Out-Null
 
     $markerPath = Join-Path $tempRoot 'storage\app\kaevcms\installed-version.json'
-    '{"version":"0.23.11"}' | Set-Content -LiteralPath $markerPath -Encoding UTF8
-    $markerResult = Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.11' -ExpectedToVersion '0.23.12' -LegacyApplyScriptName 'apply-0.23.11.ps1' -LegacyApplySha256 '0000000000000000000000000000000000000000000000000000000000000000'
-    Assert-True ($markerResult.Version -eq '0.23.11') 'Marker version was not read.'
+    '{"version":"0.23.12"}' | Set-Content -LiteralPath $markerPath -Encoding UTF8
+    $markerResult = Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.12' -ExpectedToVersion '0.24.0' -LegacyApplyScriptName 'apply-0.23.12.ps1' -LegacyApplySha256 '0000000000000000000000000000000000000000000000000000000000000000'
+    Assert-True ($markerResult.Version -eq '0.23.12') 'Marker version was not read.'
     Assert-True ($markerResult.Source -eq 'marker') 'Marker source was not reported.'
 
     Remove-Item -LiteralPath $markerPath -Force
-    $legacyPath = Join-Path $tempRoot 'apply-0.23.11.ps1'
+    $legacyPath = Join-Path $tempRoot 'apply-0.23.12.ps1'
     'official previous apply script' | Set-Content -LiteralPath $legacyPath -Encoding UTF8
     $legacyHash = (Get-FileHash -LiteralPath $legacyPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    $legacyResult = Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.11' -ExpectedToVersion '0.23.12' -LegacyApplyScriptName 'apply-0.23.11.ps1' -LegacyApplySha256 $legacyHash
+    $legacyResult = Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.12' -ExpectedToVersion '0.24.0' -LegacyApplyScriptName 'apply-0.23.12.ps1' -LegacyApplySha256 $legacyHash
     Assert-True ($legacyResult.Source -eq 'legacy-apply-fingerprint') 'Legacy source fingerprint was not accepted.'
 
-    Write-KaevCmsPendingUpdateMarker -ProjectRoot $tempRoot -FromVersion '0.23.11' -ToVersion '0.23.12'
+    Write-KaevCmsPendingUpdateMarker -ProjectRoot $tempRoot -FromVersion '0.23.12' -ToVersion '0.24.0'
     Remove-Item -LiteralPath $legacyPath -Force
-    $pendingResult = Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.11' -ExpectedToVersion '0.23.12' -LegacyApplyScriptName 'apply-0.23.11.ps1' -LegacyApplySha256 $legacyHash
-    Assert-True ($pendingResult.Version -eq '0.23.11') 'Pending update source version was not read.'
+    $pendingResult = Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.12' -ExpectedToVersion '0.24.0' -LegacyApplyScriptName 'apply-0.23.12.ps1' -LegacyApplySha256 $legacyHash
+    Assert-True ($pendingResult.Version -eq '0.23.12') 'Pending update source version was not read.'
     Assert-True ($pendingResult.Source -eq 'pending-update') 'Pending update source was not reported.'
 
     $wrongTargetRejected = $false
     try {
-        Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.11' -ExpectedToVersion '0.24.0' -LegacyApplyScriptName 'apply-0.23.11.ps1' -LegacyApplySha256 $legacyHash | Out-Null
+        Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.12' -ExpectedToVersion '0.24.1' -LegacyApplyScriptName 'apply-0.23.12.ps1' -LegacyApplySha256 $legacyHash | Out-Null
     } catch {
         $wrongTargetRejected = $true
     }
@@ -51,7 +51,7 @@ try {
     'official previous apply script' | Set-Content -LiteralPath $legacyPath -Encoding UTF8
     $hashRejected = $false
     try {
-        Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.11' -ExpectedToVersion '0.23.12' -LegacyApplyScriptName 'apply-0.23.11.ps1' -LegacyApplySha256 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' | Out-Null
+        Get-KaevCmsInstalledVersion -ProjectRoot $tempRoot -ExpectedFromVersion '0.23.12' -ExpectedToVersion '0.24.0' -LegacyApplyScriptName 'apply-0.23.12.ps1' -LegacyApplySha256 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' | Out-Null
     } catch {
         $hashRejected = $true
     }
@@ -59,13 +59,13 @@ try {
 
     New-Item -Path (Join-Path $tempRoot 'resources\views\account') -ItemType Directory -Force | Out-Null
     'legacy view' | Set-Content -LiteralPath (Join-Path $tempRoot 'resources\views\account\index.blade.php') -Encoding UTF8
-    $backup = Move-KaevCmsArtifactsToBackup -ProjectRoot $tempRoot -TargetVersion '0.23.12' -RelativePaths @('apply-0.23.11.ps1', 'resources\views\account')
+    $backup = Move-KaevCmsArtifactsToBackup -ProjectRoot $tempRoot -TargetVersion '0.24.0' -RelativePaths @('apply-0.23.12.ps1', 'resources\views\account')
     Assert-True (-not (Test-Path -LiteralPath $legacyPath)) 'Previous apply script was not moved out of the project root.'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $tempRoot 'resources\views\account'))) 'Legacy account views were not moved out of the active tree.'
-    Assert-True (Test-Path -LiteralPath (Join-Path $backup.Root 'apply-0.23.11.ps1')) 'Previous apply script was not preserved in the update backup.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $backup.Root 'apply-0.23.12.ps1')) 'Previous apply script was not preserved in the update backup.'
     Assert-True (Test-Path -LiteralPath (Join-Path $backup.Root 'resources\views\account\index.blade.php')) 'Legacy account view was not preserved in the update backup.'
-    Remove-KaevCmsUpdateBackups -ProjectRoot $tempRoot -TargetVersion '0.23.12'
-    Assert-True (-not (Test-Path -LiteralPath (Join-Path $tempRoot 'storage\app\kaevcms\update-backups\0.23.12'))) 'Successful update backups were not removed.'
+    Remove-KaevCmsUpdateBackups -ProjectRoot $tempRoot -TargetVersion '0.24.0'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $tempRoot 'storage\app\kaevcms\update-backups\0.24.0'))) 'Successful update backups were not removed.'
 
     'cached' | Set-Content -LiteralPath (Join-Path $tempRoot 'bootstrap\cache\config.php') -Encoding UTF8
     'cached' | Set-Content -LiteralPath (Join-Path $tempRoot 'bootstrap\cache\routes.php') -Encoding UTF8
@@ -78,6 +78,9 @@ try {
     Assert-True (-not $updateScript.Contains('QUEUE_CONNECTION=sync')) 'Updater still rewrites QUEUE_CONNECTION.'
     Assert-True (-not $updateScript.Contains('SESSION_COOKIE=l2forge_session')) 'Updater still writes the legacy session cookie.'
     Assert-True (-not $updateScript.Contains('function Set-EnvValue')) 'Updater still contains an .env mutation helper.'
+    Assert-True ($updateScript.Contains('$composerDependenciesChanged')) 'Updater does not compare release dependency locks.'
+    Assert-True ($updateScript.Contains('Composer install was skipped')) 'Updater does not skip an unchanged Composer dependency set.'
+    Assert-True ($updateScript.Contains('$actualComposerLockSha256 -ne $currentComposerLockSha256')) 'Updater does not verify the release composer.lock fingerprint.'
     Assert-True ($updateScript.Contains('php artisan kaevcms:maintenance-status --no-ansi')) 'Updater does not query Laravel for the current maintenance state.'
     Assert-True ($updateScript.Contains('Move-KaevCmsArtifactsToBackup')) 'Updater does not stage obsolete artifacts before tests.'
     Assert-True ($updateScript.Contains("'resources\views\account'")) 'Updater does not remove legacy account views.'
@@ -97,7 +100,7 @@ try {
     Assert-True ($phpunitConfig.Contains('<env name="APP_MAINTENANCE_DRIVER" value="cache" force="true"/>')) 'PHPUnit still shares the live file maintenance state.'
     Assert-True ($phpunitConfig.Contains('<env name="APP_MAINTENANCE_STORE" value="array" force="true"/>')) 'PHPUnit maintenance cache is not isolated in memory.'
 
-    $applyScript = Get-Content -LiteralPath "$PWD\apply-0.23.12.ps1" -Raw
+    $applyScript = Get-Content -LiteralPath "$PWD\apply-0.24.0.ps1" -Raw
     Assert-True (-not $applyScript.Contains('update.ps1 failed with exit code $LASTEXITCODE')) 'Apply script still relies on a stale LASTEXITCODE after invoking PowerShell.'
 
     Write-Host 'PowerShell update workflow tests completed successfully.' -ForegroundColor Green
