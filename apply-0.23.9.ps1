@@ -5,8 +5,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$fromVersion = '0.23.7'
-$toVersion = '0.23.8'
+$fromVersion = '0.23.8'
+$toVersion = '0.23.9'
 
 if (-not (Test-Path 'artisan')) {
     throw 'Run this script from the KaevCMS project root.'
@@ -36,6 +36,29 @@ $requiredFiles = @(
     'app\Console\Commands\MaintenanceStatusCommand.php',
     'app\Services\Releases\InstalledVersion.php',
     'app\Jobs\Mail\SendUserMailNotification.php',
+    'app\Console\Commands\DrainDatabaseQueueCommand.php',
+    'app\Console\Commands\CleanupQueueDataCommand.php',
+    'app\Auth\AdminAccessPolicy.php',
+    'app\Http\Controllers\Admin\MailSettingsController.php',
+    'app\Models\FailedJob.php',
+    'app\Providers\AppServiceProvider.php',
+    'app\Services\MailSettings.php',
+    'app\Services\SystemInformation.php',
+    'config\cms.php',
+    'routes\admin.php',
+    'routes\console.php',
+    'lang\ru.json',
+    'lang\en.json',
+    'public\assets\admin\css\app.css',
+    'resources\views\admin\dashboard.blade.php',
+    'resources\views\admin\settings\_system_tabs.blade.php',
+    'resources\views\admin\settings\system.blade.php',
+    'app\Http\Controllers\Admin\QueueOperationsController.php',
+    'app\Services\Infrastructure\QueueMaintenance.php',
+    'app\Services\Infrastructure\RuntimeDiagnostics.php',
+    'resources\views\admin\settings\queue.blade.php',
+    'public\assets\admin\js\queue.js',
+    'tests\Feature\Admin\QueueInfrastructureTest.php',
     'tests\Feature\ReleaseInstalledVersionTest.php',
     'tests\Feature\ReleaseMetadataTest.php',
     'tests\powershell\update-workflow.ps1'

@@ -217,3 +217,14 @@ test('dashboard shows administrator runtime diagnostics', async ({ page }) => {
     await expect(runtimeCard.getByText('Ошибки очереди')).toBeVisible();
     await expect(runtimeCard.getByText('Очередь почты')).toHaveCount(0);
 });
+
+test('queue management opens from dashboard diagnostics', async ({ page }) => {
+    await page.goto('/admin');
+    await page.locator('.dashboard-runtime-card').getByRole('link', { name: 'Подробнее об очередях' }).click();
+
+    await expect(page).toHaveURL(/\/admin\/settings\/system\/queue$/);
+    await expect(page.getByRole('heading', { name: 'Управление очередями' }).first()).toBeVisible();
+    await expect(page.getByText('Текущее состояние очередей')).toBeVisible();
+    await expect(page.getByText('Хранение служебных данных')).toBeVisible();
+    await expect(page.getByText('Payload очереди и полные тексты исключений скрыты.')).toBeVisible();
+});

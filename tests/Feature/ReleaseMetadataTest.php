@@ -40,7 +40,7 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.23.7'", $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.23.8'", $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
     }
@@ -49,7 +49,7 @@ class ReleaseMetadataTest extends TestCase
     {
         $updateScript = $this->readReleaseFile('update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.23.7'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.23.8'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
@@ -61,6 +61,7 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringNotContainsString('function Set-EnvValue', $updateScript);
         $this->assertStringContainsString('Clear-KaevCmsBootstrapCache -ProjectRoot $PSScriptRoot', $updateScript);
         $this->assertStringContainsString('composer install --no-interaction --prefer-dist --no-scripts', $updateScript);
+        $this->assertStringContainsString('php artisan queue:restart', $updateScript);
         $this->assertStringContainsString('php artisan kaevcms:maintenance-status --no-ansi', $updateScript);
         $this->assertStringContainsString('php artisan down --retry=60', $updateScript);
         $this->assertStringContainsString('finally {', $updateScript);
@@ -73,6 +74,8 @@ class ReleaseMetadataTest extends TestCase
         $cachePosition = strpos($updateScript, 'Clear-KaevCmsBootstrapCache -ProjectRoot $PSScriptRoot');
         $maintenancePosition = strpos($updateScript, 'php artisan down --retry=60');
         $composerPosition = strpos($updateScript, 'composer install --no-interaction --prefer-dist --no-scripts');
+        $migrationPosition = strpos($updateScript, 'php artisan migrate --force');
+        $queueRestartPosition = strpos($updateScript, 'php artisan queue:restart');
         $stagePosition = strpos($updateScript, 'Move-KaevCmsArtifactsToBackup');
         $testPosition = strpos($updateScript, 'php artisan test');
         $markPosition = strpos($updateScript, 'php artisan kaevcms:release-version --mark=$cmsVersion');
@@ -82,6 +85,8 @@ class ReleaseMetadataTest extends TestCase
         $this->assertNotFalse($cachePosition);
         $this->assertNotFalse($maintenancePosition);
         $this->assertNotFalse($composerPosition);
+        $this->assertNotFalse($migrationPosition);
+        $this->assertNotFalse($queueRestartPosition);
         $this->assertNotFalse($stagePosition);
         $this->assertNotFalse($testPosition);
         $this->assertNotFalse($markPosition);
@@ -89,6 +94,8 @@ class ReleaseMetadataTest extends TestCase
         $this->assertNotFalse($finalCleanupPosition);
         $this->assertLessThan($composerPosition, $cachePosition);
         $this->assertLessThan($composerPosition, $maintenancePosition);
+        $this->assertLessThan($queueRestartPosition, $migrationPosition);
+        $this->assertLessThan($testPosition, $queueRestartPosition);
         $this->assertLessThan($testPosition, $stagePosition);
         $this->assertLessThan($markPosition, $testPosition);
         $this->assertLessThan($backupCleanupPosition, $markPosition);

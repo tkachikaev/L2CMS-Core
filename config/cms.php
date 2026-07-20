@@ -60,6 +60,12 @@ return [
         'retention_days' => (int) env('AUDIT_LOG_RETENTION_DAYS', 90),
     ],
 
+    'queue' => [
+        'mail_delivery_retention_days' => 30,
+        'failed_job_retention_days' => 90,
+        'heartbeat_retention_days' => 30,
+    ],
+
     'external_database' => [
         'connect_timeout_seconds' => (int) env('EXTERNAL_DB_CONNECT_TIMEOUT_SECONDS', 3),
         'query_timeout_ms' => (int) env('EXTERNAL_DB_QUERY_TIMEOUT_MS', 3000),

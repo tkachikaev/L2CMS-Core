@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\SendTestMailRequest;
 use App\Mail\CustomHtmlMail;
 use App\Notifications\MailTemplateTestNotification;
 use App\Services\AuditLogger;
+use App\Services\Infrastructure\RuntimeDiagnostics;
 use App\Services\Localization\LanguageManager;
 use App\Services\Mail\CustomMailHtmlSanitizer;
 use App\Services\MailSettings;
@@ -113,6 +114,7 @@ class MailSettingsController extends Controller
     public function updateMail(
         SaveMailSettingsRequest $request,
         MailSettings $mailSettings,
+        RuntimeDiagnostics $runtimeDiagnostics,
     ): RedirectResponse {
         $validated = $request->validated();
         $before = $this->mailAuditValues($mailSettings->values());
@@ -131,6 +133,7 @@ class MailSettingsController extends Controller
             'admin_email' => (string) ($validated['notification_email'] ?? ''),
         ]);
         $mailSettings->applyConfiguration();
+        $runtimeDiagnostics->markQueueRestartRequired('mail-settings-updated');
         $after = $this->mailAuditValues($mailSettings->values());
 
         $this->auditLogger->success(

@@ -534,8 +534,14 @@ final class SystemInformation
             __('Session: :value', ['value' => $environment['session']]),
             __('Queue: :value', ['value' => $environment['queue']]),
             __('Scheduler status: :value', ['value' => $information['runtime']['scheduler']['status']]),
+            __('Queue processing status: :value', ['value' => $information['runtime']['queue']['status']]),
             __('Pending jobs: :value', ['value' => $information['runtime']['jobs']['pending']]),
             __('Failed jobs: :value', ['value' => $information['runtime']['jobs']['failed']]),
+            __('Last successful job: :value', ['value' => $information['runtime']['queue']['last_succeeded_at']?->toIso8601String() ?? 'N/A']),
+            __('Active queues: :value', ['value' => implode(', ', array_map(
+                static fn (array $queue): string => $queue['name'].'('.$queue['pending'].'/'.$queue['failed'].')',
+                $information['runtime']['jobs']['queues'],
+            )) ?: 'NONE']),
             __('Mail: :value', ['value' => $environment['mail']]),
             __('Logging: :value', ['value' => $environment['logging']]),
         ]);

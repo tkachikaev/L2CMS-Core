@@ -192,10 +192,10 @@ mail.password_changed_failed
 Асинхронный режим с очередью в базе данных использует стандартное Laravel-подключение `database`. Задание сохраняется в таблице `jobs`, переживает перезапуск приложения и повторяется после временной ошибки. Для обработки должен работать Laravel Scheduler либо отдельный worker:
 
 ```text
-php artisan queue:work database --queue=mail-probe,mail
+php artisan queue:work database --queue=mail-probe,mail,default
 ```
 
-KaevCMS ежеминутно регистрирует безопасный одноразовый запуск `queue:work ... --stop-when-empty` в Laravel Scheduler. Поэтому при уже настроенном системном `schedule:run` отдельный постоянный worker не обязателен.
+KaevCMS ежеминутно запускает команду `kaevcms:queue-drain`. Она обнаруживает все очереди, в которых реально есть задания, и поочерёдно передаёт каждую из них отдельному короткоживущему `queue:work ... --stop-when-empty`. Так одна большая очередь не блокирует остальные. Поэтому при уже настроенном системном `schedule:run` отдельный постоянный worker не обязателен, а будущие очереди модулей не требуют изменения системного расписания.
 
 При первом выборе асинхронного режима CMS автоматически запускает реальную тестовую задачу без отправки письма. Обычный асинхронный тест ожидается до 15 секунд, тест очереди в базе данных — до 90 секунд. Режим включается только после успешного выполнения. При неудаче синхронная отправка остаётся активной.
 
@@ -229,7 +229,7 @@ sudo apt install supervisor
 [program:kaevcms-mail]
 process_name=%(program_name)s_%(process_num)02d
 directory=/var/www/kaevcms
-command=/usr/bin/php /var/www/kaevcms/artisan queue:work database --queue=mail-probe,mail --sleep=3 --tries=3 --backoff=10 --max-time=3600
+command=/usr/bin/php /var/www/kaevcms/artisan queue:work database --queue=mail-probe,mail,default --sleep=3 --tries=3 --backoff=10 --max-time=3600
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -297,3 +297,20 @@ CMS сохраняет только техническое состояние а
 mail.template.email_verification.en.subject
 mail.template.password_reset.ru.body
 ```
+
+
+## Диагностика и хранение данных очереди
+
+Страница `/admin/settings/system/queue` показывает все активные database-очереди, последнее начало, успешное завершение и окончательную ошибку обработки. Полный payload задания и текст исключения в интерфейсе не выводятся.
+
+Администратор может повторить выбранное неудачное задание, удалить его запись, отправить стандартный сигнал `queue:restart` и вручную запустить очистку устаревших служебных данных. Все действия записываются в аудит.
+
+Scheduler ежедневно в 03:45 запускает `kaevcms:queue-clean`. По умолчанию хранятся:
+
+```text
+история завершённой доставки почты — 30 дней
+failed_jobs — 90 дней
+неактивные heartbeat отдельных очередей — 30 дней
+```
+
+Ожидающие записи `mail_deliveries` автоматическая очистка не удаляет. После изменения SMTP ранее активный постоянный worker отмечается как требующий перезапуска; свежий одноразовый worker Scheduler снимает предупреждение после успешного задания.

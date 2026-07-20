@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\NewsImageController as AdminNewsImageController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PageImageController as AdminPageImageController;
+use App\Http\Controllers\Admin\QueueOperationsController as AdminQueueOperationsController;
 use App\Http\Controllers\Admin\RegistrationSettingsController as AdminRegistrationSettingsController;
 use App\Http\Controllers\Admin\SecuritySettingsController as AdminSecuritySettingsController;
 use App\Http\Controllers\Admin\SystemSettingsController as AdminSystemSettingsController;
@@ -208,6 +209,20 @@ Route::prefix('{adminPath}')->name('admin.')->middleware(['admin.path', 'admin.h
         Route::put('/settings/system/monitoring', [AdminAdminPanelSettingsController::class, 'updateMonitoring']);
         Route::put('/settings/system/admin-path', [AdminAdminPathController::class, 'update']);
         Route::get('/settings/system', [AdminSystemSettingsController::class, 'system'])->name('settings.system');
+        Route::get('/settings/system/queue', [AdminQueueOperationsController::class, 'index'])
+            ->name('settings.system.queue');
+        Route::post('/settings/system/queue/restart', [AdminQueueOperationsController::class, 'restart'])
+            ->middleware('throttle:3,1')
+            ->name('settings.system.queue.restart');
+        Route::post('/settings/system/queue/cleanup', [AdminQueueOperationsController::class, 'cleanup'])
+            ->middleware('throttle:3,1')
+            ->name('settings.system.queue.cleanup');
+        Route::post('/settings/system/queue/{uuid}/retry', [AdminQueueOperationsController::class, 'retry'])
+            ->middleware('throttle:10,1')
+            ->name('settings.system.queue.retry');
+        Route::delete('/settings/system/queue/{uuid}', [AdminQueueOperationsController::class, 'destroy'])
+            ->middleware('throttle:10,1')
+            ->name('settings.system.queue.destroy');
         Route::get('/settings/languages', [AdminLanguageSettingsController::class, 'languages'])->name('settings.languages');
         Route::put('/settings/languages', [AdminLanguageSettingsController::class, 'updateLanguages'])->name('settings.languages.update');
 

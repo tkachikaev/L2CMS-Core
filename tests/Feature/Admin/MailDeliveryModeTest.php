@@ -61,7 +61,8 @@ class MailDeliveryModeTest extends TestCase
 
         $this->assertStringContainsString('Настройка асинхронной очереди на Linux VDS', $documentation);
         $this->assertStringContainsString('/etc/supervisor/conf.d/kaevcms-mail.conf', $documentation);
-        $this->assertStringContainsString('queue:work database --queue=mail-probe,mail', $documentation);
+        $this->assertStringContainsString('kaevcms:queue-drain', $documentation);
+        $this->assertStringContainsString('mail-probe,mail,default', $documentation);
         $this->assertStringContainsString('php artisan queue:restart', $documentation);
         $this->assertStringContainsString('php artisan schedule:run', $documentation);
     }
@@ -284,14 +285,13 @@ class MailDeliveryModeTest extends TestCase
         }
     }
 
-    public function test_scheduler_runs_one_off_database_mail_worker_every_minute(): void
+    public function test_scheduler_runs_dynamic_database_queue_drain_every_minute(): void
     {
         $event = collect(app(Schedule::class)->events())
-            ->first(fn (Event $event): bool => str_contains((string) $event->command, 'queue:work database'));
+            ->first(fn (Event $event): bool => str_contains((string) $event->command, 'kaevcms:queue-drain'));
 
         $this->assertNotNull($event);
-        $this->assertStringContainsString('--queue=mail-probe,mail', (string) $event->command);
-        $this->assertStringContainsString('--stop-when-empty', (string) $event->command);
+        $this->assertStringNotContainsString('--queue=mail-probe,mail', (string) $event->command);
         $this->assertSame('* * * * *', $event->expression);
     }
 

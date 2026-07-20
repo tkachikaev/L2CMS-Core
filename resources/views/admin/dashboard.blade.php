@@ -155,7 +155,7 @@
                     <h2>{{ __('System operations') }}</h2>
                     <p>{{ __('Scheduler, queues and jobs that require administrator attention.') }}</p>
                 </div>
-                <a wire:navigate href="{{ route('admin.settings.system') }}">{{ __('System information') }}</a>
+                <a wire:navigate href="{{ route('admin.settings.system.queue') }}">{{ __('Queue details') }}</a>
             </header>
 
             <div class="dashboard-runtime-statuses">
@@ -180,6 +180,10 @@
                 <div>
                     <span>{{ __('Oldest pending job') }}</span>
                     <strong class="dashboard-runtime-time">{{ $runtime['jobs']['oldest_pending_at'] ? $runtime['jobs']['oldest_pending_at']->diffForHumans() : '—' }}</strong>
+                </div>
+                <div>
+                    <span>{{ __('Last successful job') }}</span>
+                    <strong class="dashboard-runtime-time">{{ $runtime['queue']['last_succeeded_at']?->diffForHumans() ?? '—' }}</strong>
                 </div>
             </div>
 

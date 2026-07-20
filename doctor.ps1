@@ -442,7 +442,8 @@ if ((Test-Path -LiteralPath $autoloadPath -PathType Leaf) -and (Test-Path -Liter
 
     if ($scheduleCommandOk) {
         Test-ItemStatus 'Scheduler heartbeat task' ($scheduleOutput -match 'kaevcms:scheduler-heartbeat') $(if ($scheduleOutput -match 'kaevcms:scheduler-heartbeat') { 'registered every minute' } else { 'missing from Laravel schedule' })
-        Test-ItemStatus 'Database mail queue task' ($scheduleOutput -match 'queue:work database') $(if ($scheduleOutput -match 'queue:work database') { 'registered in Laravel schedule' } else { 'missing from Laravel schedule' })
+        Test-ItemStatus 'Database queue drain task' ($scheduleOutput -match 'kaevcms:queue-drain') $(if ($scheduleOutput -match 'kaevcms:queue-drain') { 'registered every minute' } else { 'missing from Laravel schedule' })
+        Test-ItemStatus 'Queue retention cleanup task' ($scheduleOutput -match 'kaevcms:queue-clean') $(if ($scheduleOutput -match 'kaevcms:queue-clean') { 'registered daily' } else { 'missing from Laravel schedule' })
     }
 
     Write-Host ''

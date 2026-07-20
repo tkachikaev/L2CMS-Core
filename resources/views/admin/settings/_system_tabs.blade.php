@@ -17,7 +17,7 @@
     <a wire:navigate @class(['admin-tab', 'settings-section-tab', 'active' => request()->routeIs('admin.settings.security*')]) href="{{ route('admin.settings.security') }}">
         {{ __('Security') }}
     </a>
-    <a wire:navigate @class(['admin-tab', 'settings-section-tab', 'active' => request()->routeIs('admin.settings.system')]) href="{{ route('admin.settings.system') }}">
+    <a wire:navigate @class(['admin-tab', 'settings-section-tab', 'active' => request()->routeIs('admin.settings.system*')]) href="{{ route('admin.settings.system') }}">
         {{ __('System information') }}
     </a>
 </nav>

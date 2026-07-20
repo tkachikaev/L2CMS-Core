@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\Releases\InstalledVersion;
+use App\Support\KaevCMS;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
@@ -73,12 +74,14 @@ class ReleaseInstalledVersionTest extends TestCase
 
     public function test_release_command_records_the_current_release(): void
     {
-        $this->artisan('kaevcms:release-version', ['--mark' => '0.23.8'])
-            ->expectsOutputToContain('Installed version recorded: 0.23.8')
+        $version = KaevCMS::version();
+
+        $this->artisan('kaevcms:release-version', ['--mark' => $version])
+            ->expectsOutputToContain("Installed version recorded: {$version}")
             ->assertSuccessful();
 
         $this->artisan('kaevcms:release-version')
-            ->expectsOutput('0.23.8')
+            ->expectsOutput($version)
             ->assertSuccessful();
     }
 

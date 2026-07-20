@@ -5,10 +5,10 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$expectedFromVersion = '0.23.7'
-$expectedToVersion = '0.23.8'
-$legacyApplyScriptName = 'apply-0.23.7.ps1'
-$legacyApplySha256 = '154d611facec2affba2cc033bfa3da257c28d9e724314768da59639583b007cb'
+$expectedFromVersion = '0.23.8'
+$expectedToVersion = '0.23.9'
+$legacyApplyScriptName = 'apply-0.23.8.ps1'
+$legacyApplySha256 = '92586cc4bf4e943539749e8df80eda0d9d38a3af9b0bcc0a0aaf32a840e6211c'
 
 $supportScript = Join-Path $PSScriptRoot 'scripts\release-update-support.ps1'
 if (-not (Test-Path -LiteralPath $supportScript -PathType Leaf)) {
@@ -285,6 +285,7 @@ try {
     }
     Invoke-Checked 'Clearing Laravel runtime caches' { php artisan optimize:clear }
     Invoke-Checked 'Running database migrations' { php artisan migrate --force }
+    Invoke-Checked 'Signalling queue workers to restart' { php artisan queue:restart }
     Invoke-Checked 'Refreshing server monitoring snapshot' { php artisan kaevcms:servers-monitor --force }
 
     if (-not $SkipTests) {

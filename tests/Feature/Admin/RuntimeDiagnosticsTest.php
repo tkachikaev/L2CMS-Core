@@ -42,9 +42,13 @@ class RuntimeDiagnosticsTest extends TestCase
     {
         Queue::connection('sync')->push(new RuntimeDiagnosticsProbeJob);
 
-        $this->assertDatabaseMissing('system_heartbeats', [
-            'key' => RuntimeDiagnostics::QUEUE_WORKER_HEARTBEAT,
-        ]);
+        foreach ([
+            RuntimeDiagnostics::QUEUE_WORKER_HEARTBEAT,
+            RuntimeDiagnostics::QUEUE_WORKER_SUCCEEDED,
+            RuntimeDiagnostics::QUEUE_WORKER_FAILED,
+        ] as $heartbeatKey) {
+            $this->assertDatabaseMissing('system_heartbeats', ['key' => $heartbeatKey]);
+        }
 
         config()->set('queue.connections.database', ['driver' => 'sync']);
         Queue::connection('database')->push(new RuntimeDiagnosticsProbeJob);
@@ -117,7 +121,8 @@ class RuntimeDiagnosticsTest extends TestCase
 
         $this->assertIsString($doctor);
         $this->assertStringContainsString('kaevcms:scheduler-heartbeat', $doctor);
-        $this->assertStringContainsString('queue:work database', $doctor);
+        $this->assertStringContainsString('kaevcms:queue-drain', $doctor);
+        $this->assertStringContainsString('kaevcms:queue-clean', $doctor);
     }
 
     public function test_sync_mail_mode_does_not_require_a_queue_worker(): void

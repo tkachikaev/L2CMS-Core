@@ -11,6 +11,7 @@ use App\Services\AuditLogger;
 use App\Services\GameAccountSettings;
 use App\Services\GameServerSettings;
 use App\Services\Html\SafeHtmlSanitizer;
+use App\Services\Infrastructure\QueueMaintenance;
 use App\Services\Infrastructure\RuntimeDiagnostics;
 use App\Services\Localization\LanguageManager;
 use App\Services\Localization\LocalizedContentResolver;
@@ -31,6 +32,9 @@ use App\Services\Settings\SettingsImageStorage;
 use App\Services\SiteSettings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
@@ -50,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GameAccountSettings::class);
         $this->app->singleton(GameServerSettings::class);
         $this->app->singleton(RuntimeDiagnostics::class);
+        $this->app->singleton(QueueMaintenance::class);
         $this->app->singleton(SafeHtmlSanitizer::class);
         $this->app->singleton(MailSettings::class);
         $this->app->singleton(MailDeliveryMonitor::class);
@@ -83,9 +88,40 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Queue::before(static function (JobProcessing $event) use ($runtimeDiagnostics): void {
-            $runtimeDiagnostics->recordQueueWorker(
+            $runtimeDiagnostics->recordQueueStarted(
                 $event->connectionName,
                 $event->job->getQueue(),
+                $event->job->getJobId(),
+                $event->job->resolveName(),
+            );
+        });
+
+        Queue::after(static function (JobProcessed $event) use ($runtimeDiagnostics): void {
+            $runtimeDiagnostics->recordQueueSucceeded(
+                $event->connectionName,
+                $event->job->getQueue(),
+                $event->job->getJobId(),
+                $event->job->resolveName(),
+            );
+        });
+
+        Queue::exceptionOccurred(static function (JobExceptionOccurred $event) use ($runtimeDiagnostics): void {
+            $runtimeDiagnostics->recordQueueException(
+                $event->connectionName,
+                $event->job->getQueue(),
+                $event->exception,
+                $event->job->getJobId(),
+                $event->job->resolveName(),
+            );
+        });
+
+        Queue::failing(static function (JobFailed $event) use ($runtimeDiagnostics): void {
+            $runtimeDiagnostics->recordQueueFailed(
+                $event->connectionName,
+                $event->job->getQueue(),
+                $event->exception,
+                $event->job->getJobId(),
+                $event->job->resolveName(),
             );
         });
 
