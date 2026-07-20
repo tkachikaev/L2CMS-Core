@@ -44,6 +44,8 @@ class SystemSettingsTest extends TestCase
             ->assertSee(PHP_VERSION)
             ->assertSee(app()->version())
             ->assertSee('Тип хеша')
+            ->assertSee('Шифрование APP_KEY')
+            ->assertSee('Зашифрованные секреты')
             ->assertSee($hashLabel)
             ->assertSee('Разделы настроек')
             ->assertDontSee('THIS_MUST_NOT_BE_RENDERED_IN_SYSTEM_INFORMATION')
@@ -110,6 +112,8 @@ class SystemSettingsTest extends TestCase
             ->get('/admin/settings/system')
             ->assertOk()
             ->assertSee('Тип хеша')
+            ->assertSee('Шифрование APP_KEY')
+            ->assertSee('Зашифрованные секреты')
             ->assertSee('bcrypt');
 
         if (PasswordHashing::argon2idSupported()) {
@@ -200,7 +204,7 @@ class SystemSettingsTest extends TestCase
         ]);
     }
 
-    public function test_legacy_system_monitoring_endpoint_remains_compatible(): void
+    public function test_legacy_system_monitoring_endpoint_is_not_registered(): void
     {
         $admin = Admin::query()->create([
             'name' => 'Legacy Monitor Admin',
@@ -213,9 +217,9 @@ class SystemSettingsTest extends TestCase
             ->put('/admin/settings/system/monitoring', [
                 'refresh_interval_seconds' => 300,
             ])
-            ->assertRedirect(route('admin.settings.admin-panel'));
+            ->assertNotFound();
 
-        $this->assertSame(300, app(ServerMonitorSettings::class)->refreshIntervalSeconds());
+        $this->assertSame(60, app(ServerMonitorSettings::class)->refreshIntervalSeconds());
     }
 
     public function test_version_is_read_from_the_root_version_file(): void

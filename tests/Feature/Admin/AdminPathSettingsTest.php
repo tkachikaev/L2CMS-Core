@@ -134,7 +134,7 @@ class AdminPathSettingsTest extends TestCase
         $this->get('/admin/login')->assertRedirect(route('admin.dashboard'));
     }
 
-    public function test_legacy_system_admin_path_endpoint_remains_compatible(): void
+    public function test_legacy_system_admin_path_endpoint_is_not_registered(): void
     {
         $admin = $this->createAdmin();
 
@@ -142,11 +142,10 @@ class AdminPathSettingsTest extends TestCase
             ->put('/admin/settings/system/admin-path', [
                 'admin_path_suffix' => 'legacy01',
             ])
-            ->assertRedirect('/admin-legacy01/settings/admin-panel');
+            ->assertNotFound();
 
-        $this->assertDatabaseHas('cms_settings', [
+        $this->assertDatabaseMissing('cms_settings', [
             'key' => AdminPathSettings::SETTING_KEY,
-            'value' => 'legacy01',
         ]);
     }
 

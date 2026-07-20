@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Admin\AdminPanelSettingsController;
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GeneralSettingsController;
 use App\Http\Controllers\Admin\MailSettingsController;
 use App\Http\Controllers\Admin\SystemSettingsController;
@@ -63,11 +62,43 @@ class CoreStabilizationTest extends TestCase
             Route::getRoutes()->getByName('localized.password.reset')?->gatherMiddleware() ?? [],
         );
 
+        $this->assertContains(
+            'throttle:public-login',
+            Route::getRoutes()->getByName('login.store')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-login',
+            Route::getRoutes()->getByName('localized.login.store')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-registration',
+            Route::getRoutes()->getByName('register.store')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-registration',
+            Route::getRoutes()->getByName('localized.register.store')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-password-email',
+            Route::getRoutes()->getByName('password.email')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-password-email',
+            Route::getRoutes()->getByName('localized.password.email')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-password-reset',
+            Route::getRoutes()->getByName('password.store')?->gatherMiddleware() ?? [],
+        );
+        $this->assertContains(
+            'throttle:public-password-reset',
+            Route::getRoutes()->getByName('localized.password.store')?->gatherMiddleware() ?? [],
+        );
+
         $legacyDashboardRoute = collect(Route::getRoutes()->getRoutes())
             ->first(static fn ($route): bool => $route->uri() === '{adminPath}/dashboard');
 
-        $this->assertNotNull($legacyDashboardRoute);
-        $this->assertSame(DashboardController::class.'@legacyRedirect', $legacyDashboardRoute->getActionName());
+        $this->assertNull($legacyDashboardRoute);
     }
 
     public function test_legacy_large_settings_controller_was_replaced_by_domain_controllers(): void

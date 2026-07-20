@@ -436,6 +436,13 @@ if ((Test-Path -LiteralPath $autoloadPath -PathType Leaf) -and (Test-Path -Liter
         else { "expected $cmsVersion, reported: $installedVersionOutput" }
     )
 
+    $encryptionHealthOutput = (& php artisan kaevcms:encryption-health --no-ansi 2>&1 | Out-String).Trim()
+    $encryptionHealthOk = $LASTEXITCODE -eq 0
+    Test-ItemStatus 'Encrypted secrets' $encryptionHealthOk $(
+        if ([string]::IsNullOrWhiteSpace($encryptionHealthOutput)) { 'encryption health check returned no details' }
+        else { $encryptionHealthOutput -replace "`r?`n", '; ' }
+    )
+
     $scheduleOutput = (& php artisan schedule:list --no-ansi 2>&1 | Out-String)
     $scheduleCommandOk = $LASTEXITCODE -eq 0
     Test-ItemStatus 'Laravel schedule list' $scheduleCommandOk $(if ($scheduleCommandOk) { 'loaded successfully' } else { 'php artisan schedule:list failed' })

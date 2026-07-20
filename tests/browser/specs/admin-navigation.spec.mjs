@@ -86,7 +86,6 @@ test('persisted sidebar keeps group state during navigation and history changes'
     await expect(appearanceGroup).toHaveAttribute('open', '');
 });
 
-
 test('settings use one sidebar entry and local tabs', async ({ page }) => {
     await page.goto('/admin/settings');
 
@@ -163,7 +162,6 @@ test('game server settings keep fields separated by tabs', async ({ page }) => {
     await expect(dialog.getByText('Дополнительные сетевые настройки')).toBeVisible();
 });
 
-
 test('admin catalogues share enterprise surfaces', async ({ page }) => {
     await page.goto('/admin/news');
     const newsOverview = page.locator('.admin-overview').first();
@@ -185,7 +183,6 @@ test('admin catalogues share enterprise surfaces', async ({ page }) => {
         await expect(table.first()).toHaveCSS('border-radius', '12px');
     }
 });
-
 
 test('administrator role selector explains the selected access level', async ({ page }) => {
     await page.goto('/admin/administrators');
@@ -225,6 +222,23 @@ test('queue management opens from dashboard diagnostics', async ({ page }) => {
     await expect(page).toHaveURL(/\/admin\/settings\/system\/queue$/);
     await expect(page.getByRole('heading', { name: 'Управление очередями' }).first()).toBeVisible();
     await expect(page.getByText('Текущее состояние очередей')).toBeVisible();
-    await expect(page.getByText('Хранение служебных данных')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Хранение служебных данных', exact: true })).toBeVisible();
     await expect(page.getByText('Payload очереди и полные тексты исключений скрыты.')).toBeVisible();
+});
+
+test('system information reports APP_KEY encryption health without exposing secrets', async ({ page }) => {
+    await page.goto('/admin/settings/system');
+
+    const encryptionCard = page.getByRole('heading', { name: 'Шифрование APP_KEY' }).locator('..');
+    await expect(encryptionCard).toBeVisible();
+    await expect(encryptionCard.getByText('Зашифрованные значения', { exact: true })).toBeVisible();
+    await expect(encryptionCard.getByText('Недоступные значения', { exact: true })).toBeVisible();
+    await expect(page.getByText('APP_KEY encryption')).toHaveCount(0);
+});
+
+test('removed legacy dashboard endpoint returns not found', async ({ page }) => {
+    const response = await page.goto('/admin/dashboard');
+
+    expect(response).not.toBeNull();
+    expect(response.status()).toBe(404);
 });

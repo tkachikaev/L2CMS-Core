@@ -62,7 +62,6 @@ Route::prefix('{adminPath}')->name('admin.')->middleware(['admin.path', 'admin.h
         Route::post('/server-monitor/refresh', [AdminDashboardController::class, 'refresh'])
             ->middleware('throttle:6,1')
             ->name('server-monitor.refresh');
-        Route::get('/dashboard', [AdminDashboardController::class, 'legacyRedirect']);
 
         Route::get('/account/security', [AdminAccountSecurityController::class, 'show'])->name('account.security');
         Route::post('/account/security/two-factor/setup', [AdminAccountSecurityController::class, 'begin'])
@@ -206,8 +205,6 @@ Route::prefix('{adminPath}')->name('admin.')->middleware(['admin.path', 'admin.h
             ->name('settings.admin-panel.monitoring.update');
         Route::put('/settings/admin-panel/admin-path', [AdminAdminPathController::class, 'update'])
             ->name('settings.admin-panel.admin-path.update');
-        Route::put('/settings/system/monitoring', [AdminAdminPanelSettingsController::class, 'updateMonitoring']);
-        Route::put('/settings/system/admin-path', [AdminAdminPathController::class, 'update']);
         Route::get('/settings/system', [AdminSystemSettingsController::class, 'system'])->name('settings.system');
         Route::get('/settings/system/queue', [AdminQueueOperationsController::class, 'index'])
             ->name('settings.system.queue');

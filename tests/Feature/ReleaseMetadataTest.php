@@ -40,7 +40,7 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.23.8'", $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.23.9'", $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
     }
@@ -49,7 +49,7 @@ class ReleaseMetadataTest extends TestCase
     {
         $updateScript = $this->readReleaseFile('update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.23.8'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.23.9'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
@@ -108,11 +108,20 @@ class ReleaseMetadataTest extends TestCase
 
         $doctorScript = $this->readReleaseFile('doctor.ps1');
         $this->assertStringContainsString('php artisan kaevcms:release-version --no-ansi', $doctorScript);
+        $this->assertStringContainsString('php artisan kaevcms:encryption-health --no-ansi', $doctorScript);
 
         $qualityScript = $this->readReleaseFile('quality.ps1');
         $this->assertStringContainsString('tests\\powershell\\update-workflow.ps1', $qualityScript);
+        $this->assertStringContainsString('composer audit --locked --no-interaction', $qualityScript);
         $this->assertStringContainsString('php artisan route:cache', $qualityScript);
         $this->assertSame(2, substr_count($qualityScript, 'php artisan route:clear'));
+
+        $browserQualityScript = $this->readReleaseFile('browser-quality.ps1');
+        $this->assertStringContainsString('npm audit --audit-level=high', $browserQualityScript);
+
+        $workflow = $this->readReleaseFile('.github/workflows/quality.yml');
+        $this->assertStringContainsString('composer audit --locked --no-interaction', $workflow);
+        $this->assertStringContainsString('npm audit --audit-level=high', $workflow);
     }
 
     public function test_obsolete_preview_and_settings_placeholder_are_not_shipped(): void

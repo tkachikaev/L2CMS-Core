@@ -98,20 +98,6 @@ final class AdminAccessPolicy
                 : new AdminAccessDecision(AdminPermission::SettingsManage);
         }
 
-        $path = '/'.ltrim($request->path(), '/');
-
-        if ($method === 'GET' && str_ends_with($path, '/dashboard')) {
-            return new AdminAccessDecision(AdminPermission::DashboardView);
-        }
-
-        if (str_ends_with($path, '/settings/system/admin-path')) {
-            return new AdminAccessDecision(AdminPermission::AdminPathManage);
-        }
-
-        if (str_ends_with($path, '/settings/system/monitoring')) {
-            return new AdminAccessDecision(AdminPermission::SettingsManage);
-        }
-
         return new AdminAccessDecision(AdminPermission::AdminPathManage);
     }
 }

@@ -39,11 +39,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function legacyRedirect(): RedirectResponse
-    {
-        return redirect()->route('admin.dashboard');
-    }
-
     public function status(
         ServerMonitorCoordinator $monitorCoordinator,
         ServerStatusOverview $statuses,

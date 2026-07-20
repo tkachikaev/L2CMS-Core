@@ -46,24 +46,24 @@ $registerPublicRoutes = static function (bool $localized = false): void {
     Route::middleware('guest')->group(function () use ($namePrefix): void {
         Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name($namePrefix.'login');
         Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-            ->middleware('throttle:10,1')
+            ->middleware('throttle:public-login')
             ->name($namePrefix.'login.store');
 
         Route::get('/register', [RegisteredUserController::class, 'create'])->name($namePrefix.'register');
         Route::post('/register', [RegisteredUserController::class, 'store'])
-            ->middleware('throttle:5,1')
+            ->middleware('throttle:public-registration')
             ->name($namePrefix.'register.store');
 
         Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name($namePrefix.'password.request');
         Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-            ->middleware('throttle:5,1')
+            ->middleware('throttle:public-password-email')
             ->name($namePrefix.'password.email');
 
         Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])
             ->middleware('throttle:30,1')
             ->name($namePrefix.'password.reset');
         Route::post('/reset-password', [NewPasswordController::class, 'store'])
-            ->middleware('throttle:5,1')
+            ->middleware('throttle:public-password-reset')
             ->name($namePrefix.'password.store');
     });
 };

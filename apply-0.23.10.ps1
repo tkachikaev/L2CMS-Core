@@ -5,8 +5,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$fromVersion = '0.23.8'
-$toVersion = '0.23.9'
+$fromVersion = '0.23.9'
+$toVersion = '0.23.10'
 
 if (-not (Test-Path 'artisan')) {
     throw 'Run this script from the KaevCMS project root.'
@@ -26,42 +26,40 @@ if ($cmsVersion -ne $toVersion) {
 }
 
 $requiredFiles = @(
+    '.github\workflows\quality.yml',
     'CHANGELOG.md',
     'README.md',
     'VERSION',
     'update.ps1',
-    'phpunit.xml',
-    'scripts\release-update-support.ps1',
-    'app\Console\Commands\ReleaseVersionCommand.php',
-    'app\Console\Commands\MaintenanceStatusCommand.php',
-    'app\Services\Releases\InstalledVersion.php',
-    'app\Jobs\Mail\SendUserMailNotification.php',
-    'app\Console\Commands\DrainDatabaseQueueCommand.php',
-    'app\Console\Commands\CleanupQueueDataCommand.php',
-    'app\Auth\AdminAccessPolicy.php',
-    'app\Http\Controllers\Admin\MailSettingsController.php',
-    'app\Models\FailedJob.php',
-    'app\Providers\AppServiceProvider.php',
-    'app\Services\MailSettings.php',
-    'app\Services\SystemInformation.php',
+    'quality.ps1',
+    'browser-quality.ps1',
+    'doctor.ps1',
     'config\cms.php',
+    'routes\public.php',
     'routes\admin.php',
-    'routes\console.php',
+    'app\Auth\AdminAccessPolicy.php',
+    'app\Http\Controllers\Admin\DashboardController.php',
+    'app\Providers\AppServiceProvider.php',
+    'app\Services\SystemInformation.php',
+    'app\Services\Security\EncryptionHealth.php',
+    'app\Console\Commands\EncryptionHealthCommand.php',
+    'resources\views\admin\settings\system.blade.php',
     'lang\ru.json',
     'lang\en.json',
-    'public\assets\admin\css\app.css',
-    'resources\views\admin\dashboard.blade.php',
-    'resources\views\admin\settings\_system_tabs.blade.php',
-    'resources\views\admin\settings\system.blade.php',
-    'app\Http\Controllers\Admin\QueueOperationsController.php',
-    'app\Services\Infrastructure\QueueMaintenance.php',
-    'app\Services\Infrastructure\RuntimeDiagnostics.php',
-    'resources\views\admin\settings\queue.blade.php',
-    'public\assets\admin\js\queue.js',
-    'tests\Feature\Admin\QueueInfrastructureTest.php',
-    'tests\Feature\ReleaseInstalledVersionTest.php',
+    'tests\Feature\Auth\PublicUserAuthenticationTest.php',
+    'tests\Feature\Admin\EncryptionHealthTest.php',
+    'tests\Feature\Admin\AdminPanelTest.php',
+    'tests\Feature\Admin\AdminPathSettingsTest.php',
+    'tests\Feature\Admin\SystemSettingsTest.php',
+    'tests\Feature\CoreStabilizationTest.php',
     'tests\Feature\ReleaseMetadataTest.php',
-    'tests\powershell\update-workflow.ps1'
+    'tests\browser\specs\admin-navigation.spec.mjs',
+    'tests\powershell\update-workflow.ps1',
+    'docs\ADMIN_PANEL.md',
+    'docs\SECURITY.md',
+    'docs\SYSTEM.md',
+    'docs\ROADMAP.md',
+    'docs\development\QUALITY.md'
 )
 foreach ($requiredFile in $requiredFiles) {
     if (-not (Test-Path $requiredFile -PathType Leaf)) {

@@ -396,7 +396,7 @@ class AdminPanelTest extends TestCase
         }
     }
 
-    public function test_old_dashboard_address_redirects_to_admin_root(): void
+    public function test_old_dashboard_address_is_not_registered(): void
     {
         $admin = Admin::query()->create([
             'name' => 'Main Admin',
@@ -407,6 +407,6 @@ class AdminPanelTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->get('/admin/dashboard')
-            ->assertRedirect('/admin');
+            ->assertNotFound();
     }
 }

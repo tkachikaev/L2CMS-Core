@@ -37,7 +37,6 @@ All examples below use the default `/admin` prefix. A configured suffix replaces
 - `/admin/administrators` — administrator account management.
 - `/admin/logs` — human-readable audit log with categories and event details.
 - `/admin/login` — administrator authentication.
-- `/admin/dashboard` — compatibility redirect to the current panel root.
 
 ## Navigation
 
@@ -54,7 +53,7 @@ Current navigation structure:
 - **Audit log** — administrator and system activity.
 - **Modules** — reserved disabled entry until the module loader is implemented.
 
-Settings use a local tab bar so closely related pages stay together without crowding the sidebar. The **Administrator panel** tab contains the configurable panel path and server-monitoring interval. **System information** is read-only diagnostics. Existing legacy update endpoints under `/admin/settings/system/*` remain accepted for compatibility, while current forms use `/admin/settings/admin-panel/*`. Mail templates retain their own local tab bar because they belong to one mail module.
+Settings use a local tab bar so closely related pages stay together without crowding the sidebar. The **Administrator panel** tab contains the configurable panel path and server-monitoring interval. **System information** is read-only diagnostics. Legacy update endpoints under `/admin/settings/system/*` and `/admin/dashboard` were removed in 0.23.10. Current forms and integrations must use `/admin/settings/admin-panel/*` and the panel root. Mail templates retain their own local tab bar because they belong to one mail module.
 
 ## Administrative visual system
 

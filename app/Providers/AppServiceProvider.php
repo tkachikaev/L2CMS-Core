@@ -25,6 +25,7 @@ use App\Services\Pages\PageHtmlSanitizer;
 use App\Services\Pages\PageImageStorage;
 use App\Services\Pages\PageNavigation;
 use App\Services\RegistrationSettings;
+use App\Services\Security\EncryptionHealth;
 use App\Services\SecurityLogMaintenance;
 use App\Services\SecuritySettings;
 use App\Services\Servers\ServerMonitorSettings;
@@ -40,6 +41,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
@@ -68,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PageImageStorage::class);
         $this->app->singleton(PageNavigation::class);
         $this->app->singleton(RegistrationSettings::class);
+        $this->app->singleton(EncryptionHealth::class);
         $this->app->singleton(SecurityLogMaintenance::class);
         $this->app->singleton(SecuritySettings::class);
         $this->app->singleton(ServerMonitorSettings::class);
@@ -144,6 +147,54 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiters(SecuritySettings $securitySettings): void
     {
+        RateLimiter::for('public-login', static function (Request $request): array {
+            $ip = hash('sha256', $request->ip() ?? 'unknown');
+            $identity = hash('sha256', Str::lower(trim((string) $request->input('login', 'unknown'))));
+
+            return [
+                Limit::perMinute(max(1, (int) config('cms.public_auth.login_ip_per_minute', 10)))
+                    ->by('public-login-ip:'.$ip),
+                Limit::perHour(max(1, (int) config('cms.public_auth.login_identity_per_hour', 20)))
+                    ->by('public-login-identity:'.$identity),
+            ];
+        });
+
+        RateLimiter::for('public-registration', static function (Request $request): array {
+            $ip = hash('sha256', $request->ip() ?? 'unknown');
+            $identity = hash('sha256', Str::lower(trim((string) $request->input('email', 'unknown'))));
+
+            return [
+                Limit::perMinute(max(1, (int) config('cms.public_auth.registration_ip_per_minute', 5)))
+                    ->by('public-registration-ip:'.$ip),
+                Limit::perHour(max(1, (int) config('cms.public_auth.registration_identity_per_hour', 5)))
+                    ->by('public-registration-identity:'.$identity),
+            ];
+        });
+
+        RateLimiter::for('public-password-email', static function (Request $request): array {
+            $ip = hash('sha256', $request->ip() ?? 'unknown');
+            $identity = hash('sha256', Str::lower(trim((string) $request->input('email', 'unknown'))));
+
+            return [
+                Limit::perMinute(max(1, (int) config('cms.public_auth.password_email_ip_per_minute', 5)))
+                    ->by('public-password-email-ip:'.$ip),
+                Limit::perHour(max(1, (int) config('cms.public_auth.password_email_identity_per_hour', 3)))
+                    ->by('public-password-email-identity:'.$identity),
+            ];
+        });
+
+        RateLimiter::for('public-password-reset', static function (Request $request): array {
+            $ip = hash('sha256', $request->ip() ?? 'unknown');
+            $identity = hash('sha256', Str::lower(trim((string) $request->input('email', 'unknown'))));
+
+            return [
+                Limit::perMinute(max(1, (int) config('cms.public_auth.password_reset_ip_per_minute', 5)))
+                    ->by('public-password-reset-ip:'.$ip),
+                Limit::perHour(max(1, (int) config('cms.public_auth.password_reset_identity_per_hour', 5)))
+                    ->by('public-password-reset-identity:'.$identity),
+            ];
+        });
+
         RateLimiter::for('admin-login-ip', static function (Request $request) use ($securitySettings): array {
             $ip = $request->ip() ?? 'unknown';
             $key = 'admin-login-ip:'.hash('sha256', $ip);

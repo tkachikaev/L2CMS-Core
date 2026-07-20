@@ -138,6 +138,124 @@ class PublicUserAuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_public_login_is_limited_by_ip(): void
+    {
+        config()->set('cms.public_auth.login_ip_per_minute', 2);
+        config()->set('cms.public_auth.login_identity_per_hour', 20);
+
+        foreach (range(1, 2) as $attempt) {
+            $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.41'])
+                ->post('/login', [
+                    'login' => 'PLAYER@example.com',
+                    'password' => 'WrongPassword123',
+                ])
+                ->assertSessionHasErrors('login');
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.41'])
+            ->post('/login', [
+                'login' => 'player@example.com',
+                'password' => 'WrongPassword123',
+            ])
+            ->assertStatus(429);
+    }
+
+    public function test_public_login_is_limited_by_normalized_identity_across_ip_addresses(): void
+    {
+        config()->set('cms.public_auth.login_ip_per_minute', 20);
+        config()->set('cms.public_auth.login_identity_per_hour', 2);
+
+        foreach (['203.0.113.42', '203.0.113.43'] as $ip) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->post('/login', [
+                    'login' => 'PLAYER@example.com',
+                    'password' => 'WrongPassword123',
+                ])
+                ->assertSessionHasErrors('login');
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.44'])
+            ->post('/login', [
+                'login' => 'player@example.com',
+                'password' => 'WrongPassword123',
+            ])
+            ->assertStatus(429);
+    }
+
+    public function test_registration_is_limited_by_normalized_email_across_ip_addresses(): void
+    {
+        app(RegistrationSettings::class)->update(true, false);
+        config()->set('cms.public_auth.registration_ip_per_minute', 20);
+        config()->set('cms.public_auth.registration_identity_per_hour', 2);
+
+        foreach (['203.0.113.45', '203.0.113.46'] as $ip) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->post('/register', [
+                    'name' => 'player',
+                    'email' => 'PLAYER@example.com',
+                    'password' => 'weak',
+                    'password_confirmation' => 'different',
+                ])
+                ->assertSessionHasErrors('password');
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.47'])
+            ->post('/register', [
+                'name' => 'player',
+                'email' => 'player@example.com',
+                'password' => 'weak',
+                'password_confirmation' => 'different',
+            ])
+            ->assertStatus(429);
+    }
+
+    public function test_password_reset_requests_are_limited_per_email_across_ip_addresses(): void
+    {
+        Notification::fake();
+        $this->configureReadyMail();
+        config()->set('cms.public_auth.password_email_ip_per_minute', 20);
+        config()->set('cms.public_auth.password_email_identity_per_hour', 2);
+
+        foreach (['203.0.113.51', '203.0.113.52'] as $ip) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->post('/forgot-password', ['email' => 'UNKNOWN@example.com'])
+                ->assertSessionHas('status');
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.53'])
+            ->post('/forgot-password', ['email' => 'unknown@example.com'])
+            ->assertStatus(429);
+    }
+
+    public function test_password_reset_submission_is_limited_per_email_even_when_tokens_change(): void
+    {
+        config()->set('cms.public_auth.password_reset_ip_per_minute', 20);
+        config()->set('cms.public_auth.password_reset_identity_per_hour', 2);
+
+        foreach ([
+            ['203.0.113.61', 'invalid-token-one'],
+            ['203.0.113.62', 'invalid-token-two'],
+        ] as [$ip, $token]) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->post('/reset-password', [
+                    'token' => $token,
+                    'email' => 'PLAYER@example.com',
+                    'password' => 'NewPassword123',
+                    'password_confirmation' => 'NewPassword123',
+                ])
+                ->assertSessionHasErrors('email');
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.63'])
+            ->post('/reset-password', [
+                'token' => 'invalid-token-three',
+                'email' => 'player@example.com',
+                'password' => 'NewPassword123',
+                'password_confirmation' => 'NewPassword123',
+            ])
+            ->assertStatus(429);
+    }
+
     public function test_reset_form_rejects_invalid_token_before_password_is_entered(): void
     {
         $user = User::query()->create([

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Services\Infrastructure\RuntimeDiagnostics;
+use App\Services\Security\EncryptionHealth;
 use App\Support\KaevCMS;
 use App\Support\PasswordHashing;
 use App\Support\TrustedProxyConfiguration;
@@ -19,6 +20,7 @@ final class SystemInformation
         private readonly DatabaseManager $database,
         private readonly MailSettings $mailSettings,
         private readonly RuntimeDiagnostics $runtimeDiagnostics,
+        private readonly EncryptionHealth $encryptionHealth,
     ) {}
 
     /**
@@ -30,7 +32,8 @@ final class SystemInformation
         $proxy = $this->proxyInformation();
         $extensions = $this->extensionInformation();
         $runtime = $this->runtimeDiagnostics->overview();
-        $components = $this->componentInformation($database, $proxy, $runtime);
+        $encryption = $this->encryptionHealth->inspect();
+        $components = $this->componentInformation($database, $proxy, $runtime, $encryption);
 
         $information = [
             'cms' => [
@@ -55,7 +58,10 @@ final class SystemInformation
                 'mail' => (string) config('mail.default'),
                 'logging' => (string) config('logging.default'),
             ],
-            'security' => $this->passwordHashInformation(),
+            'security' => [
+                ...$this->passwordHashInformation(),
+                'encryption' => $encryption,
+            ],
             'database' => $database,
             'proxy' => $proxy,
             'runtime' => $runtime,
@@ -233,9 +239,10 @@ final class SystemInformation
      *     queue: array{state: string, status: string, details: string},
      *     scheduler: array{state: string, status: string, details: string}
      * }  $runtime
+     * @param  array{state: string, status: string, details: string}  $encryption
      * @return array<int, array{label: string, state: string, status: string, details: string}>
      */
-    private function componentInformation(array $database, array $proxy, array $runtime): array
+    private function componentInformation(array $database, array $proxy, array $runtime, array $encryption): array
     {
         $components = [];
 
@@ -310,6 +317,13 @@ final class SystemInformation
                 'details' => __('Could not read mail settings'),
             ];
         }
+
+        $components[] = [
+            'label' => __('Encrypted secrets'),
+            'state' => $encryption['state'],
+            'status' => $encryption['status'],
+            'details' => $encryption['details'],
+        ];
 
         $components[] = [
             'label' => __('Queues'),
@@ -515,6 +529,8 @@ final class SystemInformation
             __('Architecture: :value', ['value' => $software['architecture']]),
             __('PHP SAPI: :value', ['value' => $software['sapi']]),
             __('Password hash: :value', ['value' => $security['label']]),
+            __('Encrypted secrets: :value', ['value' => $security['encryption']['status']]),
+            __('Unavailable encrypted values: :value', ['value' => $security['encryption']['invalid_values_total']]),
             __('Database: :value', ['value' => $database['driver_label'].($database['version'] ? ' '.$database['version'] : '')]),
             __('Database connection: :value', ['value' => $database['connected'] ? 'OK' : 'ERROR']),
             ...($database['driver'] === 'sqlite' ? [

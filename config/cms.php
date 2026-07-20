@@ -46,6 +46,17 @@ return [
         'email_verification_required' => (bool) env('REGISTRATION_EMAIL_VERIFICATION', true),
     ],
 
+    'public_auth' => [
+        'login_ip_per_minute' => 10,
+        'login_identity_per_hour' => 20,
+        'registration_ip_per_minute' => 5,
+        'registration_identity_per_hour' => 5,
+        'password_email_ip_per_minute' => 5,
+        'password_email_identity_per_hour' => 3,
+        'password_reset_ip_per_minute' => 5,
+        'password_reset_identity_per_hour' => 5,
+    ],
+
     'admin' => [
         'login_max_attempts' => (int) env('ADMIN_LOGIN_MAX_ATTEMPTS', 5),
         'login_decay_seconds' => (int) env('ADMIN_LOGIN_DECAY_SECONDS', 60),

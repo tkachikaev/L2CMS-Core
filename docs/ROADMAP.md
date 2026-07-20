@@ -44,6 +44,9 @@
 - [x] ожидание блокировки и диагностика SQLite
 - [x] heartbeat Laravel Scheduler и очередей
 - [x] показатели `jobs` и `failed_jobs` на административном дашборде без дублирования отдельной почтовой карточки
+- [x] управление всеми database-очередями, retention и безопасный повтор failed jobs
+- [x] dependency audit Composer/npm и проверка APP_KEY-зависимых секретов
+- [x] усиленный rate limit публичной авторизации и удаление legacy admin-маршрутов
 
 ## Система модулей
 
