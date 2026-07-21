@@ -107,6 +107,6 @@ routes/admin.php
 
 Public and account route names and URLs remain compatible. Administrative routes use an internal `{adminPath}` prefix checked by `EnsureAdminPath`. The middleware removes this infrastructure parameter before controller dispatch so it cannot replace real parameters such as a theme slug or model identifier.
 
-## Reward deliveries
+## Reward queue
 
-Owners and administrators can inspect the read-only reward-delivery journal. Editors have no access. The journal exposes safe operation states and failure codes without database credentials or exception messages. Unknown delivery outcomes are marked for review and keep their inventory rows reserved instead of making them available for a potentially duplicated transfer.
+Owners and administrators can inspect the read-only reward-queue journal. Editors have no access. The journal shows whether KaevCMS confirmed writing the requested rows to `kaev_reward_queue`; actual item delivery remains under the GameServer administrator’s control. Unknown write outcomes are marked for review and keep inventory rows reserved.

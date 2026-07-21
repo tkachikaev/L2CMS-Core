@@ -3,25 +3,22 @@
 namespace Tests\Feature\Rewards;
 
 use App\Contracts\GameAccountGateway;
-use App\Contracts\GameRewardDeliveryGateway;
+use App\Contracts\GameRewardQueueGateway;
 use App\Exceptions\GameServerHasRewardData;
-use App\Jobs\ConfirmRewardDelivery;
-use App\Jobs\ProcessRewardDelivery;
 use App\Models\GameServer;
 use App\Models\RewardDelivery;
 use App\Models\RewardInventoryItem;
 use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\GameServerSettings;
-use App\Services\Rewards\RewardDeliveryProcessor;
 use App\Services\Rewards\RewardInventoryService;
 use App\Support\Rewards\RewardGrantItem;
+use App\Support\Rewards\RewardQueueWriteResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Queue;
 use Tests\Concerns\InteractsWithServerFixtures;
 use Tests\Fakes\FakeGameAccountGateway;
-use Tests\Fakes\FakeGameRewardDeliveryGateway;
+use Tests\Fakes\FakeGameRewardQueueGateway;
 use Tests\TestCase;
 
 class WebInventoryTest extends TestCase
@@ -31,7 +28,7 @@ class WebInventoryTest extends TestCase
 
     private FakeGameAccountGateway $gameAccounts;
 
-    private FakeGameRewardDeliveryGateway $deliveryGateway;
+    private FakeGameRewardQueueGateway $rewardQueue;
 
     protected function setUp(): void
     {
@@ -39,20 +36,9 @@ class WebInventoryTest extends TestCase
 
         Cache::flush();
         $this->gameAccounts = new FakeGameAccountGateway;
-        $this->deliveryGateway = new FakeGameRewardDeliveryGateway;
+        $this->rewardQueue = new FakeGameRewardQueueGateway;
         $this->app->instance(GameAccountGateway::class, $this->gameAccounts);
-        $this->app->instance(GameRewardDeliveryGateway::class, $this->deliveryGateway);
-    }
-
-    public function test_reward_jobs_use_durable_database_queue(): void
-    {
-        $process = new ProcessRewardDelivery(1);
-        $confirm = new ConfirmRewardDelivery(1);
-
-        $this->assertSame('database', $process->connection);
-        $this->assertSame('rewards', $process->queue);
-        $this->assertSame('database', $confirm->connection);
-        $this->assertSame('rewards', $confirm->queue);
+        $this->app->instance(GameRewardQueueGateway::class, $this->rewardQueue);
     }
 
     public function test_grants_are_idempotent_and_separated_by_server(): void
@@ -114,11 +100,6 @@ class WebInventoryTest extends TestCase
             $this->fail('A GameServer with reward data must not be deleted.');
         } catch (GameServerHasRewardData) {
             $this->assertDatabaseHas('game_servers', ['id' => $server->id]);
-            $this->assertDatabaseHas('reward_inventory_items', [
-                'user_id' => $user->id,
-                'game_server_id' => $server->id,
-                'status' => RewardInventoryItem::STATUS_AVAILABLE,
-            ]);
         }
     }
 
@@ -139,9 +120,139 @@ class WebInventoryTest extends TestCase
             ->assertSee('Веб-инвентарь');
     }
 
-    public function test_transfer_reserves_items_and_dispatches_one_idempotent_operation(): void
+    public function test_missing_gameserver_queue_disables_transfer_with_clear_message(): void
     {
-        Queue::fake();
+        $this->rewardQueue->supported = false;
+        $this->rewardQueue->unsupportedReason = 'reward_queue_not_installed';
+        [$user, $server] = $this->userWithCharacter();
+        app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'queue-missing:1',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+
+        $this->actingAs($user)
+            ->get('/account/web-inventory')
+            ->assertOk()
+            ->assertSee(__('The kaev_reward_queue table is not installed in this GameServer database.'));
+    }
+
+    public function test_transfer_writes_one_idempotent_queue_payload_and_allows_online_character(): void
+    {
+        [$user, $server, $account] = $this->userWithCharacter(online: true);
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'promo:activation:200',
+            sourceType: 'promo_code',
+            items: [
+                new RewardGrantItem(57, 1000000, 'Adena'),
+                new RewardGrantItem(4037, 10, 'Coin of Luck'),
+            ],
+        );
+        $token = '7d533cac-9e67-4a4d-884f-4f18c18498b5';
+        $payload = [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $grant->items->modelKeys(),
+            'request_token' => $token,
+        ];
+
+        $this->actingAs($user)->post('/account/web-inventory/transfers', $payload)->assertRedirect();
+        $this->actingAs($user)->post('/account/web-inventory/transfers', $payload)->assertRedirect();
+
+        $delivery = RewardDelivery::query()->with('items')->firstOrFail();
+        $this->assertDatabaseCount('reward_deliveries', 1);
+        $this->assertSame(RewardDelivery::STATUS_QUEUED, $delivery->status);
+        $this->assertSame($account->id, $delivery->user_game_account_id);
+        $this->assertSame(2, RewardInventoryItem::query()->where('status', RewardInventoryItem::STATUS_TRANSFERRED)->count());
+        $this->assertCount(1, $this->rewardQueue->payloads);
+        $this->assertSame($delivery->operation_uuid, $this->rewardQueue->payloads[0]->requestUuid);
+        $this->assertSame($server->id, $this->rewardQueue->payloads[0]->gameServerId);
+        $this->assertSame('RewardPlayer', $this->rewardQueue->payloads[0]->accountName);
+        $this->assertSame(9001, $this->rewardQueue->payloads[0]->characterId);
+        $this->assertSame([
+            ['item_id' => 57, 'amount' => 1000000],
+            ['item_id' => 4037, 'amount' => 10],
+        ], $this->rewardQueue->payloads[0]->items);
+    }
+
+    public function test_confirmed_queue_failure_returns_rewards_to_inventory(): void
+    {
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_FAILED;
+        $this->rewardQueue->failureCode = 'reward_queue_write_failed';
+        [$user, $server] = $this->userWithCharacter();
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'queue-failure:1',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+
+        $this->actingAs($user)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $grant->items->modelKeys(),
+            'request_token' => '2f21d884-9eb0-4e4d-a5a8-d3f0040940b8',
+        ])->assertSessionHasErrors('inventory');
+
+        $this->assertSame(RewardDelivery::STATUS_FAILED, RewardDelivery::query()->firstOrFail()->status);
+        $this->assertSame(RewardInventoryItem::STATUS_AVAILABLE, $grant->items->first()->fresh()->status);
+    }
+
+    public function test_unknown_queue_write_keeps_rewards_reserved_for_review(): void
+    {
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_UNKNOWN;
+        [$user, $server] = $this->userWithCharacter();
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'queue-unknown:1',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+
+        $this->actingAs($user)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $grant->items->modelKeys(),
+            'request_token' => '520dcbdf-7cbc-460e-8fde-3f24744abec0',
+        ])->assertRedirect();
+
+        $this->assertSame(RewardDelivery::STATUS_REVIEW, RewardDelivery::query()->firstOrFail()->status);
+        $this->assertSame(RewardInventoryItem::STATUS_RESERVED, $grant->items->first()->fresh()->status);
+    }
+
+    public function test_user_cannot_transfer_another_users_reward_or_character(): void
+    {
+        $owner = User::factory()->create();
+        [$attacker, $server] = $this->userWithCharacter();
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $owner,
+            server: $server,
+            grantKey: 'gift:owner:1',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 100, 'Adena')],
+        );
+
+        $this->actingAs($attacker)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => [$grant->items->first()->id],
+            'request_token' => 'f73f998c-40ff-4b03-a02c-688654c5db04',
+        ])->assertSessionHasErrors('inventory');
+
+        $this->assertDatabaseCount('reward_deliveries', 0);
+        $this->assertSame(RewardInventoryItem::STATUS_AVAILABLE, $grant->items->first()->fresh()->status);
+        $this->assertCount(0, $this->rewardQueue->payloads);
+    }
+
+    /** @return array{User,GameServer,UserGameAccount} */
+    private function userWithCharacter(bool $online = false): array
+    {
         $user = User::factory()->create();
         [, $server] = $this->freshMobiusServerPair();
         $account = UserGameAccount::factory()->for($user)->registeredOn($server)->create([
@@ -156,251 +267,18 @@ class WebInventoryTest extends TestCase
             'race' => 1,
             'gender' => 1,
             'title' => null,
-            'online' => false,
+            'online' => $online,
             'clan' => null,
             'last_access' => 0,
             'play_time_seconds' => 0,
             'pvp_kills' => 0,
             'pk_kills' => 0,
-            'karma' => 0,
+            'reputation' => 0,
             'noble' => false,
             'hero' => false,
             'created_at' => null,
         ]];
-        $grant = app(RewardInventoryService::class)->grant(
-            user: $user,
-            server: $server,
-            grantKey: 'promo:activation:200',
-            sourceType: 'promo_code',
-            items: [
-                new RewardGrantItem(57, 1000000, 'Adena'),
-                new RewardGrantItem(4037, 10, 'Coin of Luck'),
-            ],
-        );
-        $itemIds = $grant->items->modelKeys();
-        $token = '7d533cac-9e67-4a4d-884f-4f18c18498b5';
 
-        $payload = [
-            'game_server_id' => $server->id,
-            'character_id' => 9001,
-            'inventory_item_ids' => $itemIds,
-            'request_token' => $token,
-        ];
-
-        $this->actingAs($user)->post('/account/web-inventory/transfers', $payload)->assertRedirect();
-        $this->actingAs($user)->post('/account/web-inventory/transfers', $payload)->assertRedirect();
-
-        $this->assertDatabaseCount('reward_deliveries', 1);
-        $this->assertDatabaseHas('reward_deliveries', [
-            'request_token' => $token,
-            'user_id' => $user->id,
-            'game_server_id' => $server->id,
-            'user_game_account_id' => $account->id,
-            'character_id' => 9001,
-            'status' => RewardDelivery::STATUS_PENDING,
-        ]);
-        $this->assertSame(2, RewardInventoryItem::query()->where('status', RewardInventoryItem::STATUS_RESERVED)->count());
-        Queue::assertPushed(ProcessRewardDelivery::class, 1);
-    }
-
-    public function test_successful_processing_delivers_items_once(): void
-    {
-        Queue::fake();
-        [$user, $server, $delivery] = $this->preparedDelivery();
-
-        app(RewardDeliveryProcessor::class)->process($delivery->id);
-        app(RewardDeliveryProcessor::class)->process($delivery->id);
-
-        $this->assertSame(RewardDelivery::STATUS_DELIVERED, $delivery->fresh()->status);
-        $this->assertSame(RewardInventoryItem::STATUS_DELIVERED, $delivery->items->first()->inventoryItem->fresh()->status);
-        $this->assertCount(1, $this->deliveryGateway->payloads);
-        $this->assertSame($user->id, $delivery->user_id);
-        $this->assertSame($server->id, $delivery->game_server_id);
-    }
-
-    public function test_failed_processing_returns_items_to_inventory(): void
-    {
-        Queue::fake();
-        $this->deliveryGateway->deliverSuccessfully = false;
-        [, , $delivery] = $this->preparedDelivery();
-
-        app(RewardDeliveryProcessor::class)->process($delivery->id);
-
-        $this->assertSame(RewardDelivery::STATUS_FAILED, $delivery->fresh()->status);
-        $this->assertSame('fake_delivery_failed', $delivery->fresh()->failure_code);
-        $this->assertSame(RewardInventoryItem::STATUS_AVAILABLE, $delivery->items->first()->inventoryItem->fresh()->status);
-    }
-
-    public function test_unknown_enqueue_outcome_keeps_items_reserved_and_requests_confirmation(): void
-    {
-        Queue::fake();
-        $this->deliveryGateway->throwDuringDelivery = true;
-        [, , $delivery] = $this->preparedDelivery();
-
-        app(RewardDeliveryProcessor::class)->process($delivery->id);
-
-        $this->assertSame(RewardDelivery::STATUS_PROCESSING, $delivery->fresh()->status);
-        $this->assertSame(RewardInventoryItem::STATUS_RESERVED, $delivery->items->first()->inventoryItem->fresh()->status);
-        Queue::assertPushed(ConfirmRewardDelivery::class, 1);
-    }
-
-    public function test_unknown_initial_bridge_result_requires_review_without_returning_items(): void
-    {
-        Queue::fake();
-        $this->deliveryGateway->deliverUnknown = true;
-        [, , $delivery] = $this->preparedDelivery();
-
-        app(RewardDeliveryProcessor::class)->process($delivery->id);
-
-        $this->assertSame(RewardDelivery::STATUS_REVIEW, $delivery->fresh()->status);
-        $this->assertSame('fake_delivery_unknown', $delivery->fresh()->failure_code);
-        $this->assertSame(RewardInventoryItem::STATUS_RESERVED, $delivery->items->first()->inventoryItem->fresh()->status);
-        Queue::assertNotPushed(ConfirmRewardDelivery::class);
-    }
-
-    public function test_pending_bridge_delivery_is_confirmed_without_duplicate_enqueue(): void
-    {
-        Queue::fake();
-        $this->deliveryGateway->deliverPending = true;
-        [, , $delivery] = $this->preparedDelivery();
-
-        $processor = app(RewardDeliveryProcessor::class);
-        $processor->process($delivery->id);
-
-        $this->assertSame(RewardDelivery::STATUS_PROCESSING, $delivery->fresh()->status);
-        $this->assertCount(1, $this->deliveryGateway->payloads);
-        Queue::assertPushed(ConfirmRewardDelivery::class, 1);
-
-        $this->assertTrue($processor->confirm($delivery->id));
-        $this->assertSame(RewardDelivery::STATUS_DELIVERED, $delivery->fresh()->status);
-        $this->assertSame(RewardInventoryItem::STATUS_DELIVERED, $delivery->items->first()->inventoryItem->fresh()->status);
-        $this->assertCount(1, $this->deliveryGateway->payloads);
-        $this->assertSame(1, $this->deliveryGateway->statusCalls);
-    }
-
-    public function test_confirmed_bridge_failure_returns_items_to_inventory(): void
-    {
-        Queue::fake();
-        $this->deliveryGateway->deliverPending = true;
-        $this->deliveryGateway->statusOutcome = 'failed';
-        $this->deliveryGateway->statusFailureCode = 'item_not_found';
-        [, , $delivery] = $this->preparedDelivery();
-
-        $processor = app(RewardDeliveryProcessor::class);
-        $processor->process($delivery->id);
-        $this->assertTrue($processor->confirm($delivery->id));
-
-        $this->assertSame(RewardDelivery::STATUS_FAILED, $delivery->fresh()->status);
-        $this->assertSame('item_not_found', $delivery->fresh()->failure_code);
-        $this->assertSame(RewardInventoryItem::STATUS_AVAILABLE, $delivery->items->first()->inventoryItem->fresh()->status);
-    }
-
-    public function test_unknown_bridge_status_requires_review_without_returning_items(): void
-    {
-        Queue::fake();
-        $this->deliveryGateway->deliverPending = true;
-        $this->deliveryGateway->statusOutcome = 'unknown';
-        [, , $delivery] = $this->preparedDelivery();
-
-        $processor = app(RewardDeliveryProcessor::class);
-        $processor->process($delivery->id);
-        $this->assertTrue($processor->confirm($delivery->id));
-
-        $this->assertSame(RewardDelivery::STATUS_REVIEW, $delivery->fresh()->status);
-        $this->assertSame('fake_delivery_unknown', $delivery->fresh()->failure_code);
-        $this->assertSame(RewardInventoryItem::STATUS_RESERVED, $delivery->items->first()->inventoryItem->fresh()->status);
-    }
-
-    public function test_user_cannot_transfer_another_users_reward_or_character(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $attacker = User::factory()->create();
-        [, $server] = $this->freshMobiusServerPair();
-        UserGameAccount::factory()->for($attacker)->registeredOn($server)->create();
-        $this->gameAccounts->charactersByServer[$server->id] = [[
-            'id' => 777,
-            'name' => 'AttackerCharacter',
-            'level' => 1,
-            'class_id' => 0,
-            'race' => 0,
-            'gender' => 0,
-            'title' => null,
-            'online' => false,
-            'clan' => null,
-            'last_access' => 0,
-            'play_time_seconds' => 0,
-            'pvp_kills' => 0,
-            'pk_kills' => 0,
-            'karma' => 0,
-            'noble' => false,
-            'hero' => false,
-            'created_at' => null,
-        ]];
-        $grant = app(RewardInventoryService::class)->grant(
-            user: $owner,
-            server: $server,
-            grantKey: 'gift:owner:1',
-            sourceType: 'admin_gift',
-            items: [new RewardGrantItem(57, 100, 'Adena')],
-        );
-
-        $this->actingAs($attacker)->post('/account/web-inventory/transfers', [
-            'game_server_id' => $server->id,
-            'character_id' => 777,
-            'inventory_item_ids' => [$grant->items->first()->id],
-            'request_token' => 'f73f998c-40ff-4b03-a02c-688654c5db04',
-        ])->assertSessionHasErrors('inventory');
-
-        $this->assertDatabaseCount('reward_deliveries', 0);
-        $this->assertSame(RewardInventoryItem::STATUS_AVAILABLE, $grant->items->first()->fresh()->status);
-    }
-
-    /** @return array{User,GameServer,RewardDelivery} */
-    private function preparedDelivery(): array
-    {
-        $user = User::factory()->create();
-        [, $server] = $this->freshMobiusServerPair();
-        UserGameAccount::factory()->for($user)->registeredOn($server)->create([
-            'game_login' => 'DeliveryPlayer',
-            'normalized_login' => 'deliveryplayer',
-        ]);
-        $this->gameAccounts->charactersByServer[$server->id] = [[
-            'id' => 500,
-            'name' => 'DeliveryCharacter',
-            'level' => 80,
-            'class_id' => 0,
-            'race' => 0,
-            'gender' => 0,
-            'title' => null,
-            'online' => false,
-            'clan' => null,
-            'last_access' => 0,
-            'play_time_seconds' => 0,
-            'pvp_kills' => 0,
-            'pk_kills' => 0,
-            'karma' => 0,
-            'noble' => false,
-            'hero' => false,
-            'created_at' => null,
-        ]];
-        $grant = app(RewardInventoryService::class)->grant(
-            user: $user,
-            server: $server,
-            grantKey: 'promo:activation:500',
-            sourceType: 'promo_code',
-            items: [new RewardGrantItem(57, 5000, 'Adena')],
-        );
-
-        $this->actingAs($user)->post('/account/web-inventory/transfers', [
-            'game_server_id' => $server->id,
-            'character_id' => 500,
-            'inventory_item_ids' => $grant->items->modelKeys(),
-            'request_token' => 'b6b6d3bc-f924-4dbc-bc26-f324404f7f23',
-        ])->assertRedirect();
-
-        $delivery = RewardDelivery::query()->with('items.inventoryItem')->firstOrFail();
-
-        return [$user, $server, $delivery];
+        return [$user, $server, $account];
     }
 }

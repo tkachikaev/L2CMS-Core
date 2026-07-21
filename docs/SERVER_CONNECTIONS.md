@@ -59,7 +59,7 @@ Use LoginServer database connection
 
 Поддерживаемые драйверы:
 
-- `l2j_mobius_ct0_interlude` — рабочая проверка таблицы `characters` и дополнительных таблиц `account_gsdata`, `account_premium`;
+- `l2j_mobius_ct0_interlude` — единый рабочий драйвер L2J Mobius для legacy и modern схем; старый идентификатор сохранён для совместимости;
 - `rusacis` — заглушка до получения и анализа структуры базы RUSaCis.
 
 ## Проверка подключения
@@ -77,7 +77,7 @@ Use LoginServer database connection
 
 Для современного Mobius LoginServer (`l2j_mobius`) обязательна таблица `accounts`. `account_data` и `accounts_ipauth` отмечаются как дополнительные таблицы. Legacy-драйвер (`l2j_mobius_legacy`) для C1/C4 проверяет только `accounts` и не требует присутствия остальных таблиц.
 
-Для Mobius CT0 Interlude GameServer обязательна таблица `characters`, включая колонку даты создания персонажа `createDate`. `account_gsdata` и `account_premium` считаются дополнительными.
+Для L2J Mobius GameServer обязательны `characters` и `clan_data`. В `characters` должна присутствовать `createDate` и хотя бы одна из колонок `karma` или `reputation`. `heroes` и `castle` необязательны и включают только соответствующие функции. `account_gsdata` и `account_premium` текущими запросами CMS не используются и не проверяются.
 
 Имя колонки даты не зашито в шаблон кабинета. Реестр драйверов сопоставляет колонку конкретной сборки с единым полем `created_at`: Mobius использует `createDate`, а будущий драйвер сможет указать, например, `DateCreate` или другое фактическое имя.
 

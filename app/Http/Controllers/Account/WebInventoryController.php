@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Account;
 
-use App\Contracts\GameRewardDeliveryGateway;
+use App\Contracts\GameRewardQueueGateway;
 use App\Http\Controllers\Controller;
 use App\Models\GameServer;
 use App\Models\RewardDelivery;
 use App\Models\RewardInventoryItem;
 use App\Models\User;
+use App\Services\GameAssets\GameAssetUrlResolver;
 use App\Services\Rewards\RewardCharacterDirectory;
-use App\Support\Rewards\RewardDeliveryCapabilities;
+use App\Support\Rewards\RewardQueueCapabilities;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -19,8 +20,9 @@ class WebInventoryController extends Controller
 {
     public function __invoke(
         Request $request,
-        GameRewardDeliveryGateway $deliveryGateway,
+        GameRewardQueueGateway $rewardQueue,
         RewardCharacterDirectory $characters,
+        GameAssetUrlResolver $assets,
     ): View {
         $user = $request->user();
         if (! $user instanceof User) {
@@ -49,7 +51,8 @@ class WebInventoryController extends Controller
         $availableItems = collect();
         $deliveries = RewardDelivery::query()->whereRaw('1 = 0')->paginate(20);
         $characterRows = [];
-        $capabilities = RewardDeliveryCapabilities::unsupported();
+        $itemIconUrls = [];
+        $capabilities = RewardQueueCapabilities::unsupported('reward_queue_not_installed');
 
         if ($selectedServer instanceof GameServer) {
             $availableItems = RewardInventoryItem::query()
@@ -60,6 +63,10 @@ class WebInventoryController extends Controller
                 ->latest('id')
                 ->get();
 
+            foreach ($availableItems as $item) {
+                $itemIconUrls[$item->id] = $assets->itemIcon($selectedServer, $item->item_id);
+            }
+
             $deliveries = RewardDelivery::query()
                 ->with(['items', 'gameServer.translations'])
                 ->where('user_id', $user->id)
@@ -68,7 +75,7 @@ class WebInventoryController extends Controller
                 ->paginate(20)
                 ->withQueryString();
 
-            $capabilities = $deliveryGateway->capabilities($selectedServer);
+            $capabilities = $rewardQueue->capabilities($selectedServer);
             if ($capabilities->supported) {
                 $characterRows = $characters->forServer($user, $selectedServer);
             }
@@ -80,6 +87,7 @@ class WebInventoryController extends Controller
             'selectedServer' => $selectedServer,
             'activeView' => $activeView,
             'availableItems' => $availableItems,
+            'itemIconUrls' => $itemIconUrls,
             'deliveries' => $deliveries,
             'characters' => $characterRows,
             'capabilities' => $capabilities,
@@ -88,13 +96,12 @@ class WebInventoryController extends Controller
         ]);
     }
 
-    private function deliveryUnavailableMessage(RewardDeliveryCapabilities $capabilities): string
+    private function deliveryUnavailableMessage(RewardQueueCapabilities $capabilities): string
     {
         return match ($capabilities->reasonCode) {
-            'reward_bridge_not_installed' => __('Kaev Reward Bridge is not installed for this GameServer. Rewards remain safe in the web inventory.'),
-            'reward_bridge_protocol_mismatch' => __('The installed Kaev Reward Bridge version is incompatible with this KaevCMS release.'),
-            'reward_bridge_offline' => __('Kaev Reward Bridge is not responding. Start GameServer and check the bridge installation.'),
-            default => __('Rewards are safe in the web inventory, but automatic transfer is not supported by this GameServer driver yet.'),
+            'reward_queue_not_installed' => __('The kaev_reward_queue table is not installed in this GameServer database.'),
+            'reward_queue_schema_invalid' => __('The kaev_reward_queue table has an unsupported structure.'),
+            default => __('The GameServer reward queue is unavailable. Check the database connection.'),
         };
     }
 }

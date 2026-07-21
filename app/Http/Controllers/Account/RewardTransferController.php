@@ -6,6 +6,7 @@ use App\Exceptions\RewardTransferException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Account\TransferRewardsRequest;
 use App\Models\GameServer;
+use App\Models\RewardDelivery;
 use App\Models\User;
 use App\Services\Rewards\RewardTransferService;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +25,7 @@ class RewardTransferController extends Controller
         $server = GameServer::query()->findOrFail($request->integer('game_server_id'));
 
         try {
-            $transfers->queue(
+            $delivery = $transfers->queue(
                 user: $user,
                 server: $server,
                 inventoryItemIds: array_map('intval', (array) $request->validated('inventory_item_ids')),
@@ -37,11 +38,15 @@ class RewardTransferController extends Controller
                 ->withErrors(['inventory' => __($exception->messageKey())]);
         }
 
+        $message = $delivery->status === RewardDelivery::STATUS_REVIEW
+            ? __('The queue write result is uncertain. The rewards are locked for administrator review.')
+            : __('Rewards were transferred to the GameServer queue.');
+
         return redirect()
             ->to(public_route('web-inventory.index', [
                 'server' => $server->id,
                 'view' => 'history',
             ]))
-            ->with('status', __('Reward transfer queued.'));
+            ->with('status', $message);
     }
 }

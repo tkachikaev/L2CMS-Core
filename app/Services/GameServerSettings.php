@@ -8,6 +8,7 @@ use App\Models\GameServer;
 use App\Models\GameServerTranslation;
 use App\Models\UserGameAccount;
 use App\Services\Localization\LanguageManager;
+use App\Support\Modules\ModuleGameServerDependencyRegistry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -18,6 +19,7 @@ final class GameServerSettings
     public function __construct(
         private readonly LanguageManager $languages,
         private readonly GameServerDeletionImpact $deletionImpact,
+        private readonly ModuleGameServerDependencyRegistry $moduleDependencies,
     ) {}
 
     /**
@@ -199,7 +201,8 @@ final class GameServerSettings
 
             if ($lockedServer->rewardInventoryGrants()->exists()
                 || $lockedServer->rewardInventoryItems()->exists()
-                || $lockedServer->rewardDeliveries()->exists()) {
+                || $lockedServer->rewardDeliveries()->exists()
+                || $this->moduleDependencies->blocksDeletion($lockedServer)) {
                 throw new GameServerHasRewardData;
             }
 

@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\ExternalDatabaseConnectionTester;
 use App\Contracts\GameAccountGateway;
-use App\Contracts\GameRewardDeliveryGateway;
+use App\Contracts\GameRewardQueueGateway;
 use App\Contracts\GameServerAdapter;
 use App\Contracts\GameServerDatabaseGateway;
 use App\Contracts\GameServerOnlineCounter;
@@ -13,7 +13,7 @@ use App\Services\GameAccounts\ExternalGameAccountGateway;
 use App\Services\GameServer\MobiusGameServerAdapter;
 use App\Services\GameServer\MockGameServerAdapter;
 use App\Services\GameWorld\MySqlGameServerDatabase;
-use App\Services\Rewards\DriverGameRewardDeliveryGateway;
+use App\Services\Rewards\DatabaseGameRewardQueueGateway;
 use App\Services\Servers\MySqlExternalDatabaseConnectionTester;
 use App\Services\Servers\MySqlGameServerOnlineCounter;
 use App\Services\Servers\TcpServicePortProbe;
@@ -29,7 +29,7 @@ class GameServiceProvider extends ServiceProvider
         $this->app->singleton(ServicePortProbe::class, TcpServicePortProbe::class);
         $this->app->singleton(GameServerOnlineCounter::class, MySqlGameServerOnlineCounter::class);
         $this->app->singleton(GameServerDatabaseGateway::class, MySqlGameServerDatabase::class);
-        $this->app->singleton(GameRewardDeliveryGateway::class, DriverGameRewardDeliveryGateway::class);
+        $this->app->singleton(GameRewardQueueGateway::class, DatabaseGameRewardQueueGateway::class);
 
         $this->app->singleton(GameServerAdapter::class, function () {
             return match (config('game.adapter')) {

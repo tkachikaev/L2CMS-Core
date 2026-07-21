@@ -25,7 +25,7 @@ final class GameStatistics
 
     public function __construct(
         private readonly GameWorldDriverResolver $drivers,
-        private readonly InterludeCharacterLabels $labels,
+        private readonly MobiusCharacterLabels $labels,
     ) {}
 
     public function navigationAvailable(): bool
@@ -40,7 +40,7 @@ final class GameStatistics
                     }
 
                     try {
-                        return $this->drivers->resolve($server)->capabilities() !== [];
+                        return $this->drivers->resolve($server)->capabilities($server) !== [];
                     } catch (Throwable) {
                         return false;
                     }
@@ -58,7 +58,7 @@ final class GameStatistics
         }
 
         try {
-            $capabilities = $this->drivers->resolve($server)->capabilities();
+            $capabilities = $this->drivers->resolve($server)->capabilities($server);
         } catch (Throwable) {
             return [];
         }
@@ -84,7 +84,7 @@ final class GameStatistics
         $limit = $this->sectionLimit($server, $section);
 
         $cacheKey = implode(':', [
-            'game-statistics-v1',
+            'game-statistics-v2',
             $server->id,
             $server->updated_at?->getTimestamp() ?? 0,
             $section,

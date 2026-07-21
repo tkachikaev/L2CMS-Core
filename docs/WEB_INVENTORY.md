@@ -1,109 +1,77 @@
-# Web inventory
+# Web inventory and GameServer reward queue
 
-KaevCMS 0.25.2 stores rewards in the CMS database until a player selects a character on the same GameServer. The bundled Mobius CT0 Interlude driver can now deliver simple permanent items through Kaev Reward Bridge.
+KaevCMS stores rewards in its own database until a player selects a character on the same GameServer. A successful transfer writes neutral rows to `kaev_reward_queue` in that GameServer database.
+
+KaevCMS does not insert into `items`, allocate `object_id`, patch GameServer sources, run a heartbeat or verify a bridge protocol. The GameServer administrator decides how pending queue rows are processed.
 
 ## Server isolation
 
-Every grant, inventory item and delivery contains a `game_server_id`. A reward cannot be moved to another server. When only one server has rewards, the player interface hides the server switcher. With several servers, the inventory is separated into server tabs.
+Every grant, inventory item and transfer contains a `game_server_id`. A reward cannot be moved to another server. When only one server has rewards, the player interface hides the server switcher. With several servers, the inventory is separated into server tabs.
 
-## Grant API
+## Player flow
 
-Modules and core services grant rewards through `App\Services\Rewards\RewardInventoryService`. A grant has a globally unique `grant_key`; repeating the same key returns the original grant instead of crediting items twice.
+1. The player opens `/account/web-inventory`.
+2. The player selects one GameServer when several are available.
+3. The player selects up to 50 available rewards.
+4. The player selects a character that belongs to one of their game accounts on that server.
+5. KaevCMS creates one idempotent local transfer and temporarily reserves the inventory rows.
+6. KaevCMS writes one `kaev_reward_queue` row per selected reward.
+7. If the expected rows are confirmed, the local inventory items become `transferred` and the transfer becomes `queued`.
+8. A confirmed write failure returns the rewards to `available`.
+9. If the database result cannot be confirmed, the transfer becomes `review` and rewards remain reserved to prevent a possible duplicate submission.
 
-```php
-$inventory->grant(
-    user: $user,
-    server: $server,
-    grantKey: 'promo:activation:123',
-    sourceType: 'promo_code',
-    sourceReference: 'WELCOME2026',
-    items: [
-        new RewardGrantItem(itemId: 57, amount: 1_000_000, name: 'Adena'),
-    ],
-);
-```
+Online characters are allowed because KaevCMS is not changing their inventory. The administrator-owned consumer decides when and how actual delivery is safe.
 
-A source must build the key from its own immutable operation identifier, not from user input.
+## Required GameServer table
 
-## Transfer lifecycle
-
-1. The player selects one to fifty available reward rows.
-2. KaevCMS verifies that every row belongs to the authenticated user and selected GameServer.
-3. The selected character is resolved from game accounts linked to the same LoginServer and GameServer.
-4. A CMS database transaction locks the user and inventory rows, creates one idempotent delivery and marks the rows `reserved`.
-5. `ProcessRewardDelivery` is persisted on the Laravel `database` connection in the `rewards` queue.
-6. The job checks the character and driver capability again, then places one operation in the bridge queue using the immutable operation UUID and SHA-256 payload hash.
-7. `ConfirmRewardDelivery` checks the same bridge operation without submitting the items again.
-8. A confirmed `delivered` result changes inventory rows to `delivered`. A confirmed `failed` result that guarantees no item was committed returns them to `available`.
-9. A missing, stale or otherwise uncertain result changes the CMS operation to `review` and keeps the rows `reserved`.
-
-The browser request token, CMS row locks, bridge UUID primary key and payload hash protect the flow from repeated clicks, queue retries and payload substitution.
-
-## Why direct CMS inserts are disabled
-
-Mobius allocates object IDs in the running GameServer's in-memory `IdManager`. `MAX(object_id) + 1`, an SQL lock or a CMS transaction cannot reserve an ID in that memory and can collide with normal game activity. KaevCMS therefore does not write directly to `items` while GameServer is running.
-
-Kaev Reward Bridge runs inside GameServer, obtains every ID through the same `IdManager` and writes the item rows and terminal operation state in one game-database transaction. A commit error is treated as uncertain: allocated IDs are not released or reused, the operation is not submitted again automatically, and the CMS rewards remain reserved for review.
-
-## Bridge installation
-
-The integration package is located at:
+Run this once in every participating GameServer database:
 
 ```text
-integrations/mobius-interlude/reward-bridge/
+integrations/reward-queue/install.sql
 ```
 
-Installation summary:
+The minimum schema is documented in `integrations/reward-queue/README.md`. Additional administrator-owned columns and indexes are allowed.
 
-1. Stop GameServer and back up its database and source tree.
-2. Apply `install.sql` to the selected Mobius GameServer database.
-3. Verify the bundled `CharacterSelect` SHA-256, apply `CharacterSelect.patch`, and copy `KaevRewardDeliveryLock.java` into the Mobius core source tree.
-4. Copy `KaevRewardBridge.java` to `dist/game/data/scripts/custom/KaevRewardBridge/`.
-5. Build and start GameServer.
-6. Wait for the bridge heartbeat. KaevCMS enables transfer controls only when protocol v2 is installed and the heartbeat is fresh.
+Each row contains:
 
-The login hook is mandatory for protocol v2. It serializes inventory loading and reward delivery for the same character, closing the race created by Mobius loading inventory before it writes the online flag. The detailed procedure, source hash and limits are in the integration README.
+- `request_uuid` and `line_number` for idempotency;
+- CMS GameServer and user identifiers;
+- account and character identifiers and names;
+- `item_id` and `amount`;
+- a neutral processing status and administrator-owned error fields.
 
-## Driver contract
+## Responsibility boundary
 
-`GameWorldDriver` exposes:
+KaevCMS confirms only that the requested data reached `kaev_reward_queue`.
 
-- `rewardDeliveryCapabilities()`;
-- `deliverRewards()`;
-- `rewardDeliveryStatus()`.
+Actual item delivery may be implemented through:
 
-The Mobius driver reports the delivery mode `mobius_reward_bridge_v2` only when all required queue columns exist, protocol version 2 is advertised and the latest heartbeat is no older than two minutes. Missing tables, incompatible protocol and an offline bridge are separate fail-closed capability reasons.
+- a GameServer plugin;
+- an external service;
+- a stored procedure or scheduled database event;
+- manual administrator processing.
 
-Bridge states map as follows:
+There is deliberately no universal `INSERT INTO items` script. Inventory tables, required fields and object ID allocation differ between distributions. Any consumer must be reviewed for the selected GameServer.
 
-- `pending` and recent `processing` — keep waiting;
-- `delivered` — confirm delivery;
-- `failed` — confirmed failure, rewards may be returned;
-- `uncertain`, missing operation, unknown status or stale `processing` — manual review, rewards stay reserved.
+## Statuses in KaevCMS
 
-## Queue requirement
+- `pending` — local transfer is being prepared;
+- `queued` — expected rows were confirmed in the GameServer queue;
+- `failed` — the queue write definitely failed and rewards returned to the web inventory;
+- `review` — the outcome could not be confirmed and rewards remain locked.
 
-Reward jobs always use the durable Laravel database queue named `rewards`, independent of `QUEUE_CONNECTION`. The existing `kaevcms:queue-drain` Scheduler command discovers this queue automatically. Production must run Laravel Scheduler or a database queue worker; otherwise deliveries remain safely pending in KaevCMS.
-
-## Supported bridge protocol v2
-
-- offline characters only;
-- simple `item_id + amount` rewards;
-- stackable and non-stackable permanent items;
-- at most 1,000 created item objects per operation;
-- transactionally committed `items` rows;
-- idempotency by operation UUID and payload hash.
-
-Not supported:
-
-- online delivery;
-- enchantment;
-- elemental attributes;
-- augmentation;
-- temporary or shadow items;
-- partial withdrawal from one reward row;
-- movement between GameServers.
+The status inside `kaev_reward_queue` belongs to the administrator-owned consumer and is not polled by KaevCMS.
 
 ## Administration
 
-The read-only **Reward deliveries** journal is available to owners and administrators. It shows the player, GameServer, character, item snapshots, status and safe failure code. Editors cannot access it. Operations in `review` require checking the game database and bridge logs before any manual correction.
+Owners and administrators can open the read-only **Reward queue** journal. It shows the player, GameServer, character, immutable item snapshots and whether KaevCMS confirmed the queue write. Editors cannot access it.
+
+Useful integration files:
+
+```text
+integrations/reward-queue/install.sql
+integrations/reward-queue/pending.sql
+integrations/reward-queue/consumer-template.sql
+integrations/reward-queue/mark-delivered.example.sql
+integrations/reward-queue/mark-failed.example.sql
+```

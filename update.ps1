@@ -5,10 +5,10 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$expectedFromVersion = '0.25.1'
-$expectedToVersion = '0.25.2'
-$legacyApplyScriptName = 'apply-0.25.1.ps1'
-$legacyApplySha256 = '33cd3c5a7ddb12a0e3e43ac7675d92fae83195b8d28cd42690fd1ead7cd4f5cb'
+$expectedFromVersion = '0.28.0'
+$expectedToVersion = '0.29.0'
+$legacyApplyScriptName = 'apply-0.28.0.ps1'
+$legacyApplySha256 = '098b8934cb572740316ee6f637605898dd44435074ae405725c3bfba99abf7ec'
 $previousComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $currentComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 
@@ -139,7 +139,22 @@ function Get-ObsoleteReleaseArtifacts {
         'app\Http\Controllers\Admin\SettingsController.php',
         'resources\views\account',
         'resources\views\livewire\account',
-        'public\assets\account'
+        'public\assets\account',
+        'integrations\mobius-interlude\reward-bridge',
+        'integrations\reward-queue\remove-legacy-bridge.sql',
+        'app\Contracts\GameRewardDeliveryGateway.php',
+        'app\Jobs\ConfirmRewardDelivery.php',
+        'app\Jobs\ProcessRewardDelivery.php',
+        'app\Services\Rewards\DriverGameRewardDeliveryGateway.php',
+        'app\Services\Rewards\RewardDeliveryProcessor.php',
+        'app\Support\Rewards\RewardDeliveryCapabilities.php',
+        'app\Support\Rewards\RewardDeliveryPayload.php',
+        'app\Support\Rewards\RewardDeliveryResult.php',
+        'tests\Fakes\FakeGameRewardDeliveryGateway.php',
+        'tests\Feature\Rewards\MobiusRewardBridgeDriverTest.php',
+        'app\Services\GameWorld\MobiusInterludeGameWorldDriver.php',
+        'app\Services\GameWorld\InterludeCharacterLabels.php',
+        'app\Services\GameAccounts\InterludeClassNames.php'
     )
 
     $obsoleteApplyScripts = Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'apply-*.ps1' -File -ErrorAction Stop |
@@ -204,7 +219,11 @@ $directories = @(
     'public\uploads\news\content',
     'public\uploads\pages\content',
     'public\uploads\settings\logo',
-    'public\uploads\settings\favicon'
+    'public\uploads\settings\favicon',
+    'public\uploads\game-assets\items\common',
+    'public\uploads\game-assets\items\servers',
+    'public\uploads\game-assets\characters\common',
+    'public\uploads\game-assets\characters\servers'
 )
 foreach ($directory in $directories) {
     New-Item -Path $directory -ItemType Directory -Force | Out-Null

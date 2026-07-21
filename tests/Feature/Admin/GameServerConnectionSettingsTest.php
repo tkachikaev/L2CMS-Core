@@ -45,7 +45,7 @@ class GameServerConnectionSettingsTest extends TestCase
             ->call('edit', $gameServer->id)
             ->set('connectionEnabled', true)
             ->assertSee('Подключение к базе данных')
-            ->assertSee('L2J Mobius — CT0 Interlude')
+            ->assertSee('L2J Mobius — все хроники')
             ->assertSee('RUSaCis')
             ->assertSee('Использовать параметры базы выбранного LoginServer');
     }

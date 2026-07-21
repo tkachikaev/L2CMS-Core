@@ -33,7 +33,7 @@ return new class extends Migration
             $table->string('item_name', 190)->nullable();
             $table->unsignedBigInteger('amount');
             $table->string('status', 32)->default('available');
-            $table->timestamp('delivered_at')->nullable();
+            $table->timestamp('transferred_at')->nullable();
             $table->timestamps();
 
             $table->index(['user_id', 'game_server_id', 'status'], 'reward_items_user_server_status_index');
@@ -53,8 +53,7 @@ return new class extends Migration
             $table->string('status', 32)->default('pending');
             $table->string('failure_code', 64)->nullable();
             $table->timestamp('requested_at');
-            $table->timestamp('started_at')->nullable();
-            $table->timestamp('completed_at')->nullable();
+            $table->timestamp('queued_at')->nullable();
             $table->timestamps();
 
             $table->index(['user_id', 'game_server_id', 'requested_at'], 'reward_deliveries_user_server_date_index');

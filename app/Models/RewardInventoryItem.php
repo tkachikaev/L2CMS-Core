@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $item_name
  * @property int $amount
  * @property string $status
- * @property Carbon|null $delivered_at
+ * @property Carbon|null $transferred_at
  * @property-read RewardInventoryGrant $grant
  * @property-read User $user
  * @property-read GameServer $gameServer
@@ -27,7 +27,7 @@ class RewardInventoryItem extends Model
 
     public const STATUS_RESERVED = 'reserved';
 
-    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_TRANSFERRED = 'transferred';
 
     protected $fillable = [
         'reward_inventory_grant_id',
@@ -37,7 +37,7 @@ class RewardInventoryItem extends Model
         'item_name',
         'amount',
         'status',
-        'delivered_at',
+        'transferred_at',
     ];
 
     protected function casts(): array
@@ -48,7 +48,7 @@ class RewardInventoryItem extends Model
             'game_server_id' => 'integer',
             'item_id' => 'integer',
             'amount' => 'integer',
-            'delivered_at' => 'datetime',
+            'transferred_at' => 'datetime',
         ];
     }
 

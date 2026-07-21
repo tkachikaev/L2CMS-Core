@@ -8,7 +8,9 @@ use App\Models\GameServer;
 use App\Models\LoginServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
@@ -23,7 +25,7 @@ class BrowserTestSeeder extends Seeder
         $adminEmail = (string) config('browser_tests.admin.email');
         $adminPassword = (string) config('browser_tests.admin.password');
 
-        Admin::query()->updateOrCreate(
+        $admin = Admin::query()->updateOrCreate(
             ['email' => $adminEmail],
             [
                 'name' => 'Browser Test Admin',
@@ -85,5 +87,41 @@ class BrowserTestSeeder extends Seeder
                 'created_via_cms' => true,
             ],
         );
+
+        app(ModuleManager::class)->enable('promo-codes');
+
+        $promoCodeId = DB::table('module_promo_codes')->insertGetId([
+            'game_server_id' => $gameServer->id,
+            'code' => 'BROWSER2026',
+            'starts_at' => null,
+            'ends_at' => null,
+            'total_limit' => 0,
+            'per_user_limit' => 1,
+            'activations_count' => 0,
+            'enabled' => true,
+            'created_by_admin_id' => $admin->id,
+            'updated_by_admin_id' => $admin->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('module_promo_code_rewards')->insert([
+            [
+                'promo_code_id' => $promoCodeId,
+                'item_id' => 57,
+                'amount' => 1000000,
+                'sort_order' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'promo_code_id' => $promoCodeId,
+                'item_id' => 4037,
+                'amount' => 10,
+                'sort_order' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
     }
 }

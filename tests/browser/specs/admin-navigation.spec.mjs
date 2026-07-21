@@ -291,10 +291,48 @@ test('removed legacy dashboard endpoint returns not found', async ({ page }) => 
     expect(response.status()).toBe(404);
 });
 
-test('reward delivery journal is available from the administrator sidebar', async ({ page }) => {
-    await page.getByRole('link', { name: 'Передачи наград', exact: true }).click();
+test('reward queue journal is available from the administrator sidebar', async ({ page }) => {
+    await page.getByRole('link', { name: 'Очередь наград', exact: true }).click();
 
     await expect(page).toHaveURL(/\/admin\/reward-deliveries$/);
-    await expect(page.getByRole('heading', { name: 'Передачи наград' }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Передач наград пока нет', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Передачи в очередь наград' }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Передач в очередь пока нет', exact: true })).toBeVisible();
+});
+
+test('promo code module provides compact dynamic rewards deletion and status controls', async ({ page }) => {
+    const modulesGroup = page.locator('[data-admin-menu-group="modules"]');
+    await openMenuGroup(page, 'modules');
+    await expect(modulesGroup.getByRole('link', { name: 'Модули', exact: true })).toBeVisible();
+    await modulesGroup.getByRole('link', { name: 'Промокоды', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/admin\/extensions\/promo-codes$/);
+    await expect(page.getByRole('heading', { name: 'Промокоды', exact: true }).first()).toBeVisible();
+    await expect(page.getByText('BROWSER2026', { exact: true })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Создать промокод', exact: true }).click();
+    await expect(page.locator('#starts_at')).toHaveAttribute('type', 'datetime-local');
+    await expect(page.locator('#ends_at')).toHaveAttribute('type', 'datetime-local');
+    await expect(page.locator('#game_server_id').getByRole('option', { name: 'Выберите сервер' })).toHaveCount(1);
+    await expect(page.getByText('Укажите 0, чтобы общий лимит не применялся.')).toBeVisible();
+    await expect(page.locator('[data-promo-reward-row]')).toHaveCount(1);
+
+    await page.getByRole('button', { name: 'Добавить предмет', exact: true }).click();
+    await expect(page.locator('[data-promo-reward-row]')).toHaveCount(2);
+    await page.locator('[data-promo-reward-row]').nth(1).getByRole('button', { name: 'Удалить предмет из промокода' }).click();
+    await expect(page.locator('[data-promo-reward-row]')).toHaveCount(1);
+
+    await page.locator('#code').fill('browser-new');
+    await page.locator('#game_server_id').selectOption({ label: 'Browser World' });
+    await page.locator('#reward_item_0').fill('57');
+    await page.locator('#reward_amount_0').fill('500');
+    await page.getByRole('button', { name: 'Создать промокод', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/admin\/extensions\/promo-codes$/);
+    const createdCode = page.locator('.content-row').filter({ hasText: 'BROWSER-NEW' });
+    await expect(createdCode).toBeVisible();
+    await expect(page.getByText('без лимита', { exact: true }).first()).toBeVisible();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await createdCode.getByRole('button', { name: 'Удалить', exact: true }).click();
+    await expect(page.getByText('BROWSER-NEW', { exact: true })).toHaveCount(0);
 });

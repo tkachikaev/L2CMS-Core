@@ -173,7 +173,7 @@ GameServer
 
 ## Поддерживаемые драйверы
 
-Для LoginServer поддерживаются `L2J Mobius Legacy — C1/C4` и `L2J Mobius — Interlude и новее`. Расширенный каталог персонажей поддерживается GameServer-драйвером `L2J Mobius — CT0 Interlude`.
+Для LoginServer поддерживаются `L2J Mobius Legacy — C1/C4` и `L2J Mobius — Interlude и новее`. Расширенный каталог персонажей поддерживается единым GameServer-драйвером L2J Mobius для C1/C4, Interlude, Epilogue, High Five, основной современной ветки, Classic и Essence. Драйвер автоматически нормализует `karma` и `reputation`. Неизвестные современному справочнику классы отображаются безопасно как `Class #ID`.
 
 RUSaCis остаётся заглушкой и не предлагается игрокам для создания аккаунтов до добавления контракта его таблиц.
 

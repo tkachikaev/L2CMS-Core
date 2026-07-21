@@ -100,7 +100,7 @@ final class ServerConnectionTester
         ];
     }
 
-    /** @param array<string,mixed> $report @param array{label:string,description:string,ready:bool,requirements:list<array{table:string,columns:list<string>,required:bool}>} $driver */
+    /** @param array<string,mixed> $report @param array{label:string,description:string,ready:bool,requirements:list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>} $driver */
     private function withDriver(array $report, string $driverKey, array $driver): array
     {
         if (! $driver['ready']) {

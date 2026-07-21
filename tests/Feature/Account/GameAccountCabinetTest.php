@@ -857,7 +857,7 @@ class GameAccountCabinetTest extends TestCase
             'play_time_seconds' => 90000,
             'pvp_kills' => 25,
             'pk_kills' => 2,
-            'karma' => 0,
+            'reputation' => 0,
             'noble' => true,
             'hero' => true,
             'created_at' => CarbonImmutable::parse('2024-04-05'),

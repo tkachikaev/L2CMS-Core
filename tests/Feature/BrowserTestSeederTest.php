@@ -40,5 +40,19 @@ class BrowserTestSeederTest extends TestCase
         $this->assertNotNull($player->email_verified_at);
         $this->assertTrue(Hash::check('ConfiguredBrowserPlayerPassword123!', $player->password));
         $this->assertTrue(UserGameAccount::query()->where('user_id', $player->id)->where('game_login', 'BrowserGame')->exists());
+        $this->assertDatabaseHas('cms_modules', [
+            'id' => 'promo-codes',
+            'enabled' => true,
+        ]);
+        $this->assertDatabaseHas('module_promo_codes', [
+            'code' => 'BROWSER2026',
+            'total_limit' => 0,
+            'per_user_limit' => 1,
+            'enabled' => true,
+        ]);
+        $this->assertDatabaseHas('module_promo_code_rewards', [
+            'item_id' => 57,
+            'amount' => 1000000,
+        ]);
     }
 }

@@ -34,6 +34,10 @@ return [
         'uploads_path' => env('SETTINGS_UPLOADS_PATH', public_path('uploads')),
     ],
 
+    'game_assets' => [
+        'uploads_path' => public_path('uploads/game-assets'),
+    ],
+
     'site_defaults' => [
         'name' => env('SITE_NAME', env('APP_NAME', 'KaevCMS')),
         'description' => env('SITE_DESCRIPTION', 'Бесплатная open-source CMS для серверов Lineage II.'),

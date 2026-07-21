@@ -1,6 +1,6 @@
 # Modules
 
-KaevCMS 0.24.1 provides a stable module runtime and a guarded database-migration lifecycle.
+KaevCMS 0.26.0 provides a stable module runtime, guarded database migrations, optional navigation links and GameServer dependency guards.
 
 ## Installation
 
@@ -150,6 +150,15 @@ Every module route also receives a state guard. Disabled, missing, damaged, migr
 
 If bootstrap or runtime loading fails, KaevCMS records only the safe loading stage and exception class, leaves the rest of the CMS available, and retries the module after a short cooldown. The default cooldown is 60 seconds, which prevents a broken module from flooding the log on every request.
 
+
+## Optional navigation and GameServer guards
+
+An enabled module can register links through `ModuleNavigationRegistry`. Account links must use the module public route namespace, and administrator links must use its protected module-page namespace. Links are rendered only while their route exists.
+
+A module that stores a `game_server_id` can register a check through `ModuleGameServerDependencyRegistry`. If the check reports related data or fails unexpectedly, KaevCMS blocks destructive GameServer deletion. Database foreign keys should still use `restrictOnDelete()` as the final integrity boundary.
+
+The bundled promo-code module demonstrates both contracts in `modules/promo-codes/bootstrap.php`.
+
 ## Permissions and audit
 
 - Owner: view, install, update, enable and disable modules.
@@ -186,4 +195,4 @@ Full deletion of module data must remain a separate, explicitly confirmed operat
 
 ## Reward-producing modules
 
-Promo-code, donation, voting and event modules must grant items through `RewardInventoryService` with an immutable source operation key. Modules must not write directly to a GameServer `items` table.
+Promo-code, donation, voting and event modules must grant items through `RewardInventoryService` with an immutable source operation key. Modules must not write directly to a GameServer `items` table. Item icons should be resolved through `GameAssetUrlResolver`; see `docs/GAME_ASSETS.md`.

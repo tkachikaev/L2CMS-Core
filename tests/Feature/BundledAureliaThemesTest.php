@@ -26,7 +26,7 @@ class BundledAureliaThemesTest extends TestCase
         $this->assertTrue($accountTheme['valid'], implode(PHP_EOL, $accountTheme['errors']));
         $this->assertTrue($accountTheme['compatible'], implode(PHP_EOL, $accountTheme['errors']));
         $this->assertSame('Kaev Aurelia Account', $accountTheme['name']);
-        $this->assertSame('1.1.1', $accountTheme['version']);
+        $this->assertSame('1.1.2', $accountTheme['version']);
         $this->assertNotNull($accountTheme['preview_url']);
 
         foreach ($this->publicThemeFiles() as $file) {
@@ -55,6 +55,10 @@ class BundledAureliaThemesTest extends TestCase
         );
         $this->assertStringContainsString('.account-surface {', $accountCss);
         $this->assertStringContainsString('border-radius: var(--account-radius-lg);', $accountCss);
+        $this->assertStringContainsString('.account-form-aside {', $accountCss);
+        $this->assertStringContainsString('position: relative;', $accountCss);
+        $this->assertStringContainsString('.reward-history-card {', $accountCss);
+        $this->assertStringContainsString('border-radius: var(--account-radius-sm);', $accountCss);
     }
 
     public function test_public_aurelia_theme_can_be_activated_and_renders_its_own_shell(): void

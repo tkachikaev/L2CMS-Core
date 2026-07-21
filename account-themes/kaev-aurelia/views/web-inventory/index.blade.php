@@ -24,7 +24,7 @@
         <div class="account-empty reward-empty"><span class="account-empty-symbol" aria-hidden="true">◇</span><h2>{{ __('Your web inventory is empty') }}</h2><p>{{ __('Rewards will appear here after they are granted by promo codes, donations or other modules.') }}</p></div>
     @elseif($activeView === 'history')
         @if($deliveries->isEmpty())
-            <div class="account-empty reward-empty"><span class="account-empty-symbol" aria-hidden="true">↗</span><h2>{{ __('No transfers yet') }}</h2><p>{{ __('Completed, failed and review-required character deliveries will be shown here.') }}</p></div>
+            <div class="account-empty reward-empty"><span class="account-empty-symbol" aria-hidden="true">↗</span><h2>{{ __('No transfers yet') }}</h2><p>{{ __('Transfers written to the GameServer queue, confirmed failures and uncertain writes will be shown here.') }}</p></div>
         @else
             <div class="reward-history-list">
                 @foreach($deliveries as $delivery)
@@ -35,7 +35,7 @@
                 @endforeach
             </div>
             @if($deliveries->hasPages())
-                <nav class="simple-pagination" aria-label="{{ __('Reward delivery page navigation') }}">
+                <nav class="simple-pagination" aria-label="{{ __('Reward queue transfer page navigation') }}">
                     @if($deliveries->onFirstPage())<span class="account-button ghost disabled">← {{ __('Back') }}</span>@else<a wire:navigate class="account-button ghost" href="{{ $deliveries->previousPageUrl() }}">← {{ __('Back') }}</a>@endif
                     @if($deliveries->hasMorePages())<a wire:navigate class="account-button ghost" href="{{ $deliveries->nextPageUrl() }}">{{ __('Next') }} →</a>@else<span class="account-button ghost disabled">{{ __('Next') }} →</span>@endif
                 </nav>
@@ -60,7 +60,13 @@
                     <label class="reward-item-row">
                         <input type="checkbox" name="inventory_item_ids[]" value="{{ $item->id }}" @checked(in_array($item->id, array_map('intval', (array) old('inventory_item_ids', [])), true)) @disabled(! $capabilities->supported || $characters === [])>
                         <span class="reward-item-check" aria-hidden="true">✓</span>
-                        <span class="reward-item-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($item->displayName(), 0, 1)) }}</span>
+                        <span class="reward-item-icon" aria-hidden="true">
+                            @if($itemIconUrls[$item->id] ?? null)
+                                <img src="{{ $itemIconUrls[$item->id] }}" alt="" width="38" height="38">
+                            @else
+                                {{ mb_strtoupper(mb_substr($item->displayName(), 0, 1)) }}
+                            @endif
+                        </span>
                         <span class="reward-item-copy"><strong>{{ $item->displayName() }}</strong><small>{{ $item->grant->source_label ?: __('Source: :source', ['source' => $item->grant->source_type]) }}</small></span>
                         <strong class="reward-item-amount">× {{ number_format($item->amount, 0, '.', ' ') }}</strong>
                     </label>
@@ -68,9 +74,9 @@
             </div>
 
             <div class="reward-transfer-panel">
-                <div><span class="account-eyebrow">{{ __('Transfer rewards') }}</span><h2>{{ __('Choose a character') }}</h2><p>{{ __('Only characters belonging to your game accounts on :server are shown.', ['server' => $selectedServer->nameFor()]) }}</p></div>
-                <label class="reward-character-select"><span>{{ __('Character') }}</span><select name="character_id" @disabled(! $capabilities->supported || $characters === [])><option value="">{{ __('Select character') }}</option>@foreach($characters as $character)<option value="{{ $character['id'] }}" @selected((int) old('character_id') === $character['id']) @disabled($capabilities->requiresOfflineCharacter && $character['online'])>{{ $character['name'] }} — {{ __('Level :level', ['level' => $character['level']]) }}{{ $character['online'] ? ' · '.__('Online') : '' }}</option>@endforeach</select></label>
-                <button class="account-button primary" type="submit" @disabled(! $capabilities->supported || $characters === [])>{{ __('Transfer selected rewards') }}</button>
+                <div><span class="account-eyebrow">{{ __('Transfer to GameServer queue') }}</span><h2>{{ __('Choose a character') }}</h2><p>{{ __('Only characters belonging to your game accounts on :server are shown.', ['server' => $selectedServer->nameFor()]) }}</p><p>{{ __('KaevCMS writes the selected data to kaev_reward_queue. Actual item delivery is handled by the GameServer administrator.') }}</p></div>
+                <label class="reward-character-select"><span>{{ __('Character') }}</span><select name="character_id" @disabled(! $capabilities->supported || $characters === [])><option value="">{{ __('Select character') }}</option>@foreach($characters as $character)<option value="{{ $character['id'] }}" @selected((int) old('character_id') === $character['id']) >{{ $character['name'] }} — {{ __('Level :level', ['level' => $character['level']]) }}{{ $character['online'] ? ' · '.__('Online') : '' }}</option>@endforeach</select></label>
+                <button class="account-button primary" type="submit" @disabled(! $capabilities->supported || $characters === [])>{{ __('Send selected rewards to queue') }}</button>
             </div>
         </form>
     @endif

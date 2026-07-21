@@ -81,7 +81,7 @@ sort_order  — порядок отображения
 ```text
 LoginServer: L2J Mobius — Interlude и новее
 или:        L2J Mobius Legacy — C1/C4
-GameServer:  L2J Mobius — CT0 Interlude
+GameServer:  L2J Mobius — все хроники
 ```
 
 `RUSaCis` присутствует как заглушка: подключение к базе можно проверить, но проверка таблиц и операции с данными будут добавлены после анализа схемы.

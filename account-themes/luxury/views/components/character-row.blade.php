@@ -9,7 +9,7 @@
             <strong>{{ $character['name'] }}</strong>
             @if($character['hero'])<span class="character-badge hero">{{ __('Hero') }}</span>@endif
             @if($character['noble'])<span class="character-badge noble">{{ __('Noble') }}</span>@endif
-            @if($character['karma'] > 0)<span class="character-badge karma">{{ __('Karma') }} {{ $character['karma'] }}</span>@endif
+            @if($character['reputation'] !== 0)<span class="character-badge reputation">{{ __('Reputation') }} {{ $character['reputation'] }}</span>@endif
             @if($hiddenContext)<span class="character-badge muted">{{ __('Hidden group') }}</span>@endif
         </div>
         <span>{{ __('Level :level', ['level' => $character['level']]) }} · {{ $character['class_name'] }}</span>

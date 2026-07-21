@@ -15,7 +15,7 @@ final class MySqlExternalDatabaseConnectionTester implements ExternalDatabaseCon
 {
     /**
      * @param  array{host:string,port:int,database:string,username:string,password:string,charset:string}  $connection
-     * @param  list<array{table:string,columns:list<string>,required:bool}>  $requirements
+     * @param  list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>  $requirements
      * @return array{
      *     connected:bool,
      *     compatible:bool|null,
@@ -69,6 +69,11 @@ final class MySqlExternalDatabaseConnectionTester implements ExternalDatabaseCon
                             $missingColumns[] = $column;
                         }
                     }
+
+                    $anyColumns = $requirement['any_columns'] ?? [];
+                    if ($anyColumns !== [] && ! $this->containsAnyColumn($tableColumns, $anyColumns)) {
+                        $missingColumns[] = implode(' / ', $anyColumns);
+                    }
                 }
 
                 if ($requirement['required'] && (! $tableExists || $missingColumns !== [])) {
@@ -110,6 +115,21 @@ final class MySqlExternalDatabaseConnectionTester implements ExternalDatabaseCon
                 // The test result must not be replaced by a cleanup failure.
             }
         }
+    }
+
+    /**
+     * @param  list<string>  $tableColumns
+     * @param  list<string>  $alternatives
+     */
+    private function containsAnyColumn(array $tableColumns, array $alternatives): bool
+    {
+        foreach ($alternatives as $column) {
+            if (in_array(strtolower($column), $tableColumns, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function collationFor(string $charset): string

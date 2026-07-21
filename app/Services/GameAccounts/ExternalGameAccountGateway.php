@@ -5,6 +5,7 @@ namespace App\Services\GameAccounts;
 use App\Contracts\GameAccountGateway;
 use App\Models\GameServer;
 use App\Models\LoginServer;
+use App\Services\GameWorld\MobiusGameSchemaInspector;
 use App\Services\Servers\MySqlSessionQueryTimeout;
 use App\Services\Servers\ServerDriverRegistry;
 use Carbon\CarbonImmutable;
@@ -23,6 +24,7 @@ final class ExternalGameAccountGateway implements GameAccountGateway
         private readonly MobiusPasswordEncoder $passwordEncoder,
         private readonly MySqlSessionQueryTimeout $queryTimeout,
         private readonly ServerDriverRegistry $drivers,
+        private readonly MobiusGameSchemaInspector $schemas,
     ) {}
 
     public function supportsLoginServer(LoginServer $loginServer): bool
@@ -97,8 +99,9 @@ final class ExternalGameAccountGateway implements GameAccountGateway
 
         return $this->withGameConnection(
             $gameServer,
-            function (Connection $database) use ($login, $limit, $createdAtColumn): array {
+            function (Connection $database) use ($gameServer, $login, $limit, $createdAtColumn): array {
                 $schema = $database->getSchemaBuilder();
+                $profile = $this->schemas->inspect($database, (string) $gameServer->chronicle);
                 $query = $database->table('characters')
                     ->where('characters.account_name', $login)
                     ->where('characters.deletetime', 0)
@@ -113,7 +116,7 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                     $query->selectRaw('NULL as clan_name');
                 }
 
-                if ($schema->hasTable('heroes')) {
+                if ($profile->heroesAvailable) {
                     $query->leftJoin('heroes', 'heroes.charId', '=', 'characters.charId')
                         ->selectRaw('CASE WHEN heroes.charId IS NULL THEN 0 ELSE 1 END as hero');
                 } else {
@@ -139,7 +142,7 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                     'characters.onlinetime',
                     'characters.pvpkills',
                     'characters.pkkills',
-                    'characters.karma',
+                    'characters.'.$profile->reputationColumn.' as reputation',
                     'characters.nobless',
                 ])->limit($limit)->get();
 
@@ -159,7 +162,7 @@ final class ExternalGameAccountGateway implements GameAccountGateway
                     'play_time_seconds' => is_numeric($character->onlinetime) ? max(0, (int) $character->onlinetime) : 0,
                     'pvp_kills' => is_numeric($character->pvpkills) ? max(0, (int) $character->pvpkills) : 0,
                     'pk_kills' => is_numeric($character->pkkills) ? max(0, (int) $character->pkkills) : 0,
-                    'karma' => is_numeric($character->karma) ? max(0, (int) $character->karma) : 0,
+                    'reputation' => is_numeric($character->reputation) ? (int) $character->reputation : 0,
                     'noble' => (int) $character->nobless === 1,
                     'hero' => (int) $character->hero === 1,
                     'created_at' => $this->parseCharacterCreatedAt($character->character_created_at ?? null),

@@ -6,7 +6,7 @@ use App\Contracts\GameAccountGateway;
 use App\Models\GameServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
-use App\Services\GameWorld\InterludeCharacterLabels;
+use App\Services\GameWorld\MobiusCharacterLabels;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +30,7 @@ use Throwable;
  *     play_time_label:string,
  *     pvp_kills:int,
  *     pk_kills:int,
- *     karma:int,
+ *     reputation:int,
  *     noble:bool,
  *     hero:bool,
  *     last_seen_label:?string,
@@ -51,7 +51,7 @@ final class AccountCharacterDirectory
 
     public function __construct(
         private readonly GameAccountGateway $gateway,
-        private readonly InterludeCharacterLabels $labels,
+        private readonly MobiusCharacterLabels $labels,
     ) {}
 
     /**
@@ -153,7 +153,7 @@ final class AccountCharacterDirectory
     private function characters(GameServer $gameServer, UserGameAccount $account): array
     {
         $cacheKey = implode(':', [
-            'account-character-directory-v1',
+            'account-character-directory-v2',
             $gameServer->id,
             $gameServer->updated_at?->getTimestamp() ?? 0,
             $account->id,
@@ -220,7 +220,7 @@ final class AccountCharacterDirectory
             'play_time_label' => $this->playTimeLabel($playTimeSeconds),
             'pvp_kills' => max(0, (int) ($character['pvp_kills'] ?? 0)),
             'pk_kills' => max(0, (int) ($character['pk_kills'] ?? 0)),
-            'karma' => max(0, (int) ($character['karma'] ?? 0)),
+            'reputation' => (int) ($character['reputation'] ?? 0),
             'noble' => (bool) ($character['noble'] ?? false),
             'hero' => (bool) ($character['hero'] ?? false),
             'last_seen_label' => $lastSeenAt?->format('d.m.Y H:i'),

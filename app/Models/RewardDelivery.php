@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,19 +21,17 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property string|null $failure_code
  * @property Carbon|null $requested_at
- * @property Carbon|null $started_at
- * @property Carbon|null $completed_at
+ * @property Carbon|null $queued_at
  * @property-read User $user
  * @property-read GameServer $gameServer
  * @property-read UserGameAccount|null $gameAccount
+ * @property-read EloquentCollection<int, RewardDeliveryItem> $items
  */
 class RewardDelivery extends Model
 {
     public const STATUS_PENDING = 'pending';
 
-    public const STATUS_PROCESSING = 'processing';
-
-    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_QUEUED = 'queued';
 
     public const STATUS_FAILED = 'failed';
 
@@ -50,8 +49,7 @@ class RewardDelivery extends Model
         'status',
         'failure_code',
         'requested_at',
-        'started_at',
-        'completed_at',
+        'queued_at',
     ];
 
     protected function casts(): array
@@ -62,8 +60,7 @@ class RewardDelivery extends Model
             'user_game_account_id' => 'integer',
             'character_id' => 'integer',
             'requested_at' => 'datetime',
-            'started_at' => 'datetime',
-            'completed_at' => 'datetime',
+            'queued_at' => 'datetime',
         ];
     }
 
@@ -99,9 +96,8 @@ class RewardDelivery extends Model
     public static function statusLabelFor(string $status): string
     {
         return match ($status) {
-            self::STATUS_PENDING => __('Queued'),
-            self::STATUS_PROCESSING => __('Processing'),
-            self::STATUS_DELIVERED => __('Delivered'),
+            self::STATUS_PENDING => __('Preparing transfer'),
+            self::STATUS_QUEUED => __('Transferred to GameServer queue'),
             self::STATUS_FAILED => __('Failed'),
             self::STATUS_REVIEW => __('Needs review'),
             default => __('Unknown'),

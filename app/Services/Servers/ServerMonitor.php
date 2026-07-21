@@ -89,7 +89,7 @@ final class ServerMonitor
                 'game_server_id' => $gameServer->id,
                 'driver' => $gameServer->driver,
                 'exception' => $exception::class,
-                'message' => $exception->getMessage(),
+                'code' => (string) $exception->getCode(),
             ]);
         }
     }
@@ -102,6 +102,7 @@ final class ServerMonitor
             Log::warning('LoginServer database monitoring failed.', [
                 'login_server_id' => $server->id,
                 'exception' => $exception::class,
+                'code' => (string) $exception->getCode(),
             ]);
 
             $this->databaseState->markUnknown($server, 'check_failed');
@@ -118,6 +119,7 @@ final class ServerMonitor
             Log::warning('GameServer database monitoring failed.', [
                 'game_server_id' => $server->id,
                 'exception' => $exception::class,
+                'code' => (string) $exception->getCode(),
             ]);
 
             $this->databaseState->markUnknown($server, 'check_failed');

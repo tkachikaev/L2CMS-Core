@@ -21,4 +21,13 @@
         </span>
         <span><strong>{{ __('Web inventory') }}</strong><small>{{ __('Rewards and transfers') }}</small></span>
     </a>
+
+    @foreach(app(\App\Support\Modules\ModuleNavigationRegistry::class)->accountLinks() as $moduleLink)
+        <a wire:navigate.hover @class(['active' => request()->routeIs('modules.'.$moduleLink['module_id'].'.*')]) href="{{ route($moduleLink['route']) }}">
+            <span class="account-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M7 4h10l3 4-8 12L4 8z"></path><path d="m7 4 5 16 5-16M4 8h16"></path></svg>
+            </span>
+            <span><strong>{{ __($moduleLink['label_key']) }}</strong><small>{{ __($moduleLink['description_key']) }}</small></span>
+        </a>
+    @endforeach
 </nav>

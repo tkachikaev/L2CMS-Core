@@ -40,19 +40,14 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.25.1'", $applyScript);
-        $this->assertStringContainsString("'app\\Jobs\\ConfirmRewardDelivery.php'", $applyScript);
-        $this->assertStringContainsString("'app\\Services\\GameWorld\\MobiusInterludeGameWorldDriver.php'", $applyScript);
-        $this->assertStringContainsString("'app\\Services\\Rewards\\RewardDeliveryProcessor.php'", $applyScript);
-        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\CharacterSelect.official.sha256'", $applyScript);
-        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\CharacterSelect.patch'", $applyScript);
-        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\install.sql'", $applyScript);
-        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\KaevRewardBridge.java'", $applyScript);
-        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\KaevRewardDeliveryLock.java'", $applyScript);
-        $this->assertStringContainsString("'docs\\WEB_INVENTORY.md'", $applyScript);
-        $this->assertStringContainsString("'tests\\Feature\\Rewards\\MobiusRewardBridgeDriverTest.php'", $applyScript);
-        $this->assertStringContainsString("'tests\\Feature\\Rewards\\WebInventoryTest.php'", $applyScript);
-        $this->assertStringContainsString("'tests\\powershell\\update-workflow.ps1'", $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.28.0'", $applyScript);
+        $this->assertStringContainsString('account-themes\kaev-aurelia\theme.json', $applyScript);
+        $this->assertStringContainsString('modules\promo-codes\resources\views\account\index.blade.php', $applyScript);
+        $this->assertStringContainsString('public\account-themes\kaev-aurelia\assets\css\app.css', $applyScript);
+        $this->assertStringContainsString('docs\AUDIT_0.29.0.md', $applyScript);
+        $this->assertStringContainsString('tests\Feature\BundledAureliaThemesTest.php', $applyScript);
+        $this->assertStringContainsString('tests\browser\specs\player-character-directory.spec.mjs', $applyScript);
+        $this->assertStringContainsString('tests\powershell\update-workflow.ps1', $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
     }
@@ -61,10 +56,10 @@ class ReleaseMetadataTest extends TestCase
     {
         $updateScript = $this->readReleaseFile('update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.25.1'", $updateScript);
-        $this->assertStringContainsString("\$expectedToVersion = '0.25.2'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.25.1.ps1'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplySha256 = '33cd3c5a7ddb12a0e3e43ac7675d92fae83195b8d28cd42690fd1ead7cd4f5cb'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.28.0'", $updateScript);
+        $this->assertStringContainsString("\$expectedToVersion = '0.29.0'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.28.0.ps1'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplySha256 = '098b8934cb572740316ee6f637605898dd44435074ae405725c3bfba99abf7ec'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
@@ -88,6 +83,7 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString("'resources\\views\\account'", $updateScript);
         $this->assertStringContainsString("'resources\\views\\livewire\\account'", $updateScript);
         $this->assertStringContainsString("'public\\assets\\account'", $updateScript);
+        $this->assertStringContainsString("'integrations\\reward-queue\\remove-legacy-bridge.sql'", $updateScript);
 
         $cachePosition = strpos($updateScript, 'Clear-KaevCmsBootstrapCache -ProjectRoot $PSScriptRoot');
         $maintenancePosition = strpos($updateScript, 'php artisan down --retry=60');
@@ -119,29 +115,20 @@ class ReleaseMetadataTest extends TestCase
         $this->assertLessThan($backupCleanupPosition, $markPosition);
         $this->assertLessThan($finalCleanupPosition, $testPosition);
 
-        $bridgeSql = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/install.sql');
-        $this->assertStringContainsString("enum('pending','processing','delivered','failed','uncertain')", $bridgeSql);
-        $this->assertStringContainsString('kaev_reward_operation_items', $bridgeSql);
+        $queueSql = $this->readReleaseFile('integrations/reward-queue/install.sql');
+        $this->assertStringContainsString('CREATE TABLE IF NOT EXISTS `kaev_reward_queue`', $queueSql);
+        $this->assertStringContainsString('`request_uuid` CHAR(36)', $queueSql);
+        $this->assertStringContainsString('`item_id` BIGINT UNSIGNED', $queueSql);
+        $this->assertStringContainsString('`amount` BIGINT UNSIGNED', $queueSql);
 
-        $bridgeJava = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/KaevRewardBridge.java');
-        $this->assertStringContainsString('mobius_reward_bridge_v2', $bridgeJava);
-        $this->assertStringContainsString('KaevRewardDeliveryLock.getLock(operation.characterId)', $bridgeJava);
-        $this->assertStringContainsString('IdManager.getInstance().getNextId()', $bridgeJava);
-        $this->assertStringContainsString("status = 'uncertain'", $bridgeJava);
-        $this->assertStringNotContainsString('releaseId(', $bridgeJava);
-        $this->assertStringNotContainsString('MAX(object_id)', $bridgeJava);
+        $queueGateway = $this->readReleaseFile('app/Services/Rewards/DatabaseGameRewardQueueGateway.php');
+        $this->assertStringContainsString("private const TABLE = 'kaev_reward_queue'", $queueGateway);
+        $this->assertStringContainsString('reward_queue_payload_conflict', $queueGateway);
+        $this->assertStringNotContainsString("table('items')", $queueGateway);
 
-        $deliveryLock = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/KaevRewardDeliveryLock.java');
-        $this->assertStringContainsString('ConcurrentHashMap<Integer, ReentrantLock>', $deliveryLock);
-        $this->assertStringContainsString('computeIfAbsent', $deliveryLock);
-
-        $characterSelectPatch = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/CharacterSelect.patch');
-        $this->assertStringContainsString('KaevRewardDeliveryLock.getLock(info.getObjectId())', $characterSelectPatch);
-        $this->assertStringContainsString('cha.setOnlineStatus(true, true);', $characterSelectPatch);
-        $this->assertStringContainsString('rewardDeliveryLock.unlock();', $characterSelectPatch);
-
-        $characterSelectSha = trim($this->readReleaseFile('integrations/mobius-interlude/reward-bridge/CharacterSelect.official.sha256'));
-        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $characterSelectSha);
+        $this->assertDirectoryDoesNotExist(base_path('integrations/mobius-interlude/reward-bridge'));
+        $this->assertFileDoesNotExist(app_path('Jobs/ProcessRewardDelivery.php'));
+        $this->assertFileDoesNotExist(app_path('Jobs/ConfirmRewardDelivery.php'));
 
         $phpunit = $this->readReleaseFile('phpunit.xml');
         $this->assertStringContainsString('<env name="APP_MAINTENANCE_DRIVER" value="cache" force="true"/>', $phpunit);
@@ -257,6 +244,13 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('display: grid; place-items: center;', $aureliaCss);
         $this->assertStringContainsString('.account-character-avatar > span', $aureliaCss);
         $this->assertStringContainsString('.account-surface {', $aureliaCss);
+        $this->assertStringContainsString('Kaev Aurelia Account 1.1.2', $aureliaCss);
+        $this->assertStringContainsString('.promo-activation-surface {', $aureliaCss);
+        $this->assertStringContainsString('.reward-history-main p img {', $aureliaCss);
+
+        $aureliaNavigation = $this->readReleaseFile('account-themes/kaev-aurelia/views/partials/navigation.blade.php');
+        $this->assertStringContainsString('wire:current="active"', $aureliaNavigation);
+        $this->assertStringNotContainsString("request()->routeIs('modules.'", $aureliaNavigation);
 
         $aureliaInventory = $this->readReleaseFile('account-themes/kaev-aurelia/views/web-inventory/index.blade.php');
         $this->assertStringContainsString('account-surface reward-inventory-shell', $aureliaInventory);
@@ -264,38 +258,105 @@ class ReleaseMetadataTest extends TestCase
 
     public function test_web_inventory_release_artifacts_are_shipped(): void
     {
-        $this->assertFileExists(app_path('Contracts/GameRewardDeliveryGateway.php'));
-        $this->assertFileExists(app_path('Jobs/ConfirmRewardDelivery.php'));
-        $this->assertFileExists(app_path('Jobs/ProcessRewardDelivery.php'));
+        $this->assertFileExists(app_path('Contracts/GameRewardQueueGateway.php'));
+        $this->assertFileExists(app_path('Services/Rewards/DatabaseGameRewardQueueGateway.php'));
+        $this->assertFileExists(app_path('Support/Rewards/RewardQueuePayload.php'));
         $this->assertFileExists(app_path('Models/RewardInventoryGrant.php'));
         $this->assertFileExists(app_path('Models/RewardInventoryItem.php'));
         $this->assertFileExists(app_path('Models/RewardDelivery.php'));
         $this->assertFileExists(app_path('Services/Rewards/RewardInventoryService.php'));
-        $this->assertFileExists(app_path('Services/Rewards/RewardDeliveryProcessor.php'));
+        $this->assertFileExists(app_path('Services/Rewards/RewardTransferService.php'));
         $this->assertFileExists(database_path('migrations/2026_07_21_000100_create_reward_inventory_tables.php'));
         $this->assertFileExists(base_path('docs/WEB_INVENTORY.md'));
-        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/CharacterSelect.official.sha256'));
-        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/CharacterSelect.patch'));
-        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/install.sql'));
-        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/KaevRewardBridge.java'));
-        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/KaevRewardDeliveryLock.java'));
+        $this->assertFileExists(base_path('integrations/reward-queue/install.sql'));
+        $this->assertFileExists(base_path('integrations/reward-queue/consumer-template.sql'));
+        $this->assertFileExists(base_path('integrations/reward-queue/pending.sql'));
+        $this->assertFileDoesNotExist(base_path('integrations/reward-queue/remove-legacy-bridge.sql'));
         $this->assertFileExists(base_path('account-themes/kaev-aurelia/views/web-inventory/index.blade.php'));
         $this->assertFileExists(base_path('account-themes/luxury/views/web-inventory/index.blade.php'));
         $this->assertFileExists(resource_path('views/admin/rewards/index.blade.php'));
 
         $contract = $this->readReleaseFile('app/Contracts/GameWorldDriver.php');
-        $this->assertStringContainsString('rewardDeliveryCapabilities', $contract);
-        $this->assertStringContainsString('deliverRewards', $contract);
-        $this->assertStringContainsString('rewardDeliveryStatus', $contract);
+        $this->assertStringNotContainsString('rewardDeliveryCapabilities', $contract);
+        $this->assertStringNotContainsString('deliverRewards', $contract);
+        $this->assertStringNotContainsString('rewardDeliveryStatus', $contract);
 
-        $mobiusDriver = $this->readReleaseFile('app/Services/GameWorld/MobiusInterludeGameWorldDriver.php');
+        $queueContract = $this->readReleaseFile('app/Contracts/GameRewardQueueGateway.php');
+        $this->assertStringContainsString('capabilities', $queueContract);
+        $this->assertStringContainsString('enqueue', $queueContract);
+
+        $mobiusDriver = $this->readReleaseFile('app/Services/GameWorld/MobiusGameWorldDriver.php');
         $this->assertStringNotContainsString("table('items')", $mobiusDriver);
+        $this->assertStringNotContainsString('reward', strtolower($mobiusDriver));
+        $this->assertStringContainsString('$profile->reputationColumn', $mobiusDriver);
+        $this->assertFileExists(app_path('Services/GameWorld/MobiusGameSchemaInspector.php'));
+
+        $mobiusAdapter = $this->readReleaseFile('app/Services/GameServer/MobiusGameServerAdapter.php');
+        $serverMonitor = $this->readReleaseFile('app/Services/Servers/ServerMonitor.php');
+        $this->assertStringNotContainsString("'message' => \$exception->getMessage()", $mobiusAdapter);
+        $this->assertStringNotContainsString("'message' => \$exception->getMessage()", $serverMonitor);
+        $this->assertFileExists(app_path('Services/GameWorld/MobiusGameSchemaProfile.php'));
+        $this->assertFileExists(app_path('Services/GameAccounts/MobiusClassNames.php'));
+        $this->assertFileDoesNotExist(app_path('Services/GameWorld/MobiusInterludeGameWorldDriver.php'));
+        $this->assertFileDoesNotExist(app_path('Services/GameAccounts/InterludeClassNames.php'));
+        $this->assertFileDoesNotExist(app_path('Services/GameWorld/InterludeCharacterLabels.php'));
 
         $migration = $this->readReleaseFile('database/migrations/2026_07_21_000100_create_reward_inventory_tables.php');
         $this->assertStringContainsString("Schema::create('reward_inventory_grants'", $migration);
         $this->assertStringContainsString("Schema::create('reward_inventory_items'", $migration);
         $this->assertStringContainsString("Schema::create('reward_deliveries'", $migration);
         $this->assertStringContainsString("Schema::create('reward_delivery_items'", $migration);
+        $this->assertStringContainsString("\$table->timestamp('transferred_at')->nullable()", $migration);
+        $this->assertStringContainsString("\$table->timestamp('queued_at')->nullable()", $migration);
+    }
+
+    public function test_promo_code_and_game_asset_release_artifacts_are_shipped(): void
+    {
+        $this->assertFileExists(app_path('Services/GameAssets/GameAssetUrlResolver.php'));
+        $this->assertFileExists(app_path('Support/Modules/ModuleNavigationRegistry.php'));
+        $this->assertFileExists(app_path('Support/Modules/ModuleGameServerDependencyRegistry.php'));
+        $this->assertFileExists(base_path('modules/promo-codes/module.json'));
+        $this->assertFileExists(base_path('modules/promo-codes/bootstrap.php'));
+        $this->assertFileExists(base_path('modules/promo-codes/database/migrations/2026_07_21_100000_create_module_promo_codes_table.php'));
+        $this->assertFileExists(base_path('modules/promo-codes/database/migrations/2026_07_21_100100_create_module_promo_code_rewards_table.php'));
+        $this->assertFileExists(base_path('modules/promo-codes/database/migrations/2026_07_21_100200_create_module_promo_code_activations_table.php'));
+        $this->assertFileExists(base_path('modules/promo-codes/database/migrations/2026_07_21_100300_add_deleted_at_to_module_promo_codes_table.php'));
+        $this->assertFileExists(base_path('modules/promo-codes/src/Services/PromoCodeActivationService.php'));
+        $this->assertFileExists(base_path('docs/PROMO_CODES.md'));
+        $this->assertFileExists(base_path('docs/GAME_ASSETS.md'));
+        $this->assertFileExists(public_path('assets/admin/js/promo-codes.js'));
+        $this->assertFileExists(public_path('assets/admin/css/app.css'));
+
+        $manifest = json_decode(
+            $this->readReleaseFile('modules/promo-codes/module.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertSame('promo-codes', $manifest['id']);
+        $this->assertSame('1.0.2', $manifest['version']);
+        $this->assertSame('0.26.0', $manifest['cms_min']);
+        $this->assertSame('database/migrations', $manifest['migrations']);
+
+        $activationService = $this->readReleaseFile('modules/promo-codes/src/Services/PromoCodeActivationService.php');
+        $this->assertStringContainsString('lockForUpdate()', $activationService);
+        $this->assertStringContainsString("grantKey: 'promo-code.activation.'.\$activation->id", $activationService);
+        $this->assertStringContainsString('RewardInventoryService', $activationService);
+        $this->assertStringNotContainsString("table('items')", $activationService);
+
+        $promoCodeModel = $this->readReleaseFile('modules/promo-codes/src/Models/PromoCode.php');
+        $this->assertStringContainsString('use SoftDeletes;', $promoCodeModel);
+
+        $promoScript = $this->readReleaseFile('public/assets/admin/js/promo-codes.js');
+        $this->assertStringContainsString('data-promo-reward-add', $promoScript);
+        $this->assertStringContainsString('data-promo-delete-form', $promoScript);
+
+        $adminStyles = $this->readReleaseFile('public/assets/admin/css/app.css');
+        $this->assertStringContainsString('.promo-reward-row', $adminStyles);
+
+        $resolver = $this->readReleaseFile('app/Services/GameAssets/GameAssetUrlResolver.php');
+        $this->assertStringContainsString("'items'", $resolver);
+        $this->assertStringContainsString("'characters'", $resolver);
+        $this->assertStringContainsString("'webp', 'png', 'jpg', 'jpeg'", $resolver);
     }
 
     public function test_obsolete_preview_and_settings_placeholder_are_not_shipped(): void

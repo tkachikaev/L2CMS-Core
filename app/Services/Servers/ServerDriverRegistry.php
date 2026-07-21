@@ -10,7 +10,7 @@ final class ServerDriverRegistry
      *     description:string,
      *     ready:bool,
      *     service_port:int,
-     *     requirements:list<array{table:string,columns:list<string>,required:bool}>
+     *     requirements:list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>
      * }>
      */
     public function loginDrivers(): array
@@ -71,15 +71,15 @@ final class ServerDriverRegistry
      *     character_created_at_column?:string|null,
      *     online_count?:array{table:string,column:string,value:int|string},
      *     statistics?:list<string>,
-     *     requirements:list<array{table:string,columns:list<string>,required:bool}>
+     *     requirements:list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>
      * }>
      */
     public function gameDrivers(): array
     {
         return [
             'l2j_mobius_ct0_interlude' => [
-                'label' => 'L2J Mobius — CT0 Interlude',
-                'description' => __('L2J Mobius CT0 Interlude character and account game data tables.'),
+                'label' => __('L2J Mobius — all chronicles'),
+                'description' => __('One L2J Mobius GameServer driver for legacy, mainline, Classic and Essence schemas.'),
                 'ready' => true,
                 'service_port' => 7777,
                 'character_created_at_column' => 'createDate',
@@ -108,12 +108,12 @@ final class ServerDriverRegistry
                             'deletetime',
                             'pvpkills',
                             'pkkills',
-                            'karma',
                             'nobless',
                             'clanid',
                             'lastAccess',
                             'createDate',
                         ],
+                        'any_columns' => ['karma', 'reputation'],
                         'required' => true,
                     ],
                     [
@@ -129,16 +129,6 @@ final class ServerDriverRegistry
                     [
                         'table' => 'castle',
                         'columns' => ['id', 'name'],
-                        'required' => false,
-                    ],
-                    [
-                        'table' => 'account_gsdata',
-                        'columns' => ['account_name', 'var', 'value'],
-                        'required' => false,
-                    ],
-                    [
-                        'table' => 'account_premium',
-                        'columns' => ['account_name', 'enddate'],
                         'required' => false,
                     ],
                 ],
@@ -165,13 +155,13 @@ final class ServerDriverRegistry
         return array_keys($this->gameDrivers());
     }
 
-    /** @return array{label:string,description:string,ready:bool,service_port:int,requirements:list<array{table:string,columns:list<string>,required:bool}>}|null */
+    /** @return array{label:string,description:string,ready:bool,service_port:int,requirements:list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>}|null */
     public function loginDriver(string $key): ?array
     {
         return $this->loginDrivers()[$key] ?? null;
     }
 
-    /** @return array{label:string,description:string,ready:bool,service_port:int,character_created_at_column?:string|null,online_count?:array{table:string,column:string,value:int|string},statistics?:list<string>,requirements:list<array{table:string,columns:list<string>,required:bool}>}|null */
+    /** @return array{label:string,description:string,ready:bool,service_port:int,character_created_at_column?:string|null,online_count?:array{table:string,column:string,value:int|string},statistics?:list<string>,requirements:list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>}|null */
     public function gameDriver(string $key): ?array
     {
         return $this->gameDrivers()[$key] ?? null;

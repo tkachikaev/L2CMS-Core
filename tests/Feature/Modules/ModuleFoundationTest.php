@@ -8,6 +8,7 @@ use App\Models\ModuleState;
 use App\Support\KaevCMS;
 use App\Support\Modules\ModuleManager;
 use App\Support\Modules\ModuleRuntime;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,6 +47,46 @@ class ModuleFoundationTest extends TestCase
         }
 
         parent::tearDown();
+    }
+
+    public function test_enable_refreshes_stale_migration_tracking_state(): void
+    {
+        $id = 'migration-cache-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Cache Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $migration = '2026_07_21_000001_create_cache_fixture.php';
+        $table = 'module_migration_cache_fixture';
+        $this->createTableMigration($root, $migration, $table);
+
+        Schema::drop('cms_module_migrations');
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $stale = $modules->inspect($id);
+
+        $this->assertFalse($stale['migration_tracking_available']);
+
+        Schema::create('cms_module_migrations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('module_id', 100)->index();
+            $table->string('migration', 190);
+            $table->char('checksum', 64);
+            $table->unsignedInteger('batch');
+            $table->timestamp('ran_at');
+            $table->unique(['module_id', 'migration']);
+        });
+
+        $enabled = $modules->enable($id);
+
+        $this->assertTrue($enabled['enabled']);
+        $this->assertTrue($enabled['migration_tracking_available']);
+        $this->assertTrue(Schema::hasTable($table));
+        $this->assertDatabaseHas('cms_module_migrations', [
+            'module_id' => $id,
+            'migration' => $migration,
+        ]);
     }
 
     public function test_manifest_is_strictly_validated_before_a_module_can_be_enabled(): void
@@ -251,6 +292,13 @@ PHP);
         $marker = app('runtime-fixture.marker');
         $this->assertIsArray($marker);
         $this->assertSame($id, $marker['module_id']);
+        $this->assertTrue(Route::has('modules.runtime-fixture.ping'));
+        $this->assertTrue(Route::has('admin.module-pages.runtime-fixture.status'));
+        $this->assertSame('/modules/runtime-fixture/ping', route('modules.runtime-fixture.ping', absolute: false));
+        $this->assertSame(
+            '/admin/extensions/runtime-fixture/status',
+            route('admin.module-pages.runtime-fixture.status', ['adminPath' => 'admin'], false),
+        );
         $this->get('/modules/runtime-fixture/ping')
             ->assertOk()
             ->assertJson(['module' => 'runtime-fixture']);

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Contracts\GameServerDatabaseGateway;
 use App\Models\GameServer;
 use App\Models\LoginServer;
+use App\Services\GameWorld\GameStatistics;
 use App\Services\GameWorld\GameWorldDriverResolver;
 use App\Services\SiteSettings;
 use Illuminate\Database\Schema\Blueprint;
@@ -12,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Tests\Fakes\FailingGameServerDatabaseGateway;
 use Tests\Fakes\FakeGameServerDatabaseGateway;
 use Tests\TestCase;
@@ -291,6 +293,69 @@ class PublicGameStatisticsTest extends TestCase
         $this->assertArrayNotHasKey('account_name', $characters[0]);
     }
 
+    public function test_modern_mobius_schema_uses_reputation_column_and_keeps_one_driver(): void
+    {
+        Schema::connection('statistics_test')->table('characters', function (Blueprint $table): void {
+            $table->integer('reputation')->default(0);
+        });
+        DB::connection('statistics_test')->table('characters')
+            ->where('account_name', 'test1')
+            ->update(['reputation' => 777]);
+        Schema::connection('statistics_test')->table('characters', function (Blueprint $table): void {
+            $table->dropColumn('karma');
+        });
+
+        $server = $this->statisticsServer(['chronicle' => 'Interlude']);
+        $characters = app(GameWorldDriverResolver::class)
+            ->resolve($server)
+            ->charactersForAccount($server, 'test1');
+
+        $this->assertCount(1, $characters);
+        $this->assertSame(777, $characters[0]['reputation']);
+        $this->assertArrayNotHasKey('karma', $characters[0]);
+    }
+
+    public function test_legacy_mobius_schema_normalizes_karma_to_reputation(): void
+    {
+        DB::connection('statistics_test')->table('characters')
+            ->where('account_name', 'test1')
+            ->update(['karma' => 321]);
+
+        $server = $this->statisticsServer(['chronicle' => 'Interlude']);
+        $characters = app(GameWorldDriverResolver::class)
+            ->resolve($server)
+            ->charactersForAccount($server, 'test1');
+
+        $this->assertSame(321, $characters[0]['reputation']);
+        $this->assertArrayNotHasKey('karma', $characters[0]);
+    }
+
+    public function test_optional_heroes_and_castles_are_removed_from_available_sections(): void
+    {
+        Schema::connection('statistics_test')->drop('heroes');
+        Schema::connection('statistics_test')->drop('castle');
+        $server = $this->statisticsServer();
+
+        $sections = app(GameStatistics::class)->sections($server);
+
+        $this->assertArrayHasKey('level', $sections);
+        $this->assertArrayNotHasKey('heroes', $sections);
+        $this->assertArrayNotHasKey('castles', $sections);
+    }
+
+    public function test_incompatible_mobius_schema_without_reputation_field_is_rejected(): void
+    {
+        Schema::connection('statistics_test')->table('characters', function (Blueprint $table): void {
+            $table->dropColumn('karma');
+        });
+        $server = $this->statisticsServer();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('either karma or reputation');
+
+        app(GameWorldDriverResolver::class)->resolve($server)->capabilities($server);
+    }
+
     public function test_disabled_statistics_section_falls_back_to_the_first_enabled_section(): void
     {
         $server = $this->statisticsServer([
@@ -312,7 +377,7 @@ class PublicGameStatisticsTest extends TestCase
         $this->get('/statistics/'.$server->id.'?section=pvp')->assertOk();
         $this->get('/statistics/'.$server->id.'?section=pvp')->assertOk();
 
-        $this->assertSame(1, $this->gateway->calls);
+        $this->assertSame(2, $this->gateway->calls);
     }
 
     public function test_failed_statistics_queries_use_a_short_cooldown(): void

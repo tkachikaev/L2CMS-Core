@@ -105,7 +105,7 @@ final class MobiusGameServerAdapter implements GameServerAdapter
         Log::warning('Mobius database operation failed.', [
             'operation' => $operation,
             'exception' => $exception::class,
-            'message' => $exception->getMessage(),
+            'code' => (string) $exception->getCode(),
         ]);
     }
 }

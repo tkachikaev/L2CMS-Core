@@ -15,8 +15,7 @@ class RewardDeliveryController extends Controller
         $status = strtolower(trim((string) $request->query('status')));
         if (! in_array($status, [
             RewardDelivery::STATUS_PENDING,
-            RewardDelivery::STATUS_PROCESSING,
-            RewardDelivery::STATUS_DELIVERED,
+            RewardDelivery::STATUS_QUEUED,
             RewardDelivery::STATUS_FAILED,
             RewardDelivery::STATUS_REVIEW,
         ], true)) {

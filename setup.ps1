@@ -223,7 +223,11 @@ $directories = @(
     'public\uploads\news\content',
     'public\uploads\pages\content',
     'public\uploads\settings\logo',
-    'public\uploads\settings\favicon'
+    'public\uploads\settings\favicon',
+    'public\uploads\game-assets\items\common',
+    'public\uploads\game-assets\items\servers',
+    'public\uploads\game-assets\characters\common',
+    'public\uploads\game-assets\characters\servers'
 )
 
 foreach ($directory in $directories) {

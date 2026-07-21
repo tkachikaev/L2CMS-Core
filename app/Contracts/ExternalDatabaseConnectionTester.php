@@ -6,7 +6,7 @@ interface ExternalDatabaseConnectionTester
 {
     /**
      * @param  array{host:string,port:int,database:string,username:string,password:string,charset:string}  $connection
-     * @param  list<array{table:string,columns:list<string>,required:bool}>  $requirements
+     * @param  list<array{table:string,columns:list<string>,any_columns?:list<string>,required:bool}>  $requirements
      * @return array{
      *     connected:bool,
      *     compatible:bool|null,

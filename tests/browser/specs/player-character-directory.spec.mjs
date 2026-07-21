@@ -87,3 +87,80 @@ test('player web inventory is available from the persistent account shell', asyn
     await expect(page.locator('[data-account-sidebar]')).toBeVisible();
     await expect(page.locator('[data-account-topbar]')).toBeVisible();
 });
+
+test('player activates a promo code into the server-bound web inventory', async ({ page }) => {
+    await signIn(page);
+
+    await page.locator('.account-nav').getByRole('link', { name: 'Промокоды' }).click();
+    await expect(page).toHaveURL(/\/modules\/promo-codes$/);
+    await page.locator('input[name="code"]').fill('browser2026');
+    await page.getByRole('button', { name: 'Активировать код', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/modules\/promo-codes$/);
+    await expect(page.getByText('Награды добавлены в веб-инвентарь сервера Browser World.')).toBeVisible();
+    await expect(page.getByText('BROWSER2026', { exact: true })).toBeVisible();
+    await expect(page.getByText(/#57 × 1 000 000/)).toBeVisible();
+
+    await page.getByRole('link', { name: 'Открыть веб-инвентарь', exact: true }).click();
+    await expect(page).toHaveURL(/\/account\/web-inventory$/);
+    await expect(page.getByText('Предмет №57')).toBeVisible();
+    await expect(page.getByText('1 000 000')).toBeVisible();
+});
+
+test('aurelia player theme keeps rounded surfaces and active module navigation after SPA changes', async ({ page, context }) => {
+    const adminEmail = process.env.PLAYWRIGHT_ADMIN_EMAIL || 'browser-admin@example.test';
+    const adminPassword = process.env.PLAYWRIGHT_ADMIN_PASSWORD || 'BrowserPassword123!';
+
+    await gotoWithLocalNetworkRetry(page, '/admin/login');
+    await page.locator('#email').fill(adminEmail);
+    await page.locator('#password').fill(adminPassword);
+    await page.getByRole('button', { name: 'Войти в панель' }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+
+    await gotoWithLocalNetworkRetry(page, '/admin/account-themes');
+    const aureliaCard = page.locator('.theme-card').filter({ hasText: 'Kaev Aurelia Account' });
+    const activate = aureliaCard.getByRole('button', { name: 'Активировать' });
+    if (await activate.count()) {
+        await activate.click();
+        await expect(page).toHaveURL(/\/admin\/account-themes$/);
+    }
+
+    await context.clearCookies();
+    await signIn(page);
+    await expect(page.locator('link[href*="account-themes/kaev-aurelia/assets/css/app.css"]')).toHaveCount(1);
+
+    const promoLink = page.locator('.account-nav').getByRole('link', { name: 'Промокоды' });
+    await promoLink.click();
+    await expect(page).toHaveURL(/\/modules\/promo-codes$/);
+    await expect(promoLink).toHaveClass(/active/);
+
+    const activationSurface = page.locator('.promo-activation-surface');
+    const formAside = page.locator('.account-form-aside');
+    await expect(activationSurface).toBeVisible();
+    await expect(formAside).toBeVisible();
+
+    const activationRadius = await activationSurface.evaluate((element) => Number.parseFloat(getComputedStyle(element).borderTopLeftRadius));
+    const asideStyle = await formAside.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+            radius: Number.parseFloat(style.borderTopLeftRadius),
+            position: style.position,
+            overflow: style.overflow,
+        };
+    });
+
+    expect(activationRadius).toBeGreaterThan(0);
+    expect(asideStyle.radius).toBeGreaterThan(0);
+    expect(asideStyle.position).toBe('relative');
+    expect(asideStyle.overflow).toBe('hidden');
+
+    await page.locator('.account-nav').getByRole('link', { name: 'Веб-инвентарь' }).click();
+    await expect(page).toHaveURL(/\/account\/web-inventory$/);
+
+    const inventorySurface = page.locator('.reward-inventory-shell');
+    const inventoryRadius = await inventorySurface.evaluate((element) => Number.parseFloat(getComputedStyle(element).borderTopLeftRadius));
+    const tabRadius = await page.locator('.reward-view-tabs a').first().evaluate((element) => Number.parseFloat(getComputedStyle(element).borderTopLeftRadius));
+
+    expect(inventoryRadius).toBeGreaterThan(0);
+    expect(tabRadius).toBeGreaterThan(0);
+});

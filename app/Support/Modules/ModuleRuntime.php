@@ -89,6 +89,8 @@ final class ModuleRuntime
         // They are added after the cached/core routes on every normal request,
         // so disabling or replacing a module cannot leave executable stale routes.
         if ($this->shouldRegisterRoutes()) {
+            $routes = Route::getRoutes();
+            $routeCountBeforeModule = count($routes->getRoutes());
             $routePaths = (array) ($module['route_paths'] ?? []);
             if (isset($routePaths['web']) && is_string($routePaths['web'])) {
                 Route::middleware(['web', 'module.enabled:'.$id])
@@ -103,6 +105,14 @@ final class ModuleRuntime
                     ->prefix('{adminPath}/extensions/'.$id)
                     ->name($context->adminRouteNamePrefix())
                     ->group($routePaths['admin']);
+            }
+
+            // Module routes are registered after Laravel finishes its normal route boot.
+            // Fluent ->name() calls happen after a route is initially added, so re-adding
+            // only the newly registered routes updates named/action lookups for both the
+            // normal and compiled route collections without touching cached core routes.
+            foreach (array_slice($routes->getRoutes(), $routeCountBeforeModule) as $route) {
+                $routes->add($route);
             }
         }
 

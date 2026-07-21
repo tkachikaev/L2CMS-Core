@@ -11,7 +11,7 @@ use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\AuditLogger;
 use App\Services\GameAccounts\GameAccountQuota;
-use App\Services\GameAccounts\InterludeClassNames;
+use App\Services\GameAccounts\MobiusClassNames;
 use App\Services\GameAccountSettings;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -209,7 +209,7 @@ class GameAccountController extends Controller
 
     public function show(
         Request $request,
-        InterludeClassNames $classNames,
+        MobiusClassNames $classNames,
         GameAccountSettings $settings,
     ): View {
         $gameAccount = $this->gameAccountId($request);

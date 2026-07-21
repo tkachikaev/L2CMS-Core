@@ -338,6 +338,13 @@ class AdminPanelTest extends TestCase
         $this->assertStringContainsString('wire:current.exact="active"', $navigation);
         $this->assertStringContainsString('data-admin-settings-link', $navigation);
         $this->assertStringContainsString('data-current', $navigation);
+        $this->assertStringContainsString('data-admin-menu-group="modules"', $navigation);
+        $modulesLinkPosition = strpos($navigation, "route('admin.modules.index')");
+        $moduleLinksPosition = strpos($navigation, 'ModuleNavigationRegistry::class');
+        if (! is_int($modulesLinkPosition) || ! is_int($moduleLinksPosition)) {
+            $this->fail('The module navigation group is incomplete.');
+        }
+        $this->assertLessThan($moduleLinksPosition, $modulesLinkPosition);
         $this->assertStringNotContainsString("'active' => request()->routeIs", $navigation);
     }
 

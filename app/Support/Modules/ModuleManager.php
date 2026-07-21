@@ -107,6 +107,7 @@ final class ModuleManager
     public function enable(string $id): array
     {
         $this->assertStateTable();
+        $this->refresh();
         $module = $this->inspect($id);
 
         if (! $module['valid']) {

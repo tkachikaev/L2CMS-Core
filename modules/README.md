@@ -41,3 +41,8 @@ Disabling a module stops its runtime code but preserves all database tables and 
 An enabled module is trusted PHP code. KaevCMS validates the manifest and prevents path traversal, but it cannot sandbox PHP. Install modules only from trusted sources.
 
 See `docs/MODULES.md` for the complete lifecycle and security contract.
+
+
+## Bundled module
+
+KaevCMS 0.26.0 ships `promo-codes`. It is installed and enabled explicitly by the owner, applies its own immutable migrations, grants rewards through the core web inventory and preserves all data when disabled. See `docs/PROMO_CODES.md`.

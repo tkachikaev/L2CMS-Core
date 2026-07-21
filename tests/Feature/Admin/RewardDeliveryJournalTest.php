@@ -18,7 +18,7 @@ class RewardDeliveryJournalTest extends TestCase
             $this->actingAs($admin, 'admin')
                 ->get(route('admin.rewards.index'))
                 ->assertOk()
-                ->assertSee(__('Reward deliveries'));
+                ->assertSee(__('Reward queue transfers'));
         }
 
         $editor = Admin::factory()->create(['role' => AdminRole::Editor]);

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\GameServer;
 use App\Services\GameWorld\GameWorldDriverResolver;
+use App\Services\GameWorld\MobiusGameWorldDriver;
 use App\Services\Servers\ServerDriverRegistry;
 use Tests\TestCase;
 
@@ -61,11 +62,12 @@ class ServerDriverRegistryTest extends TestCase
         $this->assertContains('l2j_mobius_legacy', $keys);
     }
 
-    public function test_mobius_interlude_game_driver_matches_schema_contract(): void
+    public function test_mobius_game_driver_matches_shared_schema_contract(): void
     {
         $driver = app(ServerDriverRegistry::class)->gameDriver('l2j_mobius_ct0_interlude');
 
         $this->assertNotNull($driver);
+        $this->assertSame(__('L2J Mobius — all chronicles'), $driver['label']);
         $this->assertTrue($driver['ready']);
         $this->assertSame(7777, $driver['service_port']);
         $this->assertSame('createDate', $driver['character_created_at_column']);
@@ -94,12 +96,12 @@ class ServerDriverRegistryTest extends TestCase
                     'deletetime',
                     'pvpkills',
                     'pkkills',
-                    'karma',
                     'nobless',
                     'clanid',
                     'lastAccess',
                     'createDate',
                 ],
+                'any_columns' => ['karma', 'reputation'],
                 'required' => true,
             ],
             [
@@ -117,28 +119,16 @@ class ServerDriverRegistryTest extends TestCase
                 'columns' => ['id', 'name'],
                 'required' => false,
             ],
-            [
-                'table' => 'account_gsdata',
-                'columns' => ['account_name', 'var', 'value'],
-                'required' => false,
-            ],
-            [
-                'table' => 'account_premium',
-                'columns' => ['account_name', 'enddate'],
-                'required' => false,
-            ],
         ], $driver['requirements']);
     }
 
-    public function test_mobius_statistics_registry_matches_the_runtime_driver(): void
+    public function test_existing_interlude_identifier_resolves_to_the_shared_mobius_driver(): void
     {
         $server = new GameServer(['driver' => 'l2j_mobius_ct0_interlude']);
-        $definition = app(ServerDriverRegistry::class)->gameDriver('l2j_mobius_ct0_interlude');
 
-        $this->assertNotNull($definition);
-        $this->assertSame(
-            $definition['statistics'],
-            app(GameWorldDriverResolver::class)->resolve($server)->capabilities(),
+        $this->assertInstanceOf(
+            MobiusGameWorldDriver::class,
+            app(GameWorldDriverResolver::class)->resolve($server),
         );
     }
 
