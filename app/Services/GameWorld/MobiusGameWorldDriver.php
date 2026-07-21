@@ -164,7 +164,7 @@ final class MobiusGameWorldDriver implements GameWorldDriver
 
     private function schemaProfile(GameServer $server): MobiusGameSchemaProfile
     {
-        if (! $server->exists || $server->id === null) {
+        if (! $server->exists) {
             return $this->inspectSchema($server);
         }
 

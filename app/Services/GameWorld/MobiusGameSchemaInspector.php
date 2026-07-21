@@ -28,13 +28,13 @@ final class MobiusGameSchemaInspector
             throw new RuntimeException('The Mobius characters table must contain either karma or reputation.');
         }
 
-        $preferred = $this->preferredProfile($chronicle);
-        $reputationColumn = match (true) {
-            $hasKarma && ! $hasReputation => 'karma',
-            $hasReputation && ! $hasKarma => 'reputation',
-            $preferred === MobiusGameSchemaProfile::LEGACY => 'karma',
-            default => 'reputation',
-        };
+        if ($hasKarma && $hasReputation) {
+            $reputationColumn = $this->preferredProfile($chronicle) === MobiusGameSchemaProfile::LEGACY
+                ? 'karma'
+                : 'reputation';
+        } else {
+            $reputationColumn = $hasKarma ? 'karma' : 'reputation';
+        }
 
         return new MobiusGameSchemaProfile(
             name: $reputationColumn === 'karma'

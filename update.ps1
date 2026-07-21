@@ -5,12 +5,13 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$expectedFromVersion = '0.28.0'
-$expectedToVersion = '0.29.0'
-$legacyApplyScriptName = 'apply-0.28.0.ps1'
-$legacyApplySha256 = '098b8934cb572740316ee6f637605898dd44435074ae405725c3bfba99abf7ec'
+$expectedFromVersion = '0.29.0'
+$expectedToVersion = '0.29.2'
+$legacyApplyScriptName = 'apply-0.29.0.ps1'
+$legacyApplySha256 = '58e1dea45db84678133335c2c9b54bb6dbfd2128a98ef15a8e25cd22498f2a7e'
 $previousComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $currentComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
+$supersededPendingTargets = @('0.29.1')
 
 $supportScript = Join-Path $PSScriptRoot 'scripts\release-update-support.ps1'
 if (-not (Test-Path -LiteralPath $supportScript -PathType Leaf)) {
@@ -233,6 +234,15 @@ $script:updateLogPath = Join-Path $PSScriptRoot ('storage\logs\update-{0}-{1}.lo
 Write-UpdateStage -Message "KaevCMS $expectedFromVersion -> $cmsVersion update"
 Write-UpdateStage -Message "Project: $PSScriptRoot"
 
+$pendingMarkerConverted = Convert-KaevCmsSupersededPendingUpdateMarker `
+    -ProjectRoot $PSScriptRoot `
+    -ExpectedFromVersion $expectedFromVersion `
+    -ExpectedToVersion $expectedToVersion `
+    -SupersededToVersions $supersededPendingTargets
+if ($pendingMarkerConverted) {
+    Write-UpdateStage -Message 'A pending marker from superseded candidate 0.29.1 was adopted for 0.29.2.' -Level WARN
+}
+
 $installed = Get-KaevCmsInstalledVersion `
     -ProjectRoot $PSScriptRoot `
     -ExpectedFromVersion $expectedFromVersion `
@@ -329,6 +339,9 @@ try {
 
     Remove-KaevCmsPendingUpdateMarker -ProjectRoot $PSScriptRoot
     Remove-KaevCmsUpdateBackups -ProjectRoot $PSScriptRoot -TargetVersion $cmsVersion
+    foreach ($supersededPendingTarget in $supersededPendingTargets) {
+        Remove-KaevCmsUpdateBackups -ProjectRoot $PSScriptRoot -TargetVersion $supersededPendingTarget
+    }
     Remove-ObsoleteReleaseArtifacts -CurrentVersion $cmsVersion
     Write-UpdateStage -Message "KaevCMS $cmsVersion update completed successfully."
 } catch {

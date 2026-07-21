@@ -37,7 +37,13 @@
             @endif
         </div>
 
-        @if($sections === [] || $activeSection === null)
+        @if(!$statisticsSourceAvailable)
+            <div class="panel statistics-empty-state statistics-error-state">
+                <span aria-hidden="true"><i>!</i></span>
+                <h2>{{ __('Game data is temporarily unavailable.') }}</h2>
+                <p>{{ __('The game database could not be read. Try again later.') }}</p>
+            </div>
+        @elseif($sections === [] || $activeSection === null)
             <div class="panel statistics-empty-state">
                 <span aria-hidden="true"><i>◎</i></span>
                 <h2>{{ __('Statistics sections are disabled.') }}</h2>

@@ -93,9 +93,9 @@ final class DatabaseGameRewardQueueGateway implements GameRewardQueueGateway
         $timestamp = now('UTC')->format('Y-m-d H:i:s');
         $rows = [];
 
-        foreach (array_values($payload->items) as $index => $item) {
-            $itemId = (int) ($item['item_id'] ?? 0);
-            $amount = (int) ($item['amount'] ?? 0);
+        foreach ($payload->items as $index => $item) {
+            $itemId = $item['item_id'];
+            $amount = $item['amount'];
             if ($itemId <= 0 || $amount <= 0) {
                 return [];
             }
@@ -126,7 +126,7 @@ final class DatabaseGameRewardQueueGateway implements GameRewardQueueGateway
     /** @return Collection<int,array<string,mixed>> */
     private function existingRows(Connection $connection, string $requestUuid): Collection
     {
-        return $connection->table(self::TABLE)
+        $records = $connection->table(self::TABLE)
             ->where('request_uuid', $requestUuid)
             ->orderBy('line_number')
             ->get([
@@ -140,8 +140,14 @@ final class DatabaseGameRewardQueueGateway implements GameRewardQueueGateway
                 'character_name',
                 'item_id',
                 'amount',
-            ])
-            ->map(static fn (object $row): array => (array) $row);
+            ]);
+
+        /** @var Collection<int,array<string,mixed>> $rows */
+        $rows = $records
+            ->map(static fn (object $record): array => get_object_vars($record))
+            ->values();
+
+        return $rows;
     }
 
     /**

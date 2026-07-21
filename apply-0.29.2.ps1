@@ -5,8 +5,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$fromVersion = '0.28.0'
-$toVersion = '0.29.0'
+$fromVersion = '0.29.0'
+$toVersion = '0.29.2'
 
 if (-not (Test-Path 'artisan')) {
     throw 'Run this script from the KaevCMS project root.'
@@ -30,21 +30,16 @@ $requiredFiles = @(
     'README.md',
     'VERSION',
     'update.ps1',
-    'account-themes\kaev-aurelia\theme.json',
-    'account-themes\kaev-aurelia\views\partials\navigation.blade.php',
-    'app\Services\GameServer\MobiusGameServerAdapter.php',
-    'app\Services\Servers\ServerMonitor.php',
-    'docs\AUDIT_0.29.0.md',
-    'docs\README.md',
-    'docs\ROADMAP.md',
-    'docs\WEB_INVENTORY.md',
-    'integrations\reward-queue\README.md',
-    'modules\promo-codes\resources\views\account\index.blade.php',
-    'public\account-themes\kaev-aurelia\assets\css\app.css',
-    'tests\Feature\BundledAureliaThemesTest.php',
-    'tests\Feature\Modules\PromoCodesModuleTest.php',
+    'scripts\release-update-support.ps1',
+    'app\Http\Controllers\StatisticsController.php',
+    'app\Services\GameWorld\GameStatistics.php',
+    'app\Services\GameWorld\MobiusGameSchemaInspector.php',
+    'app\Services\GameWorld\MobiusGameWorldDriver.php',
+    'app\Services\Rewards\DatabaseGameRewardQueueGateway.php',
+    'themes\default\views\statistics\index.blade.php',
+    'themes\kaev-aurelia\views\statistics\index.blade.php',
     'tests\Feature\ReleaseMetadataTest.php',
-    'tests\browser\specs\player-character-directory.spec.mjs',
+    'tests\Unit\MobiusClassNamesTest.php',
     'tests\powershell\update-workflow.ps1'
 )
 foreach ($requiredFile in $requiredFiles) {
@@ -61,7 +56,7 @@ Write-Host ''
 
 Write-Host ''
 Write-Host "KaevCMS $toVersion is ready." -ForegroundColor Green
-Write-Host 'Stabilization audit completed; Kaev Aurelia Account surfaces and release cleanup were updated.'
+Write-Host 'Statistics cooldown, schema inspection, and reward queue typing were corrected.'
 Write-Host 'Offline developer quality gate: .\quality.ps1'
 Write-Host 'One-time browser setup: .\browser-setup.ps1'
 Write-Host 'Offline browser smoke tests: .\browser-quality.ps1'

@@ -40,6 +40,43 @@ function Remove-KaevCmsPendingUpdateMarker {
     }
 }
 
+function Convert-KaevCmsSupersededPendingUpdateMarker {
+    param(
+        [Parameter(Mandatory = $true)][string]$ProjectRoot,
+        [Parameter(Mandatory = $true)][string]$ExpectedFromVersion,
+        [Parameter(Mandatory = $true)][string]$ExpectedToVersion,
+        [Parameter(Mandatory = $true)][string[]]$SupersededToVersions
+    )
+
+    $markerPath = Get-KaevCmsPendingUpdateMarkerPath -ProjectRoot $ProjectRoot
+    if (-not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
+        return $false
+    }
+
+    try {
+        $pending = Get-Content -LiteralPath $markerPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "Pending update marker is invalid: $markerPath"
+    }
+
+    $fromVersion = [string]$pending.from_version
+    $toVersion = [string]$pending.to_version
+    if (-not (Test-KaevCmsVersion -Version $fromVersion) -or -not (Test-KaevCmsVersion -Version $toVersion)) {
+        throw 'Pending update marker contains an invalid release number.'
+    }
+
+    if ($fromVersion -ne $ExpectedFromVersion -or $SupersededToVersions -notcontains $toVersion) {
+        return $false
+    }
+
+    Write-KaevCmsPendingUpdateMarker `
+        -ProjectRoot $ProjectRoot `
+        -FromVersion $ExpectedFromVersion `
+        -ToVersion $ExpectedToVersion
+
+    return $true
+}
+
 function Get-KaevCmsInstalledVersion {
     param(
         [Parameter(Mandatory = $true)][string]$ProjectRoot,

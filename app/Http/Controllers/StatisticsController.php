@@ -59,12 +59,15 @@ final class StatisticsController
             $selectedServer = $servers->first();
         }
 
-        $sections = $selectedServer instanceof GameServer ? $statistics->sections($selectedServer) : [];
+        $sectionState = $selectedServer instanceof GameServer
+            ? $statistics->sectionState($selectedServer)
+            : ['available' => true, 'sections' => []];
+        $sections = $sectionState['sections'];
         $requestedSection = trim((string) $request->query('section', ''));
         $activeSection = array_key_exists($requestedSection, $sections)
             ? $requestedSection
             : array_key_first($sections);
-        $result = $selectedServer instanceof GameServer && is_string($activeSection)
+        $result = $sectionState['available'] && $selectedServer instanceof GameServer && is_string($activeSection)
             ? $statistics->load($selectedServer, $activeSection)
             : ['available' => false, 'rows' => []];
 
@@ -73,6 +76,7 @@ final class StatisticsController
             'selectedServer' => $selectedServer,
             'sections' => $sections,
             'activeSection' => $activeSection,
+            'statisticsSourceAvailable' => $sectionState['available'],
             'statisticsAvailable' => $result['available'],
             'rows' => $result['rows'],
             'showOnlineStatus' => $siteSettings->showPublicOnline(),

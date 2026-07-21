@@ -39,11 +39,9 @@ final class GameStatistics
                         return false;
                     }
 
-                    try {
-                        return $this->drivers->resolve($server)->capabilities($server) !== [];
-                    } catch (Throwable) {
-                        return false;
-                    }
+                    $state = $this->sectionState($server);
+
+                    return $state['available'] && $state['sections'] !== [];
                 });
         } catch (Throwable) {
             return false;
@@ -53,14 +51,37 @@ final class GameStatistics
     /** @return array<string,string> */
     public function sections(GameServer $server): array
     {
+        return $this->sectionState($server)['sections'];
+    }
+
+    /** @return array{available:bool,sections:array<string,string>} */
+    public function sectionState(GameServer $server): array
+    {
         if (! $server->statistics_enabled || ! $server->connectionConfigured()) {
-            return [];
+            return ['available' => true, 'sections' => []];
+        }
+
+        $failureKey = implode(':', [
+            'game-statistics-capabilities-v1',
+            $server->id,
+            $server->updated_at?->getTimestamp() ?? 0,
+            'unavailable',
+        ]);
+        if (Cache::has($failureKey)) {
+            return ['available' => false, 'sections' => []];
         }
 
         try {
             $capabilities = $this->drivers->resolve($server)->capabilities($server);
-        } catch (Throwable) {
-            return [];
+        } catch (Throwable $exception) {
+            Cache::put($failureKey, true, now()->addSeconds(self::FAILURE_COOLDOWN_SECONDS));
+            Log::warning('Public game statistics capabilities could not be read.', [
+                'game_server_id' => $server->id,
+                'driver' => $server->driver,
+                'exception' => $exception::class,
+            ]);
+
+            return ['available' => false, 'sections' => []];
         }
 
         $sections = [];
@@ -70,7 +91,7 @@ final class GameStatistics
             }
         }
 
-        return $sections;
+        return ['available' => true, 'sections' => $sections];
     }
 
     /** @return array{available:bool,rows:list<array<string,mixed>>} */

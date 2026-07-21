@@ -40,14 +40,14 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.28.0'", $applyScript);
-        $this->assertStringContainsString('account-themes\kaev-aurelia\theme.json', $applyScript);
-        $this->assertStringContainsString('modules\promo-codes\resources\views\account\index.blade.php', $applyScript);
-        $this->assertStringContainsString('public\account-themes\kaev-aurelia\assets\css\app.css', $applyScript);
-        $this->assertStringContainsString('docs\AUDIT_0.29.0.md', $applyScript);
-        $this->assertStringContainsString('tests\Feature\BundledAureliaThemesTest.php', $applyScript);
-        $this->assertStringContainsString('tests\browser\specs\player-character-directory.spec.mjs', $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.29.0'", $applyScript);
+        $this->assertStringContainsString('app\Services\GameWorld\GameStatistics.php', $applyScript);
+        $this->assertStringContainsString('app\Services\Rewards\DatabaseGameRewardQueueGateway.php', $applyScript);
+        $this->assertStringContainsString('themes\default\views\statistics\index.blade.php', $applyScript);
+        $this->assertStringContainsString('themes\kaev-aurelia\views\statistics\index.blade.php', $applyScript);
+        $this->assertStringContainsString('tests\Unit\MobiusClassNamesTest.php', $applyScript);
         $this->assertStringContainsString('tests\powershell\update-workflow.ps1', $applyScript);
+        $this->assertStringContainsString('scripts\release-update-support.ps1', $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
     }
@@ -56,14 +56,16 @@ class ReleaseMetadataTest extends TestCase
     {
         $updateScript = $this->readReleaseFile('update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.28.0'", $updateScript);
-        $this->assertStringContainsString("\$expectedToVersion = '0.29.0'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.28.0.ps1'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplySha256 = '098b8934cb572740316ee6f637605898dd44435074ae405725c3bfba99abf7ec'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.29.0'", $updateScript);
+        $this->assertStringContainsString("\$expectedToVersion = '0.29.2'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.29.0.ps1'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplySha256 = '58e1dea45db84678133335c2c9b54bb6dbfd2128a98ef15a8e25cd22498f2a7e'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
         $this->assertStringContainsString('Write-KaevCmsPendingUpdateMarker', $updateScript);
+        $this->assertStringContainsString('Convert-KaevCmsSupersededPendingUpdateMarker', $updateScript);
+        $this->assertStringContainsString("\$supersededPendingTargets = @('0.29.1')", $updateScript);
         $this->assertStringContainsString('Move-KaevCmsArtifactsToBackup', $updateScript);
         $this->assertStringContainsString('Remove-KaevCmsUpdateBackups', $updateScript);
         $this->assertStringNotContainsString('QUEUE_CONNECTION=sync', $updateScript);
