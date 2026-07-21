@@ -75,3 +75,15 @@ test('luxury player theme remains reactive after SPA navigation', async ({ page 
     await allCharacters.click();
     await expect(allCharacters).toHaveAttribute('aria-selected', 'true');
 });
+
+test('player web inventory is available from the persistent account shell', async ({ page }) => {
+    await signIn(page);
+
+    await page.locator('.account-nav').getByRole('link', { name: 'Веб-инвентарь' }).click();
+
+    await expect(page).toHaveURL(/\/account\/web-inventory$/);
+    await expect(page.getByRole('heading', { name: 'Веб-инвентарь', exact: true })).toBeVisible();
+    await expect(page.getByText('Ваш веб-инвентарь пуст')).toBeVisible();
+    await expect(page.locator('[data-account-sidebar]')).toBeVisible();
+    await expect(page.locator('[data-account-topbar]')).toBeVisible();
+});

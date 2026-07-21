@@ -70,8 +70,11 @@ test('two-factor QR is rendered after leaving and returning', async ({ page }) =
 
 test('persisted sidebar keeps group state during navigation and history changes', async ({ page }) => {
     const appearanceGroup = page.locator('[data-admin-menu-group="appearance"]');
+    await expect(appearanceGroup.locator('summary')).toContainText('Темы');
     await appearanceGroup.locator('summary').click();
     await expect(appearanceGroup).toHaveAttribute('open', '');
+    await expect(appearanceGroup.getByRole('link', { name: 'Сайт', exact: true })).toBeVisible();
+    await expect(appearanceGroup.getByRole('link', { name: 'Кабинет', exact: true })).toBeVisible();
 
     await openMenuGroup(page, 'servers');
     await page.getByRole('link', { name: 'Игровые серверы' }).click();
@@ -148,7 +151,8 @@ test('module foundation is available from the administrator sidebar', async ({ p
 
     await expect(page).toHaveURL(/\/admin\/modules$/);
     await expect(page.getByRole('heading', { name: 'Модули' }).first()).toBeVisible();
-    await expect(page.getByText('Основа системы модулей')).toBeVisible();
+    await expect(page.getByText('Жизненный цикл модулей')).toBeVisible();
+    await expect(page.getByText(/При отключении модуля его данные сохраняются/)).toBeVisible();
     await expect(page.getByText(/Модули не найдены/)).toBeVisible();
 });
 
@@ -285,4 +289,12 @@ test('removed legacy dashboard endpoint returns not found', async ({ page }) => 
 
     expect(response).not.toBeNull();
     expect(response.status()).toBe(404);
+});
+
+test('reward delivery journal is available from the administrator sidebar', async ({ page }) => {
+    await page.getByRole('link', { name: 'Передачи наград', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/admin\/reward-deliveries$/);
+    await expect(page.getByRole('heading', { name: 'Передачи наград' }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Передач наград пока нет', exact: true })).toBeVisible();
 });

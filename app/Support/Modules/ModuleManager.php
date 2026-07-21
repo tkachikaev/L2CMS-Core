@@ -23,6 +23,7 @@ final class ModuleManager
         private readonly int $runtimeRetrySeconds,
         private readonly Filesystem $files,
         private readonly ModuleValidator $validator,
+        private readonly ModuleMigrationManager $migrations,
     ) {}
 
     /** @return array<int, array<string, mixed>> */
@@ -40,7 +41,10 @@ final class ModuleManager
             foreach ($this->files->directories($this->modulesPath) as $directory) {
                 $id = basename($directory);
                 $seenIds[] = $id;
-                $modules[] = $this->mergeState($this->validator->inspect($id, $this->modulesPath, $this->reservedIds), $states->get($id));
+                $modules[] = $this->mergeState(
+                    $this->validator->inspect($id, $this->modulesPath, $this->reservedIds),
+                    $states->get($id),
+                );
             }
         }
 
@@ -113,6 +117,16 @@ final class ModuleManager
             throw new RuntimeException(__('A module incompatible with this CMS version cannot be enabled.'));
         }
 
+        if (($module['migration_tracking_available'] ?? true) !== true) {
+            throw new RuntimeException(__('Module migration tracking is unavailable. Run the KaevCMS database migrations first.'));
+        }
+
+        if (($module['modified_migrations'] ?? []) !== []) {
+            throw new RuntimeException(__('An already applied module migration was modified or removed. Restore the original file or add a newer migration.'));
+        }
+
+        $migrationResult = $this->migrations->migrate($module);
+
         DB::transaction(static function () use ($module): void {
             ModuleState::query()->updateOrCreate(
                 ['id' => $module['id']],
@@ -123,13 +137,17 @@ final class ModuleManager
                     'disabled_at' => null,
                     'last_error' => null,
                     'last_error_at' => null,
+                    'migration_error' => null,
+                    'migration_error_at' => null,
                 ],
             );
         });
 
         $this->refresh();
+        $resolved = $this->inspect($id);
+        $resolved['migration_result'] = $migrationResult;
 
-        return $this->inspect($id);
+        return $resolved;
     }
 
     /** @return array<string, mixed> */
@@ -138,7 +156,7 @@ final class ModuleManager
         $this->assertStateTable();
         $state = ModuleState::query()->find($id);
 
-        if (! $state instanceof ModuleState || ! $state->enabled) {
+        if (($state instanceof ModuleState) === false || ! $state->enabled) {
             throw new RuntimeException(__('The module is not enabled.'));
         }
 
@@ -171,23 +189,46 @@ final class ModuleManager
         }
     }
 
-    /** @param array<string, mixed> $module @return array<string, mixed> */
+    /**
+     * @param  array<string, mixed>  $module
+     * @return array<string, mixed>
+     */
     private function mergeState(array $module, mixed $state): array
     {
         $enabled = $state instanceof ModuleState && $state->enabled;
         $updateAvailable = $state instanceof ModuleState
             && $state->version !== $module['version'];
         $runtimeError = $state instanceof ModuleState ? $state->last_error : null;
+        $migrationError = $state instanceof ModuleState ? $state->migration_error : null;
+        $migrationState = $this->migrations->inspect($module);
+        $migrationPending = (int) $migrationState['pending_count'] > 0;
+        $migrationModified = (array) $migrationState['modified_migrations'] !== []
+            || (array) $migrationState['missing_migrations'] !== [];
+        $migrationTrackingUnavailable = (bool) $migrationState['has_migrations']
+            && $migrationState['tracking_available'] === false;
+
         $status = match (true) {
             ! $module['valid'] => 'invalid',
             ! $module['compatible'] => 'incompatible',
+            $migrationTrackingUnavailable => 'migration_unavailable',
+            $migrationModified => 'migration_modified',
+            is_string($migrationError) && $migrationError !== '' => 'migration_error',
             $enabled && $updateAvailable => 'update_pending',
+            $enabled && $migrationPending => 'migration_pending',
+            ! $enabled && ($state instanceof ModuleState) === false && $migrationPending => 'install_pending',
+            ! $enabled && $migrationPending => 'migration_pending',
             $enabled && is_string($runtimeError) && $runtimeError !== '' => 'runtime_error',
             $enabled => 'enabled',
             default => 'disabled',
         };
 
-        return array_merge($module, [
+        $canEnable = $module['valid']
+            && $module['compatible']
+            && ! $migrationTrackingUnavailable
+            && ! $migrationModified
+            && (! $enabled || $updateAvailable || $migrationPending || $migrationError !== null);
+
+        return array_merge($module, $migrationState, [
             'enabled' => $enabled,
             'status' => $status,
             'stored_version' => $state instanceof ModuleState ? $state->version : null,
@@ -195,7 +236,10 @@ final class ModuleManager
             'disabled_at' => $state instanceof ModuleState ? $state->disabled_at : null,
             'last_error' => $runtimeError,
             'last_error_at' => $state instanceof ModuleState ? $state->last_error_at : null,
-            'can_enable' => $module['valid'] && $module['compatible'] && (! $enabled || $updateAvailable),
+            'migration_error' => $migrationError,
+            'migration_error_at' => $state instanceof ModuleState ? $state->migration_error_at : null,
+            'migration_tracking_available' => $migrationState['tracking_available'],
+            'can_enable' => $canEnable,
             'can_disable' => $enabled,
             'update_available' => $updateAvailable,
         ]);
@@ -219,6 +263,8 @@ final class ModuleManager
             'bootstrap_path' => null,
             'views_path' => null,
             'lang_path' => null,
+            'migrations_path' => null,
+            'migration_files' => [],
             'route_paths' => [],
             'capabilities' => [],
             'valid' => false,
@@ -230,6 +276,19 @@ final class ModuleManager
             'disabled_at' => $state->disabled_at,
             'last_error' => $state->last_error,
             'last_error_at' => $state->last_error_at,
+            'migration_error' => $state->migration_error,
+            'migration_error_at' => $state->migration_error_at,
+            'has_migrations' => false,
+            'tracking_available' => true,
+            'migration_tracking_available' => true,
+            'available_migrations' => [],
+            'applied_migrations' => [],
+            'pending_migrations' => [],
+            'modified_migrations' => [],
+            'missing_migrations' => [],
+            'available_count' => 0,
+            'applied_count' => 0,
+            'pending_count' => 0,
             'can_enable' => false,
             'can_disable' => $state->enabled,
             'update_available' => false,

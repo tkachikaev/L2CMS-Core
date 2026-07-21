@@ -54,8 +54,9 @@ final class ModuleRuntime
             ($module['enabled'] ?? false) !== true
             || ($module['valid'] ?? false) !== true
             || ($module['compatible'] ?? false) !== true
+            || ! in_array($module['status'] ?? null, ['enabled', 'runtime_error'], true)
         ) {
-            throw new RuntimeException("Module [$id] is not enabled, valid, and compatible.");
+            throw new RuntimeException("Module [$id] is not ready for runtime loading.");
         }
 
         $this->registerAutoload($module);

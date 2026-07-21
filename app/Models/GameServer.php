@@ -139,6 +139,24 @@ class GameServer extends Model
         return $this->belongsTo(LoginServer::class);
     }
 
+    /** @return HasMany<RewardInventoryGrant, $this> */
+    public function rewardInventoryGrants(): HasMany
+    {
+        return $this->hasMany(RewardInventoryGrant::class);
+    }
+
+    /** @return HasMany<RewardInventoryItem, $this> */
+    public function rewardInventoryItems(): HasMany
+    {
+        return $this->hasMany(RewardInventoryItem::class);
+    }
+
+    /** @return HasMany<RewardDelivery, $this> */
+    public function rewardDeliveries(): HasMany
+    {
+        return $this->hasMany(RewardDelivery::class);
+    }
+
     public function databasePassword(): ?string
     {
         try {

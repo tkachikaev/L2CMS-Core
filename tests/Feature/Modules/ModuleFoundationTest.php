@@ -5,13 +5,17 @@ namespace Tests\Feature\Modules;
 use App\Auth\AdminRole;
 use App\Models\Admin;
 use App\Models\ModuleState;
+use App\Support\KaevCMS;
 use App\Support\Modules\ModuleManager;
 use App\Support\Modules\ModuleRuntime;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Mockery;
 use Tests\TestCase;
 
@@ -22,12 +26,19 @@ class ModuleFoundationTest extends TestCase
     /** @var list<string> */
     private array $createdModules = [];
 
+    /** @var list<string> */
+    private array $createdTables = [];
+
     protected function tearDown(): void
     {
         $files = new Filesystem;
 
         foreach ($this->createdModules as $module) {
             $files->deleteDirectory(base_path('modules/'.$module));
+        }
+
+        foreach ($this->createdTables as $table) {
+            Schema::dropIfExists($table);
         }
 
         if (app()->bound(ModuleManager::class)) {
@@ -42,7 +53,7 @@ class ModuleFoundationTest extends TestCase
         $this->createModule('foundation-fixture', [
             'description' => 'Valid module fixture.',
             'cms_min' => '0.24.0',
-            'cms_max' => '0.24.99',
+            'cms_max' => KaevCMS::version(),
         ]);
 
         $module = app(ModuleManager::class)->inspect('foundation-fixture');
@@ -430,6 +441,375 @@ PHP);
         $this->assertFalse(collect(app(ModuleManager::class)->installed())->contains('id', 'removed-fixture'));
     }
 
+    public function test_module_migrations_are_applied_once_and_disabling_preserves_data(): void
+    {
+        $id = 'migration-lifecycle-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Lifecycle Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $table = 'module_lifecycle_fixture_records';
+        $this->createTableMigration($root, '2026_07_21_000001_create_lifecycle_records.php', $table);
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $pending = $modules->inspect($id);
+
+        $this->assertSame('install_pending', $pending['status']);
+        $this->assertSame(1, $pending['pending_count']);
+        $this->assertTrue($pending['can_enable']);
+
+        $enabled = $modules->enable($id);
+
+        $this->assertSame('enabled', $enabled['status']);
+        $this->assertSame(1, $enabled['migration_result']['applied_count']);
+        $this->assertTrue(Schema::hasTable($table));
+        $this->assertDatabaseHas('cms_module_migrations', [
+            'module_id' => $id,
+            'migration' => '2026_07_21_000001_create_lifecycle_records.php',
+        ]);
+
+        DB::table($table)->insert(['value' => 'preserved']);
+        $modules->disable($id);
+
+        $this->assertTrue(Schema::hasTable($table));
+        $this->assertSame('preserved', DB::table($table)->value('value'));
+
+        $reenabled = $modules->enable($id);
+
+        $this->assertSame(0, $reenabled['migration_result']['applied_count']);
+        $this->assertSame(1, DB::table($table)->count());
+    }
+
+    public function test_new_migrations_block_runtime_until_owner_applies_them(): void
+    {
+        $id = 'migration-update-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Update Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $firstTable = 'module_update_fixture_first';
+        $secondTable = 'module_update_fixture_second';
+        $this->createTableMigration($root, '2026_07_21_000001_create_first_table.php', $firstTable);
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $modules->enable($id);
+
+        $this->createTableMigration($root, '2026_07_21_000002_create_second_table.php', $secondTable);
+        $modules->refresh();
+        $pending = $modules->inspect($id);
+
+        $this->assertSame('migration_pending', $pending['status']);
+        $this->assertSame(1, $pending['pending_count']);
+        $this->assertTrue($pending['enabled']);
+        $this->assertSame([], $modules->enabled());
+
+        $resolved = $modules->enable($id);
+
+        $this->assertSame('enabled', $resolved['status']);
+        $this->assertSame(1, $resolved['migration_result']['applied_count']);
+        $this->assertTrue(Schema::hasTable($secondTable));
+    }
+
+    public function test_module_version_approval_applies_new_migrations_before_storing_the_version(): void
+    {
+        $id = 'migration-version-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Version Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $firstTable = 'module_version_fixture_first';
+        $secondTable = 'module_version_fixture_second';
+        $this->createTableMigration($root, '2026_07_21_000001_create_version_first.php', $firstTable);
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $modules->enable($id);
+
+        $manifest = json_decode((new Filesystem)->get($root.'/module.json'), true, flags: JSON_THROW_ON_ERROR);
+        $manifest['version'] = '1.1.0';
+        (new Filesystem)->put(
+            $root.'/module.json',
+            json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+        );
+        $this->createTableMigration($root, '2026_07_21_000002_create_version_second.php', $secondTable);
+        $modules->refresh();
+
+        $pending = $modules->inspect($id);
+        $this->assertSame('update_pending', $pending['status']);
+        $this->assertSame('1.0.0', $pending['stored_version']);
+        $this->assertSame(1, $pending['pending_count']);
+
+        $approved = $modules->enable($id);
+
+        $this->assertSame('enabled', $approved['status']);
+        $this->assertSame('1.1.0', $approved['stored_version']);
+        $this->assertSame(1, $approved['migration_result']['applied_count']);
+        $this->assertTrue(Schema::hasTable($secondTable));
+    }
+
+    public function test_failed_module_migration_rolls_back_current_batch_and_keeps_module_inactive(): void
+    {
+        $id = 'migration-failure-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Failure Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $table = 'module_failure_fixture_records';
+        $this->createTableMigration($root, '2026_07_21_000001_create_failure_records.php', $table);
+        $this->createFailingMigration($root, '2026_07_21_000002_fail_installation.php');
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+
+        try {
+            $modules->enable($id);
+            $this->fail('A failed module migration was accepted.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                __('Module database migration failed. Applied changes were rolled back and module code remains inactive.'),
+                $exception->getMessage(),
+            );
+        }
+
+        $modules->refresh();
+        $failed = $modules->inspect($id);
+
+        $this->assertSame('migration_error', $failed['status']);
+        $this->assertFalse($failed['enabled']);
+        $this->assertTrue($failed['can_enable']);
+        $this->assertFalse(Schema::hasTable($table));
+        $this->assertDatabaseMissing('cms_module_migrations', ['module_id' => $id]);
+        $this->assertDatabaseHas('cms_modules', [
+            'id' => $id,
+            'enabled' => false,
+        ]);
+
+        $recoveredTable = 'module_failure_fixture_recovered';
+        $this->createTableMigration(
+            $root,
+            '2026_07_21_000002_fail_installation.php',
+            $recoveredTable,
+        );
+        $modules->refresh();
+        $recovered = $modules->enable($id);
+
+        $this->assertSame('enabled', $recovered['status']);
+        $this->assertSame(2, $recovered['migration_result']['applied_count']);
+        $this->assertTrue(Schema::hasTable($table));
+        $this->assertTrue(Schema::hasTable($recoveredTable));
+        $this->assertNull(ModuleState::query()->findOrFail($id)->migration_error);
+    }
+
+    public function test_applied_module_migration_cannot_be_modified_in_place(): void
+    {
+        $id = 'migration-checksum-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Checksum Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $table = 'module_checksum_fixture_records';
+        $migration = '2026_07_21_000001_create_checksum_records.php';
+        $path = $this->createTableMigration($root, $migration, $table);
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $modules->enable($id);
+
+        (new Filesystem)->append($path, "\n// Changed after installation.\n");
+        $modules->refresh();
+        $modified = $modules->inspect($id);
+
+        $this->assertSame('migration_modified', $modified['status']);
+        $this->assertSame([$migration], $modified['modified_migrations']);
+        $this->assertFalse($modified['can_enable']);
+        $this->assertSame([], $modules->enabled());
+    }
+
+    public function test_applied_module_migration_cannot_be_removed_in_place(): void
+    {
+        $id = 'migration-missing-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Missing Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $table = 'module_missing_fixture_records';
+        $migration = '2026_07_21_000001_create_missing_records.php';
+        $path = $this->createTableMigration($root, $migration, $table);
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $modules->enable($id);
+
+        $files = new Filesystem;
+        $manifest = json_decode($files->get($root.'/module.json'), true, flags: JSON_THROW_ON_ERROR);
+        unset($manifest['migrations']);
+        $files->put(
+            $root.'/module.json',
+            json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+        );
+        $modules->refresh();
+        $hidden = $modules->inspect($id);
+
+        $this->assertSame('migration_modified', $hidden['status']);
+        $this->assertSame([$migration], $hidden['missing_migrations']);
+        $this->assertSame([], $modules->enabled());
+
+        $manifest['migrations'] = 'database/migrations';
+        $files->put(
+            $root.'/module.json',
+            json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+        );
+        $files->delete($path);
+        $modules->refresh();
+        $missing = $modules->inspect($id);
+
+        $this->assertSame('migration_modified', $missing['status']);
+        $this->assertSame([$migration], $missing['missing_migrations']);
+        $this->assertFalse($missing['can_enable']);
+        $this->assertSame([], $modules->enabled());
+        $this->assertTrue(Schema::hasTable($table));
+    }
+
+    public function test_failed_update_rolls_back_only_the_new_batch_and_preserves_previous_module_data(): void
+    {
+        $id = 'migration-batch-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Batch Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $originalTable = 'module_batch_fixture_original';
+        $newTable = 'module_batch_fixture_new';
+        $firstMigration = '2026_07_21_000001_create_batch_original.php';
+        $this->createTableMigration($root, $firstMigration, $originalTable);
+
+        $modules = app(ModuleManager::class);
+        $modules->refresh();
+        $modules->enable($id);
+        DB::table($originalTable)->insert(['value' => 'keep-me']);
+
+        $this->createTableMigration($root, '2026_07_21_000002_create_batch_new.php', $newTable);
+        $this->createFailingMigration($root, '2026_07_21_000003_fail_batch_update.php');
+        $modules->refresh();
+
+        try {
+            $modules->enable($id);
+            $this->fail('A failed module database update was accepted.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                __('Module database migration failed. Applied changes were rolled back and module code remains inactive.'),
+                $exception->getMessage(),
+            );
+        }
+
+        $modules->refresh();
+        $failed = $modules->inspect($id);
+
+        $this->assertSame('migration_error', $failed['status']);
+        $this->assertTrue($failed['enabled']);
+        $this->assertSame([], $modules->enabled());
+        $this->assertTrue(Schema::hasTable($originalTable));
+        $this->assertSame('keep-me', DB::table($originalTable)->value('value'));
+        $this->assertFalse(Schema::hasTable($newTable));
+        $this->assertDatabaseHas('cms_module_migrations', [
+            'module_id' => $id,
+            'migration' => $firstMigration,
+            'batch' => 1,
+        ]);
+        $this->assertSame(1, DB::table('cms_module_migrations')->where('module_id', $id)->count());
+    }
+
+    public function test_module_migration_lock_rejects_parallel_database_operations(): void
+    {
+        $id = 'migration-lock-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Lock Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $this->createTableMigration(
+            $root,
+            '2026_07_21_000001_create_lock_records.php',
+            'module_lock_fixture_records',
+        );
+
+        $lock = Cache::lock('kaevcms:module-migrations:'.$id, 300);
+        $this->assertTrue($lock->get());
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage(__('Another database operation is already running for this module. Try again shortly.'));
+            app(ModuleManager::class)->enable($id);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function test_owner_module_installation_and_failed_migration_are_audited(): void
+    {
+        $owner = $this->createAdmin(AdminRole::Owner, 'migration-owner@example.test');
+        $successId = 'migration-audit-success';
+        $successRoot = $this->createModule($successId, [
+            'name' => 'Migration Audit Success',
+            'migrations' => 'database/migrations',
+        ]);
+        $this->createTableMigration(
+            $successRoot,
+            '2026_07_21_000001_create_audit_success.php',
+            'module_audit_success_records',
+        );
+
+        $this->actingAs($owner, 'admin')
+            ->post('/admin/modules/'.$successId.'/enable')
+            ->assertRedirect(route('admin.modules.index'))
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'category' => 'module',
+            'action' => 'module.installed',
+            'target_name' => $successId,
+        ]);
+
+        $failureId = 'migration-audit-failure';
+        $failureRoot = $this->createModule($failureId, [
+            'name' => 'Migration Audit Failure',
+            'migrations' => 'database/migrations',
+        ]);
+        $this->createFailingMigration($failureRoot, '2026_07_21_000001_fail_audit.php');
+
+        $this->actingAs($owner, 'admin')
+            ->post('/admin/modules/'.$failureId.'/enable')
+            ->assertRedirect(route('admin.modules.index'))
+            ->assertSessionHasErrors('module');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'category' => 'module',
+            'action' => 'module.migration_failed',
+            'target_name' => $failureId,
+        ]);
+    }
+
+    public function test_invalid_migration_filename_is_rejected_by_manifest_validation(): void
+    {
+        $id = 'migration-name-fixture';
+        $root = $this->createModule($id, [
+            'name' => 'Migration Name Fixture',
+            'migrations' => 'database/migrations',
+        ]);
+        $files = new Filesystem;
+        $files->ensureDirectoryExists($root.'/database/migrations');
+        $files->put($root.'/database/migrations/create_table.php', "<?php\n");
+        app(ModuleManager::class)->refresh();
+
+        $module = app(ModuleManager::class)->inspect($id);
+
+        $this->assertFalse($module['valid']);
+        $this->assertContains(
+            __('Invalid or unsafe module migration file: :file.', ['file' => 'create_table.php']),
+            $module['errors'],
+        );
+    }
+
     /** @param array<string, mixed> $overrides */
     private function createModule(string $id, array $overrides = []): string
     {
@@ -456,6 +836,65 @@ PHP);
         app(ModuleManager::class)->refresh();
 
         return $root;
+    }
+
+    private function createTableMigration(string $root, string $name, string $table): string
+    {
+        $path = $root.'/database/migrations/'.$name;
+        $files = new Filesystem;
+        $files->ensureDirectoryExists(dirname($path));
+        $files->put($path, str_replace('__TABLE__', $table, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('__TABLE__', function (Blueprint $table): void {
+            $table->id();
+            $table->string('value')->nullable();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('__TABLE__');
+    }
+};
+PHP));
+        $this->createdTables[] = $table;
+        app(ModuleManager::class)->refresh();
+
+        return $path;
+    }
+
+    private function createFailingMigration(string $root, string $name): string
+    {
+        $path = $root.'/database/migrations/'.$name;
+        $files = new Filesystem;
+        $files->ensureDirectoryExists(dirname($path));
+        $files->put($path, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        throw new \RuntimeException('Intentional migration fixture failure.');
+    }
+
+    public function down(): void {}
+};
+PHP);
+        app(ModuleManager::class)->refresh();
+
+        return $path;
     }
 
     private function createAdmin(AdminRole $role, string $email): Admin

@@ -40,18 +40,19 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.23.12'", $applyScript);
-        $this->assertStringContainsString("'app\\Providers\\ModuleServiceProvider.php'", $applyScript);
-        $this->assertStringContainsString("'app\\Http\\Middleware\\EnsureModuleEnabled.php'", $applyScript);
-        $this->assertStringContainsString("'app\\Support\\Modules\\ModuleManager.php'", $applyScript);
-        $this->assertStringContainsString("'app\\Support\\Modules\\ModuleRuntime.php'", $applyScript);
-        $this->assertStringContainsString("'app\\Support\\Modules\\ModuleValidator.php'", $applyScript);
-        $this->assertStringContainsString("'database\\migrations\\2026_07_20_000200_create_cms_modules_table.php'", $applyScript);
-        $this->assertStringContainsString("'resources\\schemas\\module.schema.json'", $applyScript);
-        $this->assertStringContainsString("'resources\\views\\admin\\modules\\index.blade.php'", $applyScript);
-        $this->assertStringContainsString("'docs\\MODULES.md'", $applyScript);
-        $this->assertStringContainsString("'tests\\Feature\\Modules\\ModuleFoundationTest.php'", $applyScript);
-        $this->assertStringContainsString("'tests\\Feature\\BundledAureliaThemesTest.php'", $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.25.1'", $applyScript);
+        $this->assertStringContainsString("'app\\Jobs\\ConfirmRewardDelivery.php'", $applyScript);
+        $this->assertStringContainsString("'app\\Services\\GameWorld\\MobiusInterludeGameWorldDriver.php'", $applyScript);
+        $this->assertStringContainsString("'app\\Services\\Rewards\\RewardDeliveryProcessor.php'", $applyScript);
+        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\CharacterSelect.official.sha256'", $applyScript);
+        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\CharacterSelect.patch'", $applyScript);
+        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\install.sql'", $applyScript);
+        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\KaevRewardBridge.java'", $applyScript);
+        $this->assertStringContainsString("'integrations\\mobius-interlude\\reward-bridge\\KaevRewardDeliveryLock.java'", $applyScript);
+        $this->assertStringContainsString("'docs\\WEB_INVENTORY.md'", $applyScript);
+        $this->assertStringContainsString("'tests\\Feature\\Rewards\\MobiusRewardBridgeDriverTest.php'", $applyScript);
+        $this->assertStringContainsString("'tests\\Feature\\Rewards\\WebInventoryTest.php'", $applyScript);
+        $this->assertStringContainsString("'tests\\powershell\\update-workflow.ps1'", $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
     }
@@ -60,10 +61,10 @@ class ReleaseMetadataTest extends TestCase
     {
         $updateScript = $this->readReleaseFile('update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.23.12'", $updateScript);
-        $this->assertStringContainsString("\$expectedToVersion = '0.24.0'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.23.12.ps1'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplySha256 = 'e564cd67e2ecb7cfd5666cbd9099365903c8aab8f2988b41c6120e28425fae44'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.25.1'", $updateScript);
+        $this->assertStringContainsString("\$expectedToVersion = '0.25.2'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.25.1.ps1'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplySha256 = '33cd3c5a7ddb12a0e3e43ac7675d92fae83195b8d28cd42690fd1ead7cd4f5cb'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
@@ -117,6 +118,30 @@ class ReleaseMetadataTest extends TestCase
         $this->assertLessThan($markPosition, $testPosition);
         $this->assertLessThan($backupCleanupPosition, $markPosition);
         $this->assertLessThan($finalCleanupPosition, $testPosition);
+
+        $bridgeSql = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/install.sql');
+        $this->assertStringContainsString("enum('pending','processing','delivered','failed','uncertain')", $bridgeSql);
+        $this->assertStringContainsString('kaev_reward_operation_items', $bridgeSql);
+
+        $bridgeJava = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/KaevRewardBridge.java');
+        $this->assertStringContainsString('mobius_reward_bridge_v2', $bridgeJava);
+        $this->assertStringContainsString('KaevRewardDeliveryLock.getLock(operation.characterId)', $bridgeJava);
+        $this->assertStringContainsString('IdManager.getInstance().getNextId()', $bridgeJava);
+        $this->assertStringContainsString("status = 'uncertain'", $bridgeJava);
+        $this->assertStringNotContainsString('releaseId(', $bridgeJava);
+        $this->assertStringNotContainsString('MAX(object_id)', $bridgeJava);
+
+        $deliveryLock = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/KaevRewardDeliveryLock.java');
+        $this->assertStringContainsString('ConcurrentHashMap<Integer, ReentrantLock>', $deliveryLock);
+        $this->assertStringContainsString('computeIfAbsent', $deliveryLock);
+
+        $characterSelectPatch = $this->readReleaseFile('integrations/mobius-interlude/reward-bridge/CharacterSelect.patch');
+        $this->assertStringContainsString('KaevRewardDeliveryLock.getLock(info.getObjectId())', $characterSelectPatch);
+        $this->assertStringContainsString('cha.setOnlineStatus(true, true);', $characterSelectPatch);
+        $this->assertStringContainsString('rewardDeliveryLock.unlock();', $characterSelectPatch);
+
+        $characterSelectSha = trim($this->readReleaseFile('integrations/mobius-interlude/reward-bridge/CharacterSelect.official.sha256'));
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $characterSelectSha);
 
         $phpunit = $this->readReleaseFile('phpunit.xml');
         $this->assertStringContainsString('<env name="APP_MAINTENANCE_DRIVER" value="cache" force="true"/>', $phpunit);
@@ -193,10 +218,13 @@ class ReleaseMetadataTest extends TestCase
     {
         $this->assertFileExists(app_path('Providers/ModuleServiceProvider.php'));
         $this->assertFileExists(app_path('Http/Middleware/EnsureModuleEnabled.php'));
+        $this->assertFileExists(app_path('Models/ModuleMigration.php'));
         $this->assertFileExists(app_path('Support/Modules/ModuleManager.php'));
+        $this->assertFileExists(app_path('Support/Modules/ModuleMigrationManager.php'));
         $this->assertFileExists(app_path('Support/Modules/ModuleRuntime.php'));
         $this->assertFileExists(app_path('Support/Modules/ModuleValidator.php'));
         $this->assertFileExists(database_path('migrations/2026_07_20_000200_create_cms_modules_table.php'));
+        $this->assertFileExists(database_path('migrations/2026_07_21_000000_add_module_migration_lifecycle.php'));
         $this->assertFileExists(resource_path('schemas/module.schema.json'));
         $this->assertFileExists(resource_path('views/admin/modules/index.blade.php'));
         $this->assertFileExists(base_path('modules/README.md'));
@@ -210,6 +238,17 @@ class ReleaseMetadataTest extends TestCase
         $this->assertFalse($schema['additionalProperties']);
         $this->assertSame(['schema', 'id', 'name', 'version', 'author'], $schema['required']);
         $this->assertSame(1, $schema['properties']['schema']['const']);
+        $this->assertSame('#/$defs/relativePath', $schema['properties']['migrations']['$ref']);
+
+        $migrationManager = $this->readReleaseFile('app/Support/Modules/ModuleMigrationManager.php');
+        $this->assertStringContainsString('Cache::lock', $migrationManager);
+        $this->assertStringContainsString("hash_file('sha256'", $migrationManager);
+        $this->assertStringContainsString('rollbackCurrentRun', $migrationManager);
+
+        $moduleManager = $this->readReleaseFile('app/Support/Modules/ModuleManager.php');
+        $this->assertStringContainsString("'migration_pending'", $moduleManager);
+        $this->assertStringContainsString("'migration_modified'", $moduleManager);
+        $this->assertStringContainsString("'migration_error'", $moduleManager);
 
         $runtime = $this->readReleaseFile('app/Support/Modules/ModuleRuntime.php');
         $this->assertStringContainsString("array_intersect(['route:cache', 'optimize'], \$arguments)", $runtime);
@@ -217,6 +256,46 @@ class ReleaseMetadataTest extends TestCase
         $aureliaCss = $this->readReleaseFile('public/account-themes/kaev-aurelia/assets/css/app.css');
         $this->assertStringContainsString('display: grid; place-items: center;', $aureliaCss);
         $this->assertStringContainsString('.account-character-avatar > span', $aureliaCss);
+        $this->assertStringContainsString('.account-surface {', $aureliaCss);
+
+        $aureliaInventory = $this->readReleaseFile('account-themes/kaev-aurelia/views/web-inventory/index.blade.php');
+        $this->assertStringContainsString('account-surface reward-inventory-shell', $aureliaInventory);
+    }
+
+    public function test_web_inventory_release_artifacts_are_shipped(): void
+    {
+        $this->assertFileExists(app_path('Contracts/GameRewardDeliveryGateway.php'));
+        $this->assertFileExists(app_path('Jobs/ConfirmRewardDelivery.php'));
+        $this->assertFileExists(app_path('Jobs/ProcessRewardDelivery.php'));
+        $this->assertFileExists(app_path('Models/RewardInventoryGrant.php'));
+        $this->assertFileExists(app_path('Models/RewardInventoryItem.php'));
+        $this->assertFileExists(app_path('Models/RewardDelivery.php'));
+        $this->assertFileExists(app_path('Services/Rewards/RewardInventoryService.php'));
+        $this->assertFileExists(app_path('Services/Rewards/RewardDeliveryProcessor.php'));
+        $this->assertFileExists(database_path('migrations/2026_07_21_000100_create_reward_inventory_tables.php'));
+        $this->assertFileExists(base_path('docs/WEB_INVENTORY.md'));
+        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/CharacterSelect.official.sha256'));
+        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/CharacterSelect.patch'));
+        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/install.sql'));
+        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/KaevRewardBridge.java'));
+        $this->assertFileExists(base_path('integrations/mobius-interlude/reward-bridge/KaevRewardDeliveryLock.java'));
+        $this->assertFileExists(base_path('account-themes/kaev-aurelia/views/web-inventory/index.blade.php'));
+        $this->assertFileExists(base_path('account-themes/luxury/views/web-inventory/index.blade.php'));
+        $this->assertFileExists(resource_path('views/admin/rewards/index.blade.php'));
+
+        $contract = $this->readReleaseFile('app/Contracts/GameWorldDriver.php');
+        $this->assertStringContainsString('rewardDeliveryCapabilities', $contract);
+        $this->assertStringContainsString('deliverRewards', $contract);
+        $this->assertStringContainsString('rewardDeliveryStatus', $contract);
+
+        $mobiusDriver = $this->readReleaseFile('app/Services/GameWorld/MobiusInterludeGameWorldDriver.php');
+        $this->assertStringNotContainsString("table('items')", $mobiusDriver);
+
+        $migration = $this->readReleaseFile('database/migrations/2026_07_21_000100_create_reward_inventory_tables.php');
+        $this->assertStringContainsString("Schema::create('reward_inventory_grants'", $migration);
+        $this->assertStringContainsString("Schema::create('reward_inventory_items'", $migration);
+        $this->assertStringContainsString("Schema::create('reward_deliveries'", $migration);
+        $this->assertStringContainsString("Schema::create('reward_delivery_items'", $migration);
     }
 
     public function test_obsolete_preview_and_settings_placeholder_are_not_shipped(): void

@@ -1,0 +1,90 @@
+--- a/L2J_Mobius_CT_0_Interlude/java/org/l2jmobius/gameserver/network/clientpackets/CharacterSelect.java
++++ b/L2J_Mobius_CT_0_Interlude/java/org/l2jmobius/gameserver/network/clientpackets/CharacterSelect.java
+@@ -20,6 +20,7 @@
+  */
+ package org.l2jmobius.gameserver.network.clientpackets;
+ 
++import java.util.concurrent.locks.ReentrantLock;
+ import java.util.logging.Logger;
+ 
+ import org.l2jmobius.gameserver.config.GeneralConfig;
+@@ -29,6 +30,7 @@
+ import org.l2jmobius.gameserver.data.sql.CharInfoTable;
+ import org.l2jmobius.gameserver.data.sql.OfflinePlayTable;
+ import org.l2jmobius.gameserver.data.xml.AdminData;
++import org.l2jmobius.gameserver.integration.KaevRewardDeliveryLock;
+ import org.l2jmobius.gameserver.managers.AntiFeedManager;
+ import org.l2jmobius.gameserver.managers.PunishmentManager;
+ import org.l2jmobius.gameserver.model.World;
+@@ -175,35 +177,46 @@
+ 						}
+ 					}
+ 					
+-					// load up character from disk
+-					final Player cha = client.load(_charSlot);
+-					if (cha == null)
+-					{
+-						return; // handled in GameClient
+-					}
+-					
+-					CharInfoTable.getInstance().addName(cha);
+-					
+-					// Prevent instant disappear of invisible GMs on login.
+-					if (cha.isGM() && GeneralConfig.GM_STARTUP_INVISIBLE && AdminData.getInstance().hasAccess("admin_invisible", cha.getAccessLevel()))
+-					{
+-						cha.setInvisible(true);
++					// Serialize character inventory loading with Kaev Reward Bridge delivery.
++					final ReentrantLock rewardDeliveryLock = KaevRewardDeliveryLock.getLock(info.getObjectId());
++					rewardDeliveryLock.lock();
++					final Player cha;
++					try
++					{
++						// load up character from disk
++						cha = client.load(_charSlot);
++						if (cha == null)
++						{
++							return; // handled in GameClient
++						}
++
++						CharInfoTable.getInstance().addName(cha);
++
++						// Prevent instant disappear of invisible GMs on login.
++						if (cha.isGM() && GeneralConfig.GM_STARTUP_INVISIBLE && AdminData.getInstance().hasAccess("admin_invisible", cha.getAccessLevel()))
++						{
++							cha.setInvisible(true);
++						}
++
++						// Restore player location.
++						final PlayerVariables vars = cha.getVariables();
++						final String restore = vars.getString(PlayerVariables.RESTORE_LOCATION, "");
++						if (!restore.isEmpty())
++						{
++							final String[] split = restore.split(";");
++							cha.setXYZ(Integer.parseInt(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
++							vars.remove(PlayerVariables.RESTORE_LOCATION);
++						}
++
++						cha.setClient(client);
++						client.setPlayer(cha);
++						cha.setOnlineStatus(true, true);
+ 					}
+-					
+-					// Restore player location.
+-					final PlayerVariables vars = cha.getVariables();
+-					final String restore = vars.getString(PlayerVariables.RESTORE_LOCATION, "");
+-					if (!restore.isEmpty())
++					finally
+ 					{
+-						final String[] split = restore.split(";");
+-						cha.setXYZ(Integer.parseInt(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
+-						vars.remove(PlayerVariables.RESTORE_LOCATION);
++						rewardDeliveryLock.unlock();
+ 					}
+ 					
+-					cha.setClient(client);
+-					client.setPlayer(cha);
+-					cha.setOnlineStatus(true, true);
+-					
+ 					if (EventDispatcher.getInstance().hasListener(EventType.ON_PLAYER_SELECT, Containers.Players()))
+ 					{
+ 						final TerminateReturn terminate = EventDispatcher.getInstance().notifyEvent(new OnPlayerSelect(cha, cha.getObjectId(), cha.getName(), client), Containers.Players(), TerminateReturn.class);

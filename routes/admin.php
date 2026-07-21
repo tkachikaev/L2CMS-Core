@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PageImageController as AdminPageImageController;
 use App\Http\Controllers\Admin\QueueOperationsController as AdminQueueOperationsController;
 use App\Http\Controllers\Admin\RegistrationSettingsController as AdminRegistrationSettingsController;
+use App\Http\Controllers\Admin\RewardDeliveryController as AdminRewardDeliveryController;
 use App\Http\Controllers\Admin\SecuritySettingsController as AdminSecuritySettingsController;
 use App\Http\Controllers\Admin\SystemSettingsController as AdminSystemSettingsController;
 use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
@@ -113,6 +114,8 @@ Route::prefix('{adminPath}')->name('admin.')->middleware(['admin.path', 'admin.h
         Route::post('/account-themes/{theme}/activate', [AdminAccountThemeController::class, 'activate'])
             ->where('theme', '[a-z0-9][a-z0-9_-]*')
             ->name('account-themes.activate');
+
+        Route::get('/reward-deliveries', [AdminRewardDeliveryController::class, 'index'])->name('rewards.index');
 
         Route::get('/modules', [AdminModuleController::class, 'index'])->name('modules.index');
         Route::post('/modules/{module}/enable', [AdminModuleController::class, 'enable'])

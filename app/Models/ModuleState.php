@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $disabled_at
  * @property string|null $last_error
  * @property Carbon|null $last_error_at
+ * @property string|null $migration_error
+ * @property Carbon|null $migration_error_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -34,6 +36,8 @@ class ModuleState extends Model
         'disabled_at',
         'last_error',
         'last_error_at',
+        'migration_error',
+        'migration_error_at',
     ];
 
     protected function casts(): array
@@ -43,6 +47,7 @@ class ModuleState extends Model
             'enabled_at' => 'datetime',
             'disabled_at' => 'datetime',
             'last_error_at' => 'datetime',
+            'migration_error_at' => 'datetime',
         ];
     }
 }

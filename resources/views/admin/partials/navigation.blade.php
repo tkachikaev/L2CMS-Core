@@ -22,12 +22,12 @@
     @if($admin->hasPermission(\App\Auth\AdminPermission::AppearanceView))
         <details class="admin-menu-group" data-admin-menu-group="appearance" @if (request()->routeIs('admin.themes.*', 'admin.account-themes.*')) open @endif>
             <summary class="admin-menu-group-summary">
-                <span>{{ __('Appearance') }}</span>
+                <span>{{ __('Themes') }}</span>
                 <span class="admin-menu-group-chevron" aria-hidden="true">⌄</span>
             </summary>
             <div class="admin-menu-group-items">
-                <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.themes.index') }}"><span>{{ __('Themes') }}</span></a>
-                <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.account-themes.index') }}"><span>{{ __('Player account themes') }}</span></a>
+                <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.themes.index') }}"><span>{{ __('Site') }}</span></a>
+                <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.account-themes.index') }}"><span>{{ __('Account') }}</span></a>
             </div>
         </details>
     @endif
@@ -77,6 +77,7 @@
     @endif
 
     @if($admin->hasPermission(\App\Auth\AdminPermission::AuditView))
+        <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.rewards.index') }}"><span>{{ __('Reward deliveries') }}</span></a>
         <a wire:navigate.hover wire:current="active" class="admin-menu-item" href="{{ route('admin.logs.index') }}"><span>{{ __('Audit log') }}</span></a>
     @endif
 

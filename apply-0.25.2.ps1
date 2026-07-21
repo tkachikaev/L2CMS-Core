@@ -5,8 +5,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$fromVersion = '0.23.12'
-$toVersion = '0.24.0'
+$fromVersion = '0.25.1'
+$toVersion = '0.25.2'
 
 if (-not (Test-Path 'artisan')) {
     throw 'Run this script from the KaevCMS project root.'
@@ -30,39 +30,33 @@ $requiredFiles = @(
     'README.md',
     'VERSION',
     'update.ps1',
-    'bootstrap\app.php',
-    'bootstrap\providers.php',
-    'config\cms.php',
-    'app\Auth\AdminAccessPolicy.php',
-    'app\Auth\AdminPermission.php',
-    'app\Auth\AdminRole.php',
-    'app\Http\Controllers\Admin\ModuleController.php',
-    'app\Http\Middleware\EnsureModuleEnabled.php',
-    'app\Models\AuditLog.php',
-    'app\Models\ModuleState.php',
-    'app\Providers\ModuleServiceProvider.php',
-    'app\Support\Modules\ModuleContext.php',
-    'app\Support\Modules\ModuleManager.php',
-    'app\Support\Modules\ModuleRuntime.php',
-    'app\Support\Modules\ModuleValidator.php',
-    'database\migrations\2026_07_20_000200_create_cms_modules_table.php',
-    'routes\admin.php',
-    'resources\schemas\module.schema.json',
-    'resources\views\admin\modules\index.blade.php',
-    'resources\views\admin\partials\navigation.blade.php',
-    'public\assets\admin\css\app.css',
-    'public\account-themes\kaev-aurelia\assets\css\app.css',
-    'lang\ru.json',
-    'lang\en.json',
-    'modules\README.md',
-    'docs\MODULES.md',
+    'account-themes\kaev-aurelia\views\web-inventory\index.blade.php',
+    'account-themes\luxury\views\web-inventory\index.blade.php',
+    'app\Contracts\GameRewardDeliveryGateway.php',
+    'app\Contracts\GameWorldDriver.php',
+    'app\Http\Controllers\Account\WebInventoryController.php',
+    'app\Jobs\ConfirmRewardDelivery.php',
+    'app\Jobs\ProcessRewardDelivery.php',
+    'app\Services\GameWorld\MobiusInterludeGameWorldDriver.php',
+    'app\Services\Rewards\DriverGameRewardDeliveryGateway.php',
+    'app\Services\Rewards\RewardDeliveryProcessor.php',
+    'app\Support\Rewards\RewardDeliveryCapabilities.php',
+    'app\Support\Rewards\RewardDeliveryResult.php',
+    'docs\PRODUCTION.md',
     'docs\ROADMAP.md',
-    'tests\Feature\Admin\AdminPanelTest.php',
-    'tests\Feature\BundledAureliaThemesTest.php',
-    'tests\Feature\Modules\ModuleFoundationTest.php',
+    'docs\WEB_INVENTORY.md',
+    'integrations\mobius-interlude\reward-bridge\CharacterSelect.official.sha256',
+    'integrations\mobius-interlude\reward-bridge\CharacterSelect.patch',
+    'integrations\mobius-interlude\reward-bridge\install.sql',
+    'integrations\mobius-interlude\reward-bridge\KaevRewardBridge.java',
+    'integrations\mobius-interlude\reward-bridge\KaevRewardDeliveryLock.java',
+    'integrations\mobius-interlude\reward-bridge\README.md',
+    'lang\en.json',
+    'lang\ru.json',
+    'tests\Fakes\FakeGameRewardDeliveryGateway.php',
     'tests\Feature\ReleaseMetadataTest.php',
-    'tests\Unit\Auth\AdminRoleTest.php',
-    'tests\browser\specs\admin-navigation.spec.mjs',
+    'tests\Feature\Rewards\MobiusRewardBridgeDriverTest.php',
+    'tests\Feature\Rewards\WebInventoryTest.php',
     'tests\powershell\update-workflow.ps1'
 )
 foreach ($requiredFile in $requiredFiles) {

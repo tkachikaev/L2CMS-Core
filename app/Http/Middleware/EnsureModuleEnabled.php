@@ -15,7 +15,7 @@ final class EnsureModuleEnabled
     {
         $installedModule = $this->modules->inspect($module);
 
-        if ($installedModule['status'] === 'runtime_error') {
+        if (in_array($installedModule['status'], ['runtime_error', 'migration_error'], true)) {
             abort(503, __('The requested module is temporarily unavailable.'));
         }
 

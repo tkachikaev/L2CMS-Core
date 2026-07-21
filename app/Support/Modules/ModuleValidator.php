@@ -27,6 +27,7 @@ final class ModuleValidator
         'routes',
         'views',
         'lang',
+        'migrations',
     ];
 
     private readonly Filesystem $files;
@@ -174,6 +175,7 @@ final class ModuleValidator
         $this->inspectOptionalFile($manifest, 'bootstrap', $path, $result);
         $this->inspectOptionalDirectory($manifest, 'views', $path, $result);
         $this->inspectOptionalDirectory($manifest, 'lang', $path, $result);
+        $this->inspectMigrations($manifest, $path, $result);
         $this->inspectRoutes($manifest, $path, $result);
 
         $result['valid'] = $result['errors'] === [];
@@ -204,6 +206,8 @@ final class ModuleValidator
             'bootstrap_path' => null,
             'views_path' => null,
             'lang_path' => null,
+            'migrations_path' => null,
+            'migration_files' => [],
             'route_paths' => [],
             'capabilities' => [],
             'valid' => false,
@@ -303,6 +307,59 @@ final class ModuleValidator
 
         $result[$field.'_path'] = $path;
         $result['capabilities'][] = $field;
+    }
+
+    /**
+     * @param  array<string, mixed>  $manifest
+     * @param  array<string, mixed>  $result
+     */
+    private function inspectMigrations(array $manifest, string $root, array &$result): void
+    {
+        $value = Arr::get($manifest, 'migrations');
+        if ($value === null) {
+            return;
+        }
+
+        if (is_string($value) === false || trim($value) === '') {
+            $result['errors'][] = __('The migrations field must contain a relative directory path.');
+
+            return;
+        }
+
+        $path = $this->safeDirectory($root, $value);
+        if ($path === null) {
+            $result['errors'][] = __('The module migrations directory was not found or is unsafe.');
+
+            return;
+        }
+
+        $migrationFiles = [];
+        foreach ($this->files->files($path) as $file) {
+            $name = $file->getFilename();
+            if (str_starts_with($name, '.')) {
+                continue;
+            }
+
+            $filePath = $file->getRealPath();
+            if (
+                preg_match('/\A\d{4}_\d{2}_\d{2}_\d{6}_[a-z0-9_]+\.php\z/', $name) !== 1
+                || strlen($name) > 190
+                || $file->isLink()
+                || $filePath === false
+                || $this->isInside($filePath, $path) === false
+            ) {
+                $result['errors'][] = __('Invalid or unsafe module migration file: :file.', ['file' => $name]);
+
+                continue;
+            }
+
+            $migrationFiles[$name] = $filePath;
+        }
+
+        ksort($migrationFiles, SORT_STRING);
+        $result['migrations_path'] = $path;
+        $result['migration_files'] = $migrationFiles;
+        $result['capabilities'][] = 'migrations';
     }
 
     /**

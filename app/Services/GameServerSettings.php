@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\GameServerDeletionConfirmationRequired;
+use App\Exceptions\GameServerHasRewardData;
 use App\Models\GameServer;
 use App\Models\GameServerTranslation;
 use App\Models\UserGameAccount;
@@ -194,6 +195,12 @@ final class GameServerSettings
                 && (! is_string($confirmedImpactFingerprint)
                     || ! hash_equals($impact['fingerprint'], $confirmedImpactFingerprint))) {
                 throw new GameServerDeletionConfirmationRequired($impact);
+            }
+
+            if ($lockedServer->rewardInventoryGrants()->exists()
+                || $lockedServer->rewardInventoryItems()->exists()
+                || $lockedServer->rewardDeliveries()->exists()) {
+                throw new GameServerHasRewardData;
             }
 
             $this->reassignLinkedAccountsBeforeDisconnect($lockedServer);

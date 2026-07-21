@@ -99,6 +99,7 @@
                             </div>
                             <a wire:navigate href="{{ public_route('account') }}">{{ __('Overview') }}</a>
                             <a wire:navigate href="{{ public_route('game-accounts.index') }}">{{ __('Game accounts') }}</a>
+                            <a wire:navigate href="{{ public_route('web-inventory.index') }}">{{ __('Web inventory') }}</a>
                             <a href="{{ public_route('home') }}">{{ __('Back to website') }}</a>
                             <form method="POST" action="{{ public_route('logout') }}">
                                 @csrf

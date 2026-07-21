@@ -51,7 +51,7 @@ Current navigation structure:
 - **Mail** — direct access to SMTP, delivery and mail-template settings.
 - **Settings** — one sidebar entry for site, administrator panel, registration, game-account policy, languages, security and system information.
 - **Audit log** — administrator and system activity.
-- **Modules** — reserved disabled entry until the module loader is implemented.
+- **Modules** — discovered extensions, compatibility, migration state, installation, updates and activation; administrators have read-only access, while owners perform changes.
 
 Settings use a local tab bar so closely related pages stay together without crowding the sidebar. The **Administrator panel** tab contains the configurable panel path and server-monitoring interval. **System information** is read-only diagnostics. Legacy update endpoints under `/admin/settings/system/*` and `/admin/dashboard` were removed in 0.23.10. Current forms and integrations must use `/admin/settings/admin-panel/*` and the panel root. Mail templates retain their own local tab bar because they belong to one mail module.
 
@@ -106,3 +106,7 @@ routes/admin.php
 ```
 
 Public and account route names and URLs remain compatible. Administrative routes use an internal `{adminPath}` prefix checked by `EnsureAdminPath`. The middleware removes this infrastructure parameter before controller dispatch so it cannot replace real parameters such as a theme slug or model identifier.
+
+## Reward deliveries
+
+Owners and administrators can inspect the read-only reward-delivery journal. Editors have no access. The journal exposes safe operation states and failure codes without database credentials or exception messages. Unknown delivery outcomes are marked for review and keep their inventory rows reserved instead of making them available for a potentially duplicated transfer.

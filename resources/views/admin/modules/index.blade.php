@@ -12,8 +12,8 @@
 </div>
 
 <div class="notice notice-info module-foundation-notice">
-    <strong>{{ __('Module foundation') }}</strong>
-    <span>{{ __('KaevCMS validates manifests, compatibility and paths before loading a module. Browser ZIP installation and automatic data removal are intentionally unavailable in this release.') }}</span>
+    <strong>{{ __('Module lifecycle') }}</strong>
+    <span>{{ __('KaevCMS validates module manifests and applies declared database migrations before loading module code. Disabling a module preserves its database data.') }}</span>
 </div>
 
 @if ($modules === [])
@@ -28,7 +28,7 @@
                 'theme-card',
                 'module-card',
                 'active' => $module['enabled'],
-                'invalid' => in_array($module['status'], ['invalid', 'missing'], true),
+                'invalid' => in_array($module['status'], ['invalid', 'missing', 'migration_modified'], true),
             ])>
                 <div class="theme-preview module-mark" aria-hidden="true">
                     <div class="theme-preview-placeholder"><span>{{ mb_strtoupper(mb_substr($module['name'], 0, 1)) }}</span></div>
@@ -44,6 +44,11 @@
                         @switch($module['status'])
                             @case('enabled')<span class="theme-state active">{{ __('Enabled') }}</span>@break
                             @case('disabled')<span class="theme-state ready">{{ __('Disabled') }}</span>@break
+                            @case('install_pending')<span class="theme-state ready">{{ __('Ready to install') }}</span>@break
+                            @case('migration_pending')<span class="theme-state ready">{{ __('Database update required') }}</span>@break
+                            @case('migration_error')<span class="theme-state error">{{ __('Database migration error') }}</span>@break
+                            @case('migration_modified')<span class="theme-state error">{{ __('Applied migration modified') }}</span>@break
+                            @case('migration_unavailable')<span class="theme-state error">{{ __('Migration tracking unavailable') }}</span>@break
                             @case('update_pending')<span class="theme-state ready">{{ __('Update approval required') }}</span>@break
                             @case('runtime_error')<span class="theme-state error">{{ __('Runtime error') }}</span>@break
                             @case('incompatible')<span class="theme-state error">{{ __('Incompatible') }}</span>@break
@@ -57,6 +62,12 @@
                         <span>{{ __('Author: :author', ['author' => $module['author']]) }}</span>
                         <span>{{ __('Identifier: :id', ['id' => $module['id']]) }}</span>
                         <span>{{ __('CMS compatibility: :range', ['range' => ($module['cms_min'] ?: '—').' — '.($module['cms_max'] ?: '∞')]) }}</span>
+                        @if ($module['has_migrations'])
+                            <span>{{ __('Database migrations: :applied applied, :pending pending', [
+                                'applied' => $module['applied_count'],
+                                'pending' => $module['pending_count'],
+                            ]) }}</span>
+                        @endif
                     </div>
 
                     @if ($module['capabilities'] !== [])
@@ -67,6 +78,7 @@
                                     'bootstrap' => __('Bootstrap services'),
                                     'views' => __('Views'),
                                     'lang' => __('Translations'),
+                                    'migrations' => __('Database migrations'),
                                     'web_routes' => __('Public routes'),
                                     'admin_routes' => __('Administrator routes'),
                                     default => $capability,
@@ -77,6 +89,18 @@
 
                     @if ($module['update_available'])
                         <div class="notice notice-warning"><p>{{ __('Module files contain version :available, while version :stored was last enabled.', ['available' => $module['version'], 'stored' => $module['stored_version']]) }}</p></div>
+                    @endif
+
+                    @if ($module['pending_count'] > 0)
+                        <div class="notice notice-warning"><p>{{ trans_choice(':count module database migration is pending.|:count module database migrations are pending.', $module['pending_count'], ['count' => $module['pending_count']]) }}</p></div>
+                    @endif
+
+                    @if ($module['modified_migrations'] !== [] || $module['missing_migrations'] !== [])
+                        <div class="notice notice-error"><p>{{ __('Applied module migration files must never be edited or removed. Add a new migration instead.') }}</p></div>
+                    @endif
+
+                    @if ($module['migration_error'])
+                        <div class="notice notice-error"><p>{{ __('Module database migration failed: :error', ['error' => $module['migration_error']]) }}</p></div>
                     @endif
 
                     @if ($module['last_error'])
@@ -93,7 +117,15 @@
                         @if ($module['can_enable'])
                             <form method="POST" action="{{ route('admin.modules.enable', ['module' => $module['id']]) }}">
                                 @csrf
-                                <button class="button button-primary" type="submit">{{ $module['update_available'] ? __('Approve update') : __('Enable') }}</button>
+                                <button class="button button-primary" type="submit">
+                                    {{ match(true) {
+                                        $module['status'] === 'install_pending' => __('Install and enable'),
+                                        $module['update_available'] => __('Apply update'),
+                                        $module['pending_count'] > 0 && $module['enabled'] => __('Apply database update'),
+                                        $module['status'] === 'migration_error' => __('Retry database migration'),
+                                        default => __('Enable'),
+                                    } }}
+                                </button>
                             </form>
                         @endif
 

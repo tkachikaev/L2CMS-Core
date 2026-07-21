@@ -5,10 +5,10 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$expectedFromVersion = '0.23.12'
-$expectedToVersion = '0.24.0'
-$legacyApplyScriptName = 'apply-0.23.12.ps1'
-$legacyApplySha256 = 'e564cd67e2ecb7cfd5666cbd9099365903c8aab8f2988b41c6120e28425fae44'
+$expectedFromVersion = '0.25.1'
+$expectedToVersion = '0.25.2'
+$legacyApplyScriptName = 'apply-0.25.1.ps1'
+$legacyApplySha256 = '33cd3c5a7ddb12a0e3e43ac7675d92fae83195b8d28cd42690fd1ead7cd4f5cb'
 $previousComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $currentComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 

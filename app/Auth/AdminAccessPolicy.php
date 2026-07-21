@@ -56,6 +56,10 @@ final class AdminAccessPolicy
             return new AdminAccessDecision(AdminPermission::AuditView);
         }
 
+        if (str_starts_with($name, 'admin.rewards.')) {
+            return new AdminAccessDecision(AdminPermission::AuditView);
+        }
+
         if (str_starts_with($name, 'admin.settings.game-server') || str_starts_with($name, 'admin.settings.login-server')) {
             return $isRead
                 ? new AdminAccessDecision(AdminPermission::ServersView, AdminPermission::ServersManage)

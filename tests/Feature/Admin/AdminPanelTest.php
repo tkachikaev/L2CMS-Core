@@ -184,9 +184,7 @@ class AdminPanelTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder([
                 'Content',
-                'Appearance',
                 'Themes',
-                'Player account themes',
                 'Servers',
                 'Game servers',
                 'Login Servers',
@@ -223,6 +221,18 @@ class AdminPanelTest extends TestCase
         ));
 
         $xpath = new DOMXPath($document);
+        $this->assertSame(
+            'Themes',
+            trim((string) $xpath->evaluate('string(//details[@data-admin-menu-group="appearance"]/summary/span[1])')),
+        );
+        $this->assertSame(
+            'Site',
+            trim((string) $xpath->evaluate('string(//details[@data-admin-menu-group="appearance"]//a[1]/span)')),
+        );
+        $this->assertSame(
+            'Account',
+            trim((string) $xpath->evaluate('string(//details[@data-admin-menu-group="appearance"]//a[2]/span)')),
+        );
         $this->assertSame(
             1.0,
             $xpath->evaluate('count(//a[@data-admin-settings-link])'),

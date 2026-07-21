@@ -567,3 +567,44 @@ html.account-is-navigating .account-content { opacity: 0.54; transform: translat
     .account-brand, .account-nav a, .account-profile-chevron, .account-content, .game-account-card, .account-button, .account-sidebar { transition: none !important; }
     html.account-is-navigating::before { width: 100%; animation: none; }
 }
+
+/* Web inventory */
+.reward-inventory-shell { display: grid; gap: 20px; }
+.reward-inventory-heading h1 { margin: 4px 0 6px; font-size: clamp(28px, 4vw, 42px); }
+.reward-server-tabs, .reward-view-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.reward-server-tabs a, .reward-view-tabs a { padding: 10px 14px; border: 1px solid var(--account-line); border-radius: 12px; background: var(--account-panel); color: var(--account-muted); font-weight: 700; }
+.reward-server-tabs a.active, .reward-view-tabs a.active { border-color: rgba(212, 173, 103, 0.45); background: rgba(212, 173, 103, 0.12); color: var(--account-text); }
+.reward-view-tabs a { display: inline-flex; align-items: center; gap: 8px; }
+.reward-view-tabs a span { min-width: 24px; padding: 1px 7px; border-radius: 999px; background: var(--account-panel-soft); text-align: center; font-size: 11px; }
+.reward-item-list, .reward-history-list { display: grid; gap: 10px; }
+.reward-item-row { position: relative; display: grid; grid-template-columns: 22px 38px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--account-line); border-radius: 15px; background: var(--account-panel); cursor: pointer; transition: border-color .16s ease, transform .16s ease, background .16s ease; }
+.reward-item-row:hover { border-color: rgba(212, 173, 103, 0.35); transform: translateY(-1px); }
+.reward-item-row input { position: absolute; opacity: 0; pointer-events: none; }
+.reward-item-check { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid var(--account-line); border-radius: 7px; color: transparent; font-size: 12px; }
+.reward-item-row input:checked + .reward-item-check { border-color: var(--account-gold); background: var(--account-gold); color: #17120a; }
+.reward-item-row:has(input:disabled) { cursor: not-allowed; opacity: .66; }
+.reward-item-icon { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(212, 173, 103, 0.24); border-radius: 11px; background: rgba(212, 173, 103, 0.09); color: var(--account-gold-bright); font-weight: 900; }
+.reward-item-copy { min-width: 0; display: flex; flex-direction: column; }
+.reward-item-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reward-item-copy small { color: var(--account-muted); }
+.reward-item-amount { white-space: nowrap; color: var(--account-gold-dark); }
+.reward-transfer-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 320px) auto; align-items: end; gap: 18px; padding: 18px; border: 1px solid var(--account-line); border-radius: 16px; background: var(--account-panel-soft); }
+.reward-transfer-panel h2 { margin: 3px 0; }
+.reward-transfer-panel p { margin: 0; color: var(--account-muted); }
+.reward-character-select { display: grid; gap: 6px; }
+.reward-character-select span { color: var(--account-muted); font-size: 12px; font-weight: 700; }
+.reward-character-select select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--account-line); border-radius: 11px; background: var(--account-panel-raised); color: var(--account-text); }
+.reward-history-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 16px; border: 1px solid var(--account-line); border-radius: 15px; background: var(--account-panel); }
+.reward-history-main { min-width: 0; display: flex; align-items: center; gap: 12px; }
+.reward-history-main h3, .reward-history-main p { margin: 0; }
+.reward-history-main small, .reward-history-main p, .reward-history-status small { color: var(--account-muted); }
+.reward-history-main p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reward-history-status { display: grid; justify-items: end; gap: 4px; }
+.reward-status { padding: 4px 9px; border-radius: 999px; background: var(--account-panel-soft); font-size: 11px; font-weight: 800; }
+.reward-status-delivered { color: var(--account-green); }
+.reward-status-failed { color: var(--account-red); }
+.reward-status-pending, .reward-status-processing, .reward-status-review { color: var(--account-orange); }
+.reward-empty { border-radius: var(--account-radius); }
+@media (max-width: 920px) { .reward-transfer-panel { grid-template-columns: 1fr; align-items: stretch; } .reward-transfer-panel .account-button { justify-content: center; } }
+@media (max-width: 620px) { .reward-item-row { grid-template-columns: 22px 34px minmax(0, 1fr); } .reward-item-amount { grid-column: 3; } .reward-history-card { align-items: flex-start; flex-direction: column; } .reward-history-status { justify-items: start; } }
+

@@ -55,6 +55,24 @@ class User extends Authenticatable implements MustVerifyEmail
             ->whereHas('registrationGameServer');
     }
 
+    /** @return HasMany<RewardInventoryGrant, $this> */
+    public function rewardInventoryGrants(): HasMany
+    {
+        return $this->hasMany(RewardInventoryGrant::class);
+    }
+
+    /** @return HasMany<RewardInventoryItem, $this> */
+    public function rewardInventoryItems(): HasMany
+    {
+        return $this->hasMany(RewardInventoryItem::class);
+    }
+
+    /** @return HasMany<RewardDelivery, $this> */
+    public function rewardDeliveries(): HasMany
+    {
+        return $this->hasMany(RewardDelivery::class);
+    }
+
     /** @return HasOne<UserCharacterPreference, $this> */
     public function characterPreference(): HasOne
     {

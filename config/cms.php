@@ -11,6 +11,7 @@ return [
 
     'modules' => [
         'runtime_retry_seconds' => 60,
+        'migration_lock_seconds' => 300,
         'reserved_ids' => [
             'admin',
             'api',

@@ -41,6 +41,7 @@ class AuditLog extends Model
             'game_account' => __('Game accounts'),
             'system' => __('System'),
             'module' => __('Modules'),
+            'reward' => __('Rewards'),
             default => str($category)->replace(['_', '-', '.'], ' ')->headline()->toString(),
         };
     }
@@ -99,6 +100,11 @@ class AuditLog extends Model
             'module.disabled' => __('Module disabled'),
             'module.enable_failed' => __('Module enable failed'),
             'module.disable_failed' => __('Module disable failed'),
+            'reward.inventory_granted' => __('Reward granted to web inventory'),
+            'reward.delivery_queued' => __('Reward delivery queued'),
+            'reward.delivery_completed' => __('Reward delivery completed'),
+            'reward.delivery_failed' => __('Reward delivery failed'),
+            'reward.delivery_review_required' => __('Reward delivery requires review'),
             'user.registered' => __('User registered'),
             'user.email_verified' => __('Verified email'),
             'user.password_changed' => __('Password changed'),
@@ -137,6 +143,7 @@ class AuditLog extends Model
             'user' => __('User'),
             'system' => __('System'),
             'module' => __('Modules'),
+            'reward' => __('Rewards'),
             null, '' => __('Unauthenticated'),
             default => str((string) $this->actor_type)->replace(['_', '-'], ' ')->headline()->toString(),
         };

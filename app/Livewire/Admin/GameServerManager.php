@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Auth\AdminPermission;
 use App\Exceptions\GameServerDeletionConfirmationRequired;
+use App\Exceptions\GameServerHasRewardData;
 use App\Models\Admin;
 use App\Models\GameServer;
 use App\Models\GameServerTranslation;
@@ -379,6 +380,10 @@ class GameServerManager extends Component
         } catch (GameServerDeletionConfirmationRequired $exception) {
             $this->applyDeleteImpact($exception->impact);
             $this->deleteImpactWarning = __('The deletion impact changed. Review the updated account count and confirm again.');
+
+            return;
+        } catch (GameServerHasRewardData) {
+            $this->deleteImpactWarning = __('This GameServer contains web inventory rewards or delivery history. Deletion is blocked to prevent reward data loss.');
 
             return;
         }

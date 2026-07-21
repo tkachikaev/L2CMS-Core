@@ -26,7 +26,7 @@ class BundledAureliaThemesTest extends TestCase
         $this->assertTrue($accountTheme['valid'], implode(PHP_EOL, $accountTheme['errors']));
         $this->assertTrue($accountTheme['compatible'], implode(PHP_EOL, $accountTheme['errors']));
         $this->assertSame('Kaev Aurelia Account', $accountTheme['name']);
-        $this->assertSame('1.0.4', $accountTheme['version']);
+        $this->assertSame('1.1.1', $accountTheme['version']);
         $this->assertNotNull($accountTheme['preview_url']);
 
         foreach ($this->publicThemeFiles() as $file) {
@@ -53,6 +53,8 @@ class BundledAureliaThemesTest extends TestCase
             '.account-character-avatar > span { display: block; line-height: 1; transform: translateY(1px); }',
             $accountCss,
         );
+        $this->assertStringContainsString('.account-surface {', $accountCss);
+        $this->assertStringContainsString('border-radius: var(--account-radius-lg);', $accountCss);
     }
 
     public function test_public_aurelia_theme_can_be_activated_and_renders_its_own_shell(): void
@@ -101,6 +103,12 @@ class BundledAureliaThemesTest extends TestCase
             ->assertOk()
             ->assertSee('Мои аккаунты')
             ->assertSee('account-page-hero', false);
+
+        $this->actingAs($user)
+            ->get('/account/web-inventory')
+            ->assertOk()
+            ->assertSee('Веб-инвентарь')
+            ->assertSee('account-surface', false);
 
         $this->assertDatabaseHas('cms_settings', [
             'key' => 'account_theme.active',
@@ -172,6 +180,7 @@ class BundledAureliaThemesTest extends TestCase
             'livewire/character-directory.blade.php',
             'livewire/game-account-password-form.blade.php',
             'partials/navigation.blade.php',
+            'web-inventory/index.blade.php',
         ];
     }
 
