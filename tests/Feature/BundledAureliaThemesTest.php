@@ -20,13 +20,13 @@ class BundledAureliaThemesTest extends TestCase
         $this->assertTrue($publicTheme['valid'], implode(PHP_EOL, $publicTheme['errors']));
         $this->assertTrue($publicTheme['compatible'], implode(PHP_EOL, $publicTheme['errors']));
         $this->assertSame('Kaev Aurelia', $publicTheme['name']);
-        $this->assertSame('1.0.7', $publicTheme['version']);
+        $this->assertSame('1.0.8', $publicTheme['version']);
         $this->assertNotNull($publicTheme['preview_url']);
 
         $this->assertTrue($accountTheme['valid'], implode(PHP_EOL, $accountTheme['errors']));
         $this->assertTrue($accountTheme['compatible'], implode(PHP_EOL, $accountTheme['errors']));
         $this->assertSame('Kaev Aurelia Account', $accountTheme['name']);
-        $this->assertSame('1.1.2', $accountTheme['version']);
+        $this->assertSame('1.3.0', $accountTheme['version']);
         $this->assertNotNull($accountTheme['preview_url']);
 
         foreach ($this->publicThemeFiles() as $file) {
@@ -58,6 +58,10 @@ class BundledAureliaThemesTest extends TestCase
         $this->assertStringContainsString('.account-form-aside {', $accountCss);
         $this->assertStringContainsString('position: relative;', $accountCss);
         $this->assertStringContainsString('.reward-history-card {', $accountCss);
+        $this->assertStringContainsString('.account-avatar-grid {', $accountCss);
+        $this->assertStringContainsString('.account-avatar-modal {', $accountCss);
+        $this->assertStringContainsString('.account-tool-grid {', $accountCss);
+        $this->assertStringContainsString('.account-detail-hero { padding: 28px 30px; }', $accountCss);
         $this->assertStringContainsString('border-radius: var(--account-radius-sm);', $accountCss);
     }
 
@@ -107,6 +111,12 @@ class BundledAureliaThemesTest extends TestCase
             ->assertOk()
             ->assertSee('Мои аккаунты')
             ->assertSee('account-page-hero', false);
+
+        $this->actingAs($user)
+            ->get('/account/profile')
+            ->assertOk()
+            ->assertSee('Выбор аватара')
+            ->assertSee('account-avatar-picker', false);
 
         $this->actingAs($user)
             ->get('/account/web-inventory')
@@ -176,6 +186,7 @@ class BundledAureliaThemesTest extends TestCase
     {
         return [
             'components/character-row.blade.php',
+            'characters/index.blade.php',
             'dashboard.blade.php',
             'game-accounts/create.blade.php',
             'game-accounts/index.blade.php',
@@ -184,6 +195,7 @@ class BundledAureliaThemesTest extends TestCase
             'livewire/character-directory.blade.php',
             'livewire/game-account-password-form.blade.php',
             'partials/navigation.blade.php',
+            'profile/edit.blade.php',
             'web-inventory/index.blade.php',
         ];
     }

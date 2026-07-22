@@ -22,6 +22,8 @@ Open **Control panel → Modules** as an owner and choose **Install and enable**
 - one to one hundred unique simple rewards using compact `item_id + amount` rows; one row is shown initially and more are added on demand;
 - enabled/disabled state.
 
+Names are not duplicated inside each promo code. The shared localized catalog in `lang/{locale}/items.php` supplies names to the promo-code list, activation history and web inventory; administrators continue entering the technical `item_id`. See `docs/GAME_ITEMS.md`.
+
 A GameServer cannot be changed after the first successful activation. The code, dates, limits, state and future reward set may still be edited. The activation journal keeps the original code, account email, GameServer and the exact inventory grant, so later edits do not rewrite history.
 
 ## Activation transaction

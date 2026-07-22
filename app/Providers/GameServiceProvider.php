@@ -5,20 +5,16 @@ namespace App\Providers;
 use App\Contracts\ExternalDatabaseConnectionTester;
 use App\Contracts\GameAccountGateway;
 use App\Contracts\GameRewardQueueGateway;
-use App\Contracts\GameServerAdapter;
 use App\Contracts\GameServerDatabaseGateway;
 use App\Contracts\GameServerOnlineCounter;
 use App\Contracts\ServicePortProbe;
 use App\Services\GameAccounts\ExternalGameAccountGateway;
-use App\Services\GameServer\MobiusGameServerAdapter;
-use App\Services\GameServer\MockGameServerAdapter;
 use App\Services\GameWorld\MySqlGameServerDatabase;
 use App\Services\Rewards\DatabaseGameRewardQueueGateway;
 use App\Services\Servers\MySqlExternalDatabaseConnectionTester;
 use App\Services\Servers\MySqlGameServerOnlineCounter;
 use App\Services\Servers\TcpServicePortProbe;
 use Illuminate\Support\ServiceProvider;
-use InvalidArgumentException;
 
 class GameServiceProvider extends ServiceProvider
 {
@@ -30,15 +26,5 @@ class GameServiceProvider extends ServiceProvider
         $this->app->singleton(GameServerOnlineCounter::class, MySqlGameServerOnlineCounter::class);
         $this->app->singleton(GameServerDatabaseGateway::class, MySqlGameServerDatabase::class);
         $this->app->singleton(GameRewardQueueGateway::class, DatabaseGameRewardQueueGateway::class);
-
-        $this->app->singleton(GameServerAdapter::class, function () {
-            return match (config('game.adapter')) {
-                'mock' => app(MockGameServerAdapter::class),
-                'mobius' => app(MobiusGameServerAdapter::class),
-                default => throw new InvalidArgumentException(
-                    'Unsupported GAME_ADAPTER value: '.(string) config('game.adapter')
-                ),
-            };
-        });
     }
 }

@@ -2,15 +2,22 @@
     <span class="account-nav-label">{{ __('Main') }}</span>
     <a wire:navigate.hover wire:current.exact="active" href="{{ public_route('account') }}">
         <span class="account-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="img"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"></path></svg>
         </span>
-        <span><strong>{{ __('Overview') }}</strong><small>{{ __('Characters and summary') }}</small></span>
+        <span><strong>{{ __('Overview') }}</strong><small>{{ __('Account summary and quick access') }}</small></span>
     </a>
 
     <span class="account-nav-label">{{ __('Game') }}</span>
+    <a wire:navigate.hover wire:current="active" href="{{ public_route('characters.index') }}">
+        <span class="account-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0M4 5l3-2M20 5l-3-2"></path></svg>
+        </span>
+        <span><strong>{{ __('Characters') }}</strong><small>{{ __('All characters in one place') }}</small></span>
+    </a>
+
     <a wire:navigate.hover wire:current="active" href="{{ public_route('game-accounts.index') }}">
         <span class="account-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="img"><path d="M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Zm1 5v6m-3-3h6m5-3h.01M18 13h.01"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="4"></rect><path d="M8 12h4M10 10v4M16.5 10.5h.01M18 13h.01"></path></svg>
         </span>
         <span><strong>{{ __('Game accounts') }}</strong><small>{{ __('Accounts and passwords') }}</small></span>
     </a>

@@ -8,6 +8,8 @@ import process from 'node:process';
 const root = resolve(import.meta.dirname, '../..');
 const runtimeDirectory = resolve(root, 'storage/framework/testing/browser');
 const databasePath = resolve(runtimeDirectory, `kaevcms-browser-${process.pid}.sqlite`);
+const avatarDirectory = resolve(root, 'public/uploads/account-avatars');
+const browserAvatarPath = resolve(avatarDirectory, 'browser-avatar.png');
 const findAvailablePort = async () => new Promise((resolvePromise, rejectPromise) => {
     const probe = createServer();
     probe.unref();
@@ -38,7 +40,9 @@ const playerEmail = 'browser-player@example.test';
 const playerPassword = 'BrowserPlayerPassword123!';
 
 mkdirSync(dirname(databasePath), { recursive: true });
+mkdirSync(avatarDirectory, { recursive: true });
 writeFileSync(databasePath, '');
+writeFileSync(browserAvatarPath, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'));
 
 const environment = {
     ...process.env,
@@ -134,4 +138,5 @@ try {
 } finally {
     stopProcessTree(server);
     rmSync(databasePath, { force: true });
+    rmSync(browserAvatarPath, { force: true });
 }

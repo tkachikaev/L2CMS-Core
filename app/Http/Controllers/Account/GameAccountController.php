@@ -11,8 +11,9 @@ use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\AuditLogger;
 use App\Services\GameAccounts\GameAccountQuota;
-use App\Services\GameAccounts\MobiusClassNames;
 use App\Services\GameAccountSettings;
+use App\Services\GameAssets\CharacterAppearanceResolver;
+use App\Services\GameWorld\MobiusCharacterLabels;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,8 @@ class GameAccountController extends Controller
         private readonly GameAccountGateway $gateway,
         private readonly AuditLogger $auditLogger,
         private readonly GameAccountQuota $quota,
+        private readonly MobiusCharacterLabels $labels,
+        private readonly CharacterAppearanceResolver $appearances,
     ) {}
 
     public function index(Request $request, GameAccountSettings $settings): View
@@ -209,7 +212,6 @@ class GameAccountController extends Controller
 
     public function show(
         Request $request,
-        MobiusClassNames $classNames,
         GameAccountSettings $settings,
     ): View {
         $gameAccount = $this->gameAccountId($request);
@@ -247,9 +249,17 @@ class GameAccountController extends Controller
             }
 
             try {
-                $characters = array_map(static fn (array $character): array => $character + [
-                    'class_name' => $classNames->name($character['class_id']),
-                ], $this->gateway->characters($gameServer, $account->game_login));
+                $characters = array_map(function (array $character) use ($gameServer): array {
+                    $classId = $character['class_id'];
+                    $race = $character['race'];
+                    $gender = $character['gender'];
+
+                    return array_merge($character, $this->appearances->resolve($gameServer, $race, $gender, $classId), [
+                        'class_name' => $this->labels->className($classId),
+                        'race_name' => $this->labels->raceName($race),
+                        'gender_name' => $this->labels->genderName($gender),
+                    ]);
+                }, $this->gateway->characters($gameServer, $account->game_login));
                 $worlds[] = ['server' => $gameServer, 'characters' => $characters, 'available' => true];
             } catch (Throwable $exception) {
                 Log::warning('Game characters loading failed.', [

@@ -60,7 +60,6 @@ final class ServerMonitorCoordinator
             } catch (Throwable $exception) {
                 Log::warning('Server monitor lock release failed.', [
                     'exception' => $exception::class,
-                    'message' => $exception->getMessage(),
                 ]);
             }
         }
@@ -73,7 +72,6 @@ final class ServerMonitorCoordinator
         } catch (Throwable $exception) {
             Log::warning('Server monitor lock could not be created.', [
                 'exception' => $exception::class,
-                'message' => $exception->getMessage(),
             ]);
 
             return null;

@@ -16,7 +16,7 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'game_account', 'locale'];
+    protected $fillable = ['name', 'email', 'password', 'game_account', 'locale', 'avatar_filename'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -31,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
             'locale' => 'string',
+            'avatar_filename' => 'string',
             'password' => 'hashed',
         ];
     }

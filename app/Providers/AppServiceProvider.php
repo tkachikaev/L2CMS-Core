@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Auth\Passwords\UtcPasswordBrokerManager;
 use App\Http\Middleware\RequireAdminAuthentication;
+use App\Services\Account\AccountAvatarCatalog;
 use App\Services\Admin\AdminPathSettings;
 use App\Services\AdminLoginService;
 use App\Services\AdminTwoFactorAuthentication;
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->extend('auth.password', fn ($manager, $app): UtcPasswordBrokerManager => new UtcPasswordBrokerManager($app));
+        $this->app->scoped(AccountAvatarCatalog::class);
         $this->app->singleton(AdminPathSettings::class);
         $this->app->singleton(AdminLoginService::class);
         $this->app->singleton(AdminTwoFactorAuthentication::class);

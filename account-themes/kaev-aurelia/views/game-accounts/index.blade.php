@@ -39,7 +39,7 @@
             <article class="game-account-card">
                 <div class="game-account-card-accent"></div>
                 <div class="game-account-card-head">
-                    <span class="game-account-icon">{{ mb_strtoupper(mb_substr($account->game_login, 0, 1)) }}</span>
+                    <x-game-account-icon aria-hidden="true" />
                     <div><span>{{ __('Game account') }}</span><h3>{{ $account->game_login }}</h3></div>
                     <i aria-hidden="true"></i>
                 </div>

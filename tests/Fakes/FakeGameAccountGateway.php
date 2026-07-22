@@ -91,6 +91,10 @@ class FakeGameAccountGateway implements GameAccountGateway
             throw new RuntimeException('external_character_query_failed');
         }
 
-        return $this->charactersByServer[$gameServer->id] ?? [];
+        return array_map(static fn (array $character): array => array_merge($character, [
+            'class_id' => (int) ($character['class_id'] ?? -1),
+            'race' => (int) ($character['race'] ?? -1),
+            'gender' => (int) ($character['gender'] ?? -1),
+        ]), $this->charactersByServer[$gameServer->id] ?? []);
     }
 }

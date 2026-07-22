@@ -15,17 +15,34 @@ final class GameAssetUrlResolver
             return null;
         }
 
-        return $this->resolve('items', $this->serverId($server), (string) $itemId);
+        return $this->resolve('items', $this->serverId($server), [(string) $itemId]);
     }
 
     public function characterAvatar(GameServer|int|null $server, string $key): ?string
     {
-        $key = trim($key);
-        if ($key === '' || preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9._-]{0,189}\z/', $key) !== 1) {
+        return $this->firstCharacterAvatar($server, [$key]);
+    }
+
+    /** @param list<string> $keys */
+    public function firstCharacterAvatar(GameServer|int|null $server, array $keys): ?string
+    {
+        $safeKeys = [];
+        foreach ($keys as $key) {
+            $safeKey = $this->safeKey($key);
+            if ($safeKey !== null && ! in_array($safeKey, $safeKeys, true)) {
+                $safeKeys[] = $safeKey;
+            }
+        }
+
+        if ($safeKeys === []) {
             return null;
         }
 
-        return $this->resolve('characters', $server === null ? null : $this->serverId($server), $key);
+        return $this->resolve(
+            'characters',
+            $server === null ? null : $this->serverId($server),
+            $safeKeys,
+        );
     }
 
     public function rootPath(): string
@@ -38,27 +55,45 @@ final class GameAssetUrlResolver
         return $server instanceof GameServer ? (int) $server->getKey() : $server;
     }
 
-    private function resolve(string $category, ?int $serverId, string $key): ?string
+    /** @param list<string> $keys */
+    private function resolve(string $category, ?int $serverId, array $keys): ?string
     {
-        $relativeCandidates = [];
-
+        $scopeBases = [];
         if ($serverId !== null && $serverId > 0) {
-            $relativeCandidates[] = $category.'/servers/'.$serverId.'/'.$key;
+            $scopeBases[] = $category.'/servers/'.$serverId;
         }
+        $scopeBases[] = $category.'/common';
 
-        $relativeCandidates[] = $category.'/common/'.$key;
+        foreach ($scopeBases as $scopeBase) {
+            foreach ($keys as $key) {
+                foreach (self::EXTENSIONS as $extension) {
+                    $relativePath = $scopeBase.'/'.$key.'.'.$extension;
+                    $absolutePath = $this->rootPath().DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
 
-        foreach ($relativeCandidates as $relativeBase) {
-            foreach (self::EXTENSIONS as $extension) {
-                $relativePath = $relativeBase.'.'.$extension;
-                $absolutePath = $this->rootPath().DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-
-                if (File::isFile($absolutePath)) {
-                    return asset('uploads/game-assets/'.$relativePath);
+                    if (File::isFile($absolutePath)) {
+                        return asset('uploads/game-assets/'.$relativePath);
+                    }
                 }
             }
         }
 
         return null;
+    }
+
+    private function safeKey(mixed $key): ?string
+    {
+        if (! is_string($key)) {
+            return null;
+        }
+
+        $key = trim(str_replace('\\', '/', $key));
+        if ($key === '' || strlen($key) > 190 || str_starts_with($key, '/') || str_ends_with($key, '/')) {
+            return null;
+        }
+
+        return preg_match(
+            '/\A[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}(?:\/[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}){0,7}\z/D',
+            $key,
+        ) === 1 ? $key : null;
     }
 }

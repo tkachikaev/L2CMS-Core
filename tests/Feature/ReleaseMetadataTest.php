@@ -28,11 +28,11 @@ class ReleaseMetadataTest extends TestCase
         $this->assertSame(1, $matched, 'CHANGELOG must start with a dated release heading.');
         $this->assertSame($version, $matches[1] ?? null);
 
-        $updateScript = $this->readReleaseFile('update.ps1');
+        $updateScript = $this->readReleaseFile('deployment/windows/update.ps1');
         $this->assertStringContainsString("\$cmsVersion = (Get-Content 'VERSION' -Raw).Trim()", $updateScript);
         $this->assertStringContainsString('Write-UpdateStage -Message "KaevCMS $expectedFromVersion -> $cmsVersion update"', $updateScript);
 
-        $applyScripts = glob(base_path('apply-*.ps1')) ?: [];
+        $applyScripts = glob(base_path('deployment/windows/apply-*.ps1')) ?: [];
         sort($applyScripts);
 
         $this->assertCount(1, $applyScripts, 'A release must contain exactly one current apply script.');
@@ -40,38 +40,55 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString("\$fromVersion = '0.29.0'", $applyScript);
-        $this->assertStringContainsString('app\Services\GameWorld\GameStatistics.php', $applyScript);
-        $this->assertStringContainsString('app\Services\Rewards\DatabaseGameRewardQueueGateway.php', $applyScript);
-        $this->assertStringContainsString('themes\default\views\statistics\index.blade.php', $applyScript);
-        $this->assertStringContainsString('themes\kaev-aurelia\views\statistics\index.blade.php', $applyScript);
-        $this->assertStringContainsString('tests\Unit\MobiusClassNamesTest.php', $applyScript);
-        $this->assertStringContainsString('tests\powershell\update-workflow.ps1', $applyScript);
-        $this->assertStringContainsString('scripts\release-update-support.ps1', $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '0.31.9'", $applyScript);
+        $this->assertStringContainsString('public\install\index.php', $applyScript);
+        $this->assertStringContainsString('deployment\hosting\web-installer\installer.php', $applyScript);
+        $this->assertStringContainsString('deployment\hosting\web-installer\tests\installer-regression.php', $applyScript);
+        $this->assertStringContainsString('deployment\windows\tests\update-workflow.ps1', $applyScript);
+        $this->assertStringContainsString('deployment\windows\support\release-update-support.ps1', $applyScript);
         $this->assertStringNotContainsString('Remove-Item -LiteralPath $obsoleteApplyScript.FullName', $applyScript);
         $this->assertStringNotContainsString('update.ps1 failed with exit code $LASTEXITCODE', $applyScript);
+
+        $this->assertFileDoesNotExist(base_path('quality.ps1'));
+        $this->assertFileDoesNotExist(base_path('setup.ps1'));
+        $this->assertFileExists(base_path('deployment/windows/quality.ps1'));
+        $this->assertFileExists(base_path('deployment/windows/setup.ps1'));
+
+        $browserQuality = $this->readReleaseFile('deployment/windows/browser-quality.ps1');
+        $this->assertStringContainsString('node_modules\@playwright\test\package.json', $browserQuality);
+        $this->assertStringNotContainsString("require.resolve('@playwright/test')", $browserQuality);
+    }
+
+    public function test_promo_code_reward_model_has_a_single_line_ending_at_eof(): void
+    {
+        $model = $this->readReleaseFile('modules/promo-codes/src/Models/PromoCodeReward.php');
+
+        $this->assertStringEndsWith("\n", $model);
+        $this->assertFalse(str_ends_with($model, "\n\n"));
+        $this->assertFalse(str_ends_with($model, "\r\n\r\n"));
     }
 
     public function test_update_script_verifies_source_preserves_env_and_stages_cleanup_before_tests(): void
     {
-        $updateScript = $this->readReleaseFile('update.ps1');
+        $updateScript = $this->readReleaseFile('deployment/windows/update.ps1');
 
-        $this->assertStringContainsString("\$expectedFromVersion = '0.29.0'", $updateScript);
-        $this->assertStringContainsString("\$expectedToVersion = '0.29.2'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplyScriptName = 'apply-0.29.0.ps1'", $updateScript);
-        $this->assertStringContainsString("\$legacyApplySha256 = '58e1dea45db84678133335c2c9b54bb6dbfd2128a98ef15a8e25cd22498f2a7e'", $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '0.31.9'", $updateScript);
+        $this->assertStringContainsString("\$expectedToVersion = '0.31.10'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplyScriptName = 'deployment\windows\apply-0.31.9.ps1'", $updateScript);
+        $this->assertStringContainsString("\$legacyApplySha256 = '0ae65d1a439a9639a8d3e5af360c486bfa1889edd6a49966480b2651fd94a70e'", $updateScript);
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
         $this->assertStringContainsString('Write-KaevCmsPendingUpdateMarker', $updateScript);
         $this->assertStringContainsString('Convert-KaevCmsSupersededPendingUpdateMarker', $updateScript);
-        $this->assertStringContainsString("\$supersededPendingTargets = @('0.29.1')", $updateScript);
+        $this->assertStringContainsString('$supersededPendingTargets = @()', $updateScript);
+        $this->assertStringContainsString('if ($supersededPendingTargets.Count -gt 0)', $updateScript);
         $this->assertStringContainsString('Move-KaevCmsArtifactsToBackup', $updateScript);
         $this->assertStringContainsString('Remove-KaevCmsUpdateBackups', $updateScript);
         $this->assertStringNotContainsString('QUEUE_CONNECTION=sync', $updateScript);
         $this->assertStringNotContainsString('SESSION_COOKIE=l2forge_session', $updateScript);
         $this->assertStringNotContainsString('function Set-EnvValue', $updateScript);
-        $this->assertStringContainsString('Clear-KaevCmsBootstrapCache -ProjectRoot $PSScriptRoot', $updateScript);
+        $this->assertStringContainsString('Clear-KaevCmsBootstrapCache -ProjectRoot $ProjectRoot', $updateScript);
         $this->assertStringContainsString('composer install --no-interaction --prefer-dist --no-scripts', $updateScript);
         $this->assertStringContainsString('$composerDependenciesChanged', $updateScript);
         $this->assertStringContainsString('Composer install was skipped', $updateScript);
@@ -82,12 +99,13 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('finally {', $updateScript);
         $this->assertStringContainsString('php artisan up', $updateScript);
         $this->assertStringContainsString('php artisan kaevcms:release-version --mark=$cmsVersion', $updateScript);
+        $this->assertStringContainsString('storage\app\installed.lock', $updateScript);
         $this->assertStringContainsString("'resources\\views\\account'", $updateScript);
         $this->assertStringContainsString("'resources\\views\\livewire\\account'", $updateScript);
         $this->assertStringContainsString("'public\\assets\\account'", $updateScript);
         $this->assertStringContainsString("'integrations\\reward-queue\\remove-legacy-bridge.sql'", $updateScript);
 
-        $cachePosition = strpos($updateScript, 'Clear-KaevCmsBootstrapCache -ProjectRoot $PSScriptRoot');
+        $cachePosition = strpos($updateScript, 'Clear-KaevCmsBootstrapCache -ProjectRoot $ProjectRoot');
         $maintenancePosition = strpos($updateScript, 'php artisan down --retry=60');
         $composerPosition = strpos($updateScript, 'composer install --no-interaction --prefer-dist --no-scripts');
         $migrationPosition = strpos($updateScript, 'php artisan migrate --force');
@@ -137,13 +155,13 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('<env name="APP_MAINTENANCE_STORE" value="array" force="true"/>', $phpunit);
         $this->assertStringNotContainsString('<env name="APP_MAINTENANCE_DRIVER" value="file"/>', $phpunit);
 
-        $doctorScript = $this->readReleaseFile('doctor.ps1');
+        $doctorScript = $this->readReleaseFile('deployment/windows/doctor.ps1');
         $this->assertStringContainsString('php artisan kaevcms:release-version --no-ansi', $doctorScript);
         $this->assertStringContainsString('php artisan kaevcms:encryption-health --no-ansi', $doctorScript);
 
-        $qualityScript = $this->readReleaseFile('quality.ps1');
-        $this->assertStringContainsString('tests\\powershell\\update-workflow.ps1', $qualityScript);
-        $this->assertStringContainsString('tests\\powershell\\composer-audit-policy.ps1', $qualityScript);
+        $qualityScript = $this->readReleaseFile('deployment/windows/quality.ps1');
+        $this->assertStringContainsString('tests\\update-workflow.ps1', $qualityScript);
+        $this->assertStringContainsString('tests\\composer-audit-policy.ps1', $qualityScript);
         $this->assertStringContainsString('$env:COMPOSER_DISABLE_NETWORK = \'1\'', $qualityScript);
         $this->assertStringContainsString('Remove-Item Env:COMPOSER_DISABLE_NETWORK', $qualityScript);
         $this->assertStringContainsString('finally {', $qualityScript);
@@ -151,12 +169,12 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('php artisan route:cache', $qualityScript);
         $this->assertSame(2, substr_count($qualityScript, 'php artisan route:clear'));
 
-        $securityAuditScript = $this->readReleaseFile('security-audit.ps1');
-        $this->assertStringContainsString('scripts\\composer-audit-support.ps1', $securityAuditScript);
+        $securityAuditScript = $this->readReleaseFile('deployment/windows/security-audit.ps1');
+        $this->assertStringContainsString('support\\composer-audit-support.ps1', $securityAuditScript);
         $this->assertStringContainsString('Invoke-KaevCmsComposerSecurityAudit', $securityAuditScript);
         $this->assertStringContainsString('npm audit --audit-level=high', $securityAuditScript);
 
-        $composerAuditSupport = $this->readReleaseFile('scripts/composer-audit-support.ps1');
+        $composerAuditSupport = $this->readReleaseFile('deployment/windows/support/composer-audit-support.ps1');
         $this->assertStringContainsString(
             '$composerExecutable audit --locked --no-interaction',
             $composerAuditSupport,
@@ -168,23 +186,23 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('Dependency security has not been verified', $composerAuditSupport);
         $this->assertStringContainsString('throw "Composer security audit failed with exit code $auditExitCode."', $composerAuditSupport);
 
-        $composerAuditPolicyTest = $this->readReleaseFile('tests/powershell/composer-audit-policy.ps1');
+        $composerAuditPolicyTest = $this->readReleaseFile('deployment/windows/tests/composer-audit-policy.ps1');
         $this->assertStringContainsString('curl error 28', $composerAuditPolicyTest);
         $this->assertStringContainsString('security vulnerability advisory', $composerAuditPolicyTest);
         $this->assertStringContainsString('No security vulnerability advisories found.', $composerAuditPolicyTest);
         $this->assertStringContainsString('Network disabled, request canceled.', $composerAuditPolicyTest);
         $this->assertStringContainsString('NativeCommandError', $composerAuditPolicyTest);
 
-        $browserQualityScript = $this->readReleaseFile('browser-quality.ps1');
+        $browserQualityScript = $this->readReleaseFile('deployment/windows/browser-quality.ps1');
         $this->assertStringContainsString('node --test tests/browser/support/navigation.test.mjs', $browserQualityScript);
         $this->assertStringContainsString('npm run test:browser', $browserQualityScript);
         $this->assertStringNotContainsString('npm ci', $browserQualityScript);
         $this->assertStringNotContainsString('npm audit', $browserQualityScript);
         $this->assertStringNotContainsString('playwright install', $browserQualityScript);
 
-        $browserSetupScript = $this->readReleaseFile('browser-setup.ps1');
-        $this->assertStringContainsString('npm ci', $browserSetupScript);
-        $this->assertStringContainsString('playwright install chromium', $browserSetupScript);
+        $browserSetupScript = $this->readReleaseFile('deployment/windows/browser-setup.ps1');
+        $this->assertStringContainsString('npm ci --include=dev', $browserSetupScript);
+        $this->assertStringContainsString('npm exec -- playwright install chromium', $browserSetupScript);
 
         $browserRunner = $this->readReleaseFile('tests/browser/run.mjs');
         $this->assertStringContainsString('findAvailablePort', $browserRunner);
@@ -246,7 +264,7 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('display: grid; place-items: center;', $aureliaCss);
         $this->assertStringContainsString('.account-character-avatar > span', $aureliaCss);
         $this->assertStringContainsString('.account-surface {', $aureliaCss);
-        $this->assertStringContainsString('Kaev Aurelia Account 1.1.2', $aureliaCss);
+        $this->assertStringContainsString('Kaev Aurelia Account 1.3.0', $aureliaCss);
         $this->assertStringContainsString('.promo-activation-surface {', $aureliaCss);
         $this->assertStringContainsString('.reward-history-main p img {', $aureliaCss);
 
@@ -277,6 +295,10 @@ class ReleaseMetadataTest extends TestCase
         $this->assertFileExists(base_path('account-themes/kaev-aurelia/views/web-inventory/index.blade.php'));
         $this->assertFileExists(base_path('account-themes/luxury/views/web-inventory/index.blade.php'));
         $this->assertFileExists(resource_path('views/admin/rewards/index.blade.php'));
+        $this->assertFileExists(app_path('Services/Rewards/RewardDeliveryReconciler.php'));
+        $this->assertFileExists(app_path('Console/Commands/ReconcileRewardDeliveriesCommand.php'));
+        $this->assertFileExists(app_path('Http/Middleware/SecurityHeaders.php'));
+        $this->assertFileExists(base_path('docs/AUDIT-0.30.0.md'));
 
         $contract = $this->readReleaseFile('app/Contracts/GameWorldDriver.php');
         $this->assertStringNotContainsString('rewardDeliveryCapabilities', $contract);
@@ -293,10 +315,18 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('$profile->reputationColumn', $mobiusDriver);
         $this->assertFileExists(app_path('Services/GameWorld/MobiusGameSchemaInspector.php'));
 
-        $mobiusAdapter = $this->readReleaseFile('app/Services/GameServer/MobiusGameServerAdapter.php');
+        $homeController = $this->readReleaseFile('app/Http/Controllers/HomeController.php');
         $serverMonitor = $this->readReleaseFile('app/Services/Servers/ServerMonitor.php');
-        $this->assertStringNotContainsString("'message' => \$exception->getMessage()", $mobiusAdapter);
+        $monitorCoordinator = $this->readReleaseFile('app/Services/Servers/ServerMonitorCoordinator.php');
+        $this->assertStringContainsString('GameStatistics', $homeController);
+        $this->assertStringNotContainsString('GameServerAdapter', $homeController);
+        $this->assertStringNotContainsString('TheGreatPlayer', $homeController);
         $this->assertStringNotContainsString("'message' => \$exception->getMessage()", $serverMonitor);
+        $this->assertStringNotContainsString("'message' => \$exception->getMessage()", $monitorCoordinator);
+        $this->assertFileDoesNotExist(app_path('Contracts/GameServerAdapter.php'));
+        $this->assertFileDoesNotExist(app_path('Services/GameServer/MobiusGameServerAdapter.php'));
+        $this->assertFileDoesNotExist(app_path('Services/GameServer/MockGameServerAdapter.php'));
+        $this->assertFileDoesNotExist(config_path('game.php'));
         $this->assertFileExists(app_path('Services/GameWorld/MobiusGameSchemaProfile.php'));
         $this->assertFileExists(app_path('Services/GameAccounts/MobiusClassNames.php'));
         $this->assertFileDoesNotExist(app_path('Services/GameWorld/MobiusInterludeGameWorldDriver.php'));
@@ -310,11 +340,29 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString("Schema::create('reward_delivery_items'", $migration);
         $this->assertStringContainsString("\$table->timestamp('transferred_at')->nullable()", $migration);
         $this->assertStringContainsString("\$table->timestamp('queued_at')->nullable()", $migration);
+
+        $environment = $this->readReleaseFile('.env.example');
+        $this->assertStringContainsString('APP_ENV=production', $environment);
+        $this->assertStringContainsString('APP_DEBUG=false', $environment);
+        $this->assertStringContainsString('LOG_LEVEL=warning', $environment);
+        $this->assertStringNotContainsString('GAME_ADAPTER=', $environment);
+        $this->assertStringNotContainsString('GAME_DB_HOST=', $environment);
+
+        $schedule = $this->readReleaseFile('routes/console.php');
+        $this->assertStringContainsString('kaevcms:rewards-reconcile', $schedule);
     }
 
     public function test_promo_code_and_game_asset_release_artifacts_are_shipped(): void
     {
         $this->assertFileExists(app_path('Services/GameAssets/GameAssetUrlResolver.php'));
+        $this->assertFileExists(app_path('Services/GameAssets/GameItemCatalog.php'));
+        $this->assertFileExists(lang_path('ru/items.php'));
+        $this->assertFileExists(lang_path('en/items.php'));
+        $this->assertFileExists(base_path('docs/GAME_ITEMS.md'));
+        $this->assertFileExists(app_path('Services/GameAssets/CharacterAppearanceResolver.php'));
+        $this->assertFileExists(config_path('character-appearances.php'));
+        $this->assertFileExists(resource_path('views/components/game-character-avatar.blade.php'));
+        $this->assertFileExists(base_path('docs/CHARACTER_AVATARS.md'));
         $this->assertFileExists(app_path('Support/Modules/ModuleNavigationRegistry.php'));
         $this->assertFileExists(app_path('Support/Modules/ModuleGameServerDependencyRegistry.php'));
         $this->assertFileExists(base_path('modules/promo-codes/module.json'));
@@ -335,7 +383,7 @@ class ReleaseMetadataTest extends TestCase
             flags: JSON_THROW_ON_ERROR,
         );
         $this->assertSame('promo-codes', $manifest['id']);
-        $this->assertSame('1.0.2', $manifest['version']);
+        $this->assertSame('1.0.3', $manifest['version']);
         $this->assertSame('0.26.0', $manifest['cms_min']);
         $this->assertSame('database/migrations', $manifest['migrations']);
 
@@ -354,11 +402,84 @@ class ReleaseMetadataTest extends TestCase
 
         $adminStyles = $this->readReleaseFile('public/assets/admin/css/app.css');
         $this->assertStringContainsString('.promo-reward-row', $adminStyles);
+        $this->assertStringContainsString('.reward-queue-item', $adminStyles);
+        $this->assertStringContainsString('.promo-reward-name-preview', $adminStyles);
+
+        $itemCatalog = $this->readReleaseFile('app/Services/GameAssets/GameItemCatalog.php');
+        $this->assertStringContainsString('lang_path($locale.\'/items.php\')', $itemCatalog);
+        $this->assertStringContainsString('$servers[$serverId]', $itemCatalog);
+        $this->assertStringContainsString('fallbackCandidates', $itemCatalog);
+        $this->assertStringContainsString("Lang::get('Game item'", $itemCatalog);
+
+        $rewardJournal = $this->readReleaseFile('resources/views/admin/rewards/index.blade.php');
+        $this->assertStringContainsString('@section(\'title\', __(\'Reward queue\'))', $rewardJournal);
+        $this->assertStringContainsString('audit-table reward-queue-table', $rewardJournal);
+        $this->assertStringContainsString('ID {{ $item->item_id }}', $rewardJournal);
 
         $resolver = $this->readReleaseFile('app/Services/GameAssets/GameAssetUrlResolver.php');
         $this->assertStringContainsString("'items'", $resolver);
         $this->assertStringContainsString("'characters'", $resolver);
+        $this->assertStringContainsString('firstCharacterAvatar', $resolver);
+        $this->assertStringContainsString('str_starts_with($key', $resolver);
         $this->assertStringContainsString("'webp', 'png', 'jpg', 'jpeg'", $resolver);
+
+        $appearanceResolver = $this->readReleaseFile('app/Services/GameAssets/CharacterAppearanceResolver.php');
+        $this->assertStringContainsString("'race_key'", $appearanceResolver);
+        $this->assertStringContainsString("'gender_key'", $appearanceResolver);
+        $this->assertStringContainsString("'archetype'", $appearanceResolver);
+        $this->assertStringContainsString('fallback/neutral/default', $appearanceResolver);
+
+        $avatarGuide = $this->readReleaseFile('docs/CHARACTER_AVATARS.md');
+        $this->assertStringContainsString('common/human/female/mage.webp', $avatarGuide);
+        $this->assertStringContainsString('common/fallback/neutral/default.webp', $avatarGuide);
+    }
+
+    public function test_account_avatar_release_artifacts_are_shipped(): void
+    {
+        $this->assertFileExists(app_path('Services/Account/AccountAvatarCatalog.php'));
+        $this->assertFileExists(app_path('Http/Controllers/Account/ProfileController.php'));
+        $this->assertFileExists(app_path('Http/Requests/Account/UpdateAccountAvatarRequest.php'));
+        $this->assertFileExists(database_path('migrations/2026_07_22_000100_add_account_avatar_to_users_table.php'));
+        $this->assertFileExists(resource_path('views/components/account-avatar.blade.php'));
+        $this->assertFileExists(resource_path('views/components/account-avatar-modal.blade.php'));
+        $this->assertFileExists(resource_path('views/components/game-account-icon.blade.php'));
+        $this->assertFileExists(app_path('Http/Controllers/Account/CharacterController.php'));
+        $this->assertFileExists(database_path('migrations/2026_07_22_000200_upgrade_character_directory_preferences.php'));
+        $this->assertFileExists(base_path('account-themes/kaev-aurelia/views/characters/index.blade.php'));
+        $this->assertFileExists(base_path('account-themes/luxury/views/characters/index.blade.php'));
+        $this->assertFileExists(base_path('account-themes/kaev-aurelia/views/profile/edit.blade.php'));
+        $this->assertFileExists(base_path('account-themes/luxury/views/profile/edit.blade.php'));
+        $this->assertFileExists(base_path('docs/ACCOUNT_AVATARS.md'));
+
+        $routes = $this->readReleaseFile('routes/account.php');
+        $this->assertStringContainsString("/account/profile", $routes);
+        $this->assertStringContainsString("/account/characters", $routes);
+        $this->assertStringContainsString("characters.index", $routes);
+        $this->assertStringContainsString("profile.avatar.update", $routes);
+
+        $setup = $this->readReleaseFile('deployment/windows/setup.ps1');
+        $update = $this->readReleaseFile('deployment/windows/update.ps1');
+        $doctor = $this->readReleaseFile('deployment/windows/doctor.ps1');
+        $this->assertStringContainsString('public\uploads\account-avatars', $setup);
+        $this->assertStringContainsString('public\uploads\account-avatars', $update);
+        $this->assertStringContainsString('Account avatar directory', $doctor);
+
+        $migration = $this->readReleaseFile('database/migrations/2026_07_22_000100_add_account_avatar_to_users_table.php');
+        $this->assertStringContainsString("\$table->string('avatar_filename', 190)->nullable()", $migration);
+
+        $component = $this->readReleaseFile('resources/views/components/account-avatar.blade.php');
+        $this->assertStringContainsString('AccountAvatarCatalog::class', $component);
+        $this->assertStringContainsString('data-account-avatar', $component);
+
+        $modal = $this->readReleaseFile('resources/views/components/account-avatar-modal.blade.php');
+        $this->assertStringContainsString('data-avatar-modal', $modal);
+        $this->assertStringContainsString('return_to', $modal);
+        $this->assertStringContainsString('AccountAvatarCatalog::class', $modal);
+
+        $preferenceMigration = $this->readReleaseFile('database/migrations/2026_07_22_000200_upgrade_character_directory_preferences.php');
+        $this->assertStringContainsString("\$table->unsignedSmallInteger('schema_version')->default(1)", $preferenceMigration);
+        $this->assertStringContainsString("'view_mode' => 'all'", $preferenceMigration);
+        $this->assertStringContainsString("'schema_version' => 2", $preferenceMigration);
     }
 
     public function test_obsolete_preview_and_settings_placeholder_are_not_shipped(): void

@@ -41,7 +41,7 @@
                                     <header class="account-group-heading account-group-heading-nested">
                                         <button type="button" class="account-group-toggle" wire:click="toggleAccount({{ $account['id'] }})" aria-expanded="{{ in_array($account['id'], $expandedAccountIds, true) ? 'true' : 'false' }}">
                                             <span class="account-group-chevron" aria-hidden="true">{{ in_array($account['id'], $expandedAccountIds, true) ? '−' : '+' }}</span>
-                                            <span class="account-group-account-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($account['login'], 0, 1)) }}</span>
+                                            <x-game-account-icon class="account-group-account-icon" aria-hidden="true" />
                                             <span class="account-group-copy"><strong>{{ $account['login'] }}</strong><small>{{ __('Game account') }}</small></span>
                                             <em>{{ trans_choice(':count character|:count characters', count($account['characters']), ['count' => count($account['characters'])]) }}</em>
                                         </button>

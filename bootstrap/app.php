@@ -8,6 +8,7 @@ use App\Http\Middleware\RedirectAuthenticatedAdmin;
 use App\Http\Middleware\RequireActiveSiteUser;
 use App\Http\Middleware\RequireAdminAuthentication;
 use App\Http\Middleware\RequireConfiguredEmailVerification;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetApplicationLocale;
 use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: []);
         $middleware->appendToGroup('web', SetApplicationLocale::class);
+        $middleware->appendToGroup('web', SecurityHeaders::class);
         $middleware->alias([
             'admin.auth' => RequireAdminAuthentication::class,
             'admin.access' => EnforceAdminAccess::class,

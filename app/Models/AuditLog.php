@@ -107,6 +107,7 @@ class AuditLog extends Model
             'user.registered' => __('User registered'),
             'user.email_verified' => __('Verified email'),
             'user.password_changed' => __('Password changed'),
+            'user.account_avatar_updated' => __('Account avatar changed'),
             'user.password_reset_requested' => __('Password reset requested'),
             'user.enabled' => __('User enabled'),
             'user.disabled' => __('User disabled'),

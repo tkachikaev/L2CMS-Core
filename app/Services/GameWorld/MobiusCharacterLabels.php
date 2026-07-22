@@ -22,6 +22,8 @@ final class MobiusCharacterLabels
             3 => __('Orc'),
             4 => __('Dwarf'),
             5 => __('Kamael'),
+            6 => __('Ertheia'),
+            7 => __('Sylph'),
             default => __('Unknown race'),
         };
     }

@@ -28,7 +28,7 @@
                     </div>
                     <div class="content-row-meta">
                         @foreach($activation->rewardGrant?->items ?? [] as $reward)
-                            <span>#{{ $reward->item_id }} × {{ number_format($reward->amount, 0, '.', ' ') }}</span>
+                            <span>{{ $reward->displayName($activation->game_server_id) }} × {{ number_format($reward->amount, 0, '.', ' ') }} <small>ID {{ $reward->item_id }}</small></span>
                         @endforeach
                     </div>
                 </div>

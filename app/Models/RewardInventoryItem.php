@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\GameAssets\GameItemCatalog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -76,10 +77,12 @@ class RewardInventoryItem extends Model
         return $this->hasMany(RewardDeliveryItem::class);
     }
 
-    public function displayName(): string
+    public function displayName(GameServer|int|null $server = null): string
     {
-        $name = trim((string) $this->item_name);
-
-        return $name !== '' ? $name : __('Item #:id', ['id' => $this->item_id]);
+        return app(GameItemCatalog::class)->displayName(
+            $server ?? $this->game_server_id,
+            $this->item_id,
+            $this->item_name,
+        );
     }
 }

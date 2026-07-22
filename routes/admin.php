@@ -116,6 +116,9 @@ Route::prefix('{adminPath}')->name('admin.')->middleware(['admin.path', 'admin.h
             ->name('account-themes.activate');
 
         Route::get('/reward-deliveries', [AdminRewardDeliveryController::class, 'index'])->name('rewards.index');
+        Route::post('/reward-deliveries/{delivery}/reconcile', [AdminRewardDeliveryController::class, 'reconcile'])
+            ->middleware('throttle:20,1')
+            ->name('rewards.reconcile');
 
         Route::get('/modules', [AdminModuleController::class, 'index'])->name('modules.index');
         Route::post('/modules/{module}/enable', [AdminModuleController::class, 'enable'])

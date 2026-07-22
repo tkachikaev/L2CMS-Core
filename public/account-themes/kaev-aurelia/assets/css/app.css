@@ -318,7 +318,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .game-account-card:hover { transform: translateY(-3px); border-color: rgba(212, 173, 103, 0.25); box-shadow: 0 25px 75px rgba(50, 61, 53, 0.12); }
 .game-account-card-accent { position: absolute; inset: 0 0 auto; height: 2px; background: linear-gradient(90deg, transparent, rgba(212, 173, 103, 0.75), transparent); opacity: 0.65; }
 .game-account-card-head { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-.game-account-icon, .character-avatar { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(145deg, var(--account-gold-bright), var(--account-gold-dark)); color: #17120a; font-weight: 900; box-shadow: 0 12px 30px rgba(50, 61, 53, 0.12); }
+.game-account-icon, .character-avatar { width: 46px; height: 46px; display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: linear-gradient(145deg, var(--account-gold-bright), var(--account-gold-dark)); color: #17120a; font-weight: 900; box-shadow: 0 12px 30px rgba(50, 61, 53, 0.12); }
 .game-account-icon.large { width: 70px; height: 70px; border-radius: 20px; font-size: 24px; }
 .game-account-card-head > div { min-width: 0; }
 .game-account-card-head span { color: var(--account-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
@@ -438,6 +438,7 @@ dd { margin: 0; }
 .account-character-avatar { width: 48px; height: 48px; position: relative; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; border-radius: 15px; background: linear-gradient(145deg, #7e887f, #e5e9e2); color: #26302a; }
 .account-character-avatar > span { display: block; line-height: 1; transform: translateY(1px); }
 .account-character-avatar.hero { background: linear-gradient(145deg, var(--account-gold-bright), var(--account-gold-dark)); color: #17120a; }
+.character-avatar > img, .account-character-avatar > img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
 .account-character-identity { min-width: 0; display: flex; flex-direction: column; }
 .account-character-name { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .account-character-name > strong { font-size: 16px; }
@@ -1078,7 +1079,7 @@ html.account-is-navigating::before {
     }
 }
 
-/* Kaev Aurelia Account 1.1.2 — keep every cabinet surface smooth and rounded. */
+/* Kaev Aurelia Account 1.1.4 — keep every cabinet surface smooth and rounded. */
 :root {
     --account-radius-xl: 26px;
     --account-radius-lg: 24px;
@@ -1354,3 +1355,249 @@ html.account-is-navigating::before {
     .reward-transfer-panel,
     .reward-history-card { border-radius: 14px; }
 }
+
+/* Localized reward items 0.31.4 */
+.reward-history-items{display:flex;flex-wrap:wrap;gap:7px 12px!important;align-items:center}
+.reward-history-items>span{display:inline-flex;align-items:center;gap:6px}
+.reward-history-items img{flex:0 0 auto;border-radius:5px;object-fit:cover}
+
+/* Kaev Aurelia Account 1.3.0 — player avatar catalog and profile. */
+.account-avatar { position: relative; flex-shrink: 0; overflow: hidden; }
+.account-avatar > img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+.account-avatar > span { width: 100%; height: 100%; display: grid; place-items: center; line-height: 1; }
+.game-account-card-head .game-account-icon { color: #332a1b; font-size: 14px; letter-spacing: 0; text-transform: none; }
+.game-account-icon.large { font-size: 24px; }
+.account-detail-hero { padding: 28px 30px; }
+.account-profile-page-hero { align-items: center; }
+.account-profile-preview {
+    width: 104px;
+    height: 104px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(125, 103, 61, .22);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #e7d9b7, #b99758);
+    color: #332a1b;
+    font-size: 34px;
+    font-weight: 900;
+    box-shadow: 0 16px 42px rgba(125, 103, 61, .16);
+}
+.account-avatar-settings {
+    padding: 28px;
+    border: 1px solid rgba(83, 99, 87, .15);
+    border-radius: var(--account-radius-lg);
+    background: rgba(255, 253, 247, .88);
+    box-shadow: 0 18px 52px rgba(50, 61, 53, .075);
+}
+.account-avatar-form { display: grid; gap: 20px; }
+.account-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.account-avatar-option {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) 24px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(83, 99, 87, .15);
+    border-radius: 18px;
+    background: rgba(238, 240, 233, .5);
+    cursor: pointer;
+    transition: border-color .16s ease, transform .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.account-avatar-option:hover { transform: translateY(-2px); border-color: rgba(125, 103, 61, .32); background: rgba(255, 253, 247, .96); }
+.account-avatar-option:has(input:checked) { border-color: rgba(66, 133, 90, .52); background: rgba(66, 133, 90, .08); box-shadow: 0 12px 30px rgba(50, 61, 53, .08); }
+.account-avatar-option:has(input:focus-visible) { outline: 3px solid rgba(125, 103, 61, .22); outline-offset: 3px; }
+.account-avatar-option input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.account-avatar-option-visual {
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #e7d9b7, #b99758);
+    color: #332a1b;
+    font-size: 22px;
+    font-weight: 900;
+}
+.account-avatar-option-visual img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+.account-avatar-option-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.account-avatar-option-copy strong, .account-avatar-option-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-avatar-option-copy strong { color: var(--account-text); font-size: 13px; }
+.account-avatar-option-copy small { color: var(--account-muted); font-size: 10px; }
+.account-avatar-option-check { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: rgba(83, 99, 87, .1); color: transparent; font-size: 12px; font-weight: 900; }
+.account-avatar-option:has(input:checked) .account-avatar-option-check { background: var(--account-green); color: #fff; }
+.account-avatar-actions { display: flex; justify-content: flex-end; }
+.account-avatar-form > .account-field-error { margin: -8px 0 0; color: var(--account-red); font-size: 12px; font-weight: 700; }
+
+@media (max-width: 760px) {
+    .account-detail-hero { padding: 22px 20px; }
+    .account-profile-page-hero { align-items: flex-start; }
+    .account-profile-preview { width: 82px; height: 82px; font-size: 28px; }
+    .account-avatar-settings { padding: 22px 20px; }
+    .account-avatar-grid { grid-template-columns: 1fr; }
+}
+
+/* KaevCMS 0.31.7 — simplified player cabinet and modal avatar picker. */
+html.account-modal-open { overflow: hidden; }
+.account-user-avatar-button,
+.account-profile-preview-button {
+    position: relative;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    cursor: pointer;
+}
+.account-user-avatar-button { width: 34px; height: 34px; border-radius: 11px; }
+.account-user-avatar-button:focus-visible,
+.account-profile-preview-button:focus-visible { outline: 3px solid rgba(212, 173, 103, .3); outline-offset: 3px; }
+.account-avatar-edit-mark {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--account-panel-raised);
+    border-radius: 50%;
+    background: var(--account-gold);
+    color: #17120a;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.account-hero-profile { position: relative; z-index: 2; flex: 0 0 150px; display: grid; place-items: center; }
+.account-dashboard-avatar {
+    width: 112px;
+    height: 112px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(212, 173, 103, .3);
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--account-gold-bright), var(--account-gold-dark));
+    color: #17120a;
+    font-size: 34px;
+    font-weight: 900;
+    box-shadow: 0 20px 52px rgba(0, 0, 0, .18);
+}
+.account-dashboard-tools { margin-top: 32px; }
+.account-tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.account-tool-card {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+    padding: 18px;
+    border: 1px solid var(--account-line-soft);
+    border-radius: 18px;
+    background: var(--account-panel);
+    box-shadow: 0 14px 38px rgba(0, 0, 0, .06);
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.account-tool-card:hover { transform: translateY(-2px); border-color: rgba(212, 173, 103, .34); box-shadow: 0 18px 44px rgba(0, 0, 0, .1); }
+.account-tool-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px; background: var(--account-panel-soft); color: var(--account-gold-bright); }
+.account-tool-card > span:nth-child(2) { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.account-tool-card strong { font-size: 15px; }
+.account-tool-card small { color: var(--account-muted); font-size: 11px; }
+.account-tool-card b { color: var(--account-gold-bright); font-size: 20px; transition: transform .16s ease; }
+.account-tool-card:hover b { transform: translateX(3px); }
+.account-character-page { margin-top: 0; }
+
+.game-account-icon { background: var(--account-panel-soft); color: var(--account-gold-bright); }
+.game-account-icon svg { width: 23px; height: 23px; }
+.game-account-icon.large svg { width: 30px; height: 30px; }
+
+.account-profile-page-simple { align-items: center; }
+.account-profile-preview-button { flex: 0 0 auto; border-radius: 50%; }
+.account-profile-preview-button > span:last-child {
+    position: absolute;
+    right: 1px;
+    bottom: 4px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--account-panel-raised);
+    border-radius: 50%;
+    background: var(--account-gold);
+    color: #17120a;
+    font-size: 14px;
+    font-weight: 900;
+}
+.account-profile-explanation { margin-top: 22px; }
+.account-profile-rule-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.account-profile-rule-grid article { min-width: 0; display: flex; align-items: flex-start; gap: 12px; padding: 17px; border: 1px solid var(--account-line-soft); border-radius: 17px; background: var(--account-panel); }
+.account-profile-rule-grid article > span { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 13px; background: var(--account-panel-soft); color: var(--account-gold-bright); }
+.account-profile-rule-grid article > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.account-profile-rule-grid small { color: var(--account-muted); font-size: 11px; }
+
+.account-avatar-modal {
+    width: min(760px, calc(100vw - 32px));
+    max-height: min(760px, calc(100vh - 32px));
+    overflow: hidden;
+    border: 1px solid var(--account-line);
+    border-radius: 24px;
+    background: var(--account-panel-raised);
+    color: var(--account-text);
+    padding: 0;
+    box-shadow: 0 36px 120px rgba(0, 0, 0, .42);
+}
+.account-avatar-modal::backdrop { background: rgba(4, 7, 11, .72); backdrop-filter: blur(5px); }
+.account-avatar-modal-card { max-height: min(760px, calc(100vh - 32px)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.account-avatar-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 24px 26px 18px; border-bottom: 1px solid var(--account-line-soft); }
+.account-avatar-modal-head h2 { margin: 4px 0 6px; font-size: 28px; }
+.account-avatar-modal-head p { max-width: 560px; margin: 0; color: var(--account-muted); font-size: 12px; }
+.account-avatar-modal-close { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border: 1px solid var(--account-line); border-radius: 12px; background: var(--account-panel-soft); color: var(--account-muted); font-size: 25px; line-height: 1; cursor: pointer; }
+.account-avatar-modal-close:hover { color: var(--account-text); border-color: rgba(212, 173, 103, .35); }
+.account-avatar-modal-body { min-height: 0; overflow: auto; padding: 20px 26px; }
+.account-avatar-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 13px; }
+.account-avatar-tile {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 12px 10px 10px;
+    border: 1px solid var(--account-line-soft);
+    border-radius: 18px;
+    background: var(--account-panel);
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.account-avatar-tile:hover { transform: translateY(-2px); border-color: rgba(212, 173, 103, .34); }
+.account-avatar-tile:has(input:checked) { border-color: rgba(103, 211, 152, .55); background: rgba(103, 211, 152, .08); box-shadow: 0 12px 28px rgba(0, 0, 0, .12); }
+.account-avatar-tile:has(input:focus-visible) { outline: 3px solid rgba(212, 173, 103, .25); outline-offset: 3px; }
+.account-avatar-tile input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.account-avatar-tile-visual { width: 82px; height: 82px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; background: linear-gradient(145deg, var(--account-gold-bright), var(--account-gold-dark)); color: #17120a; font-size: 28px; font-weight: 900; }
+.account-avatar-tile-visual img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+.account-avatar-tile-label { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--account-muted); text-align: center; font-size: 10px; font-weight: 700; }
+.account-avatar-tile-check { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--account-panel-soft); color: transparent; font-size: 11px; font-weight: 900; }
+.account-avatar-tile:has(input:checked) .account-avatar-tile-check { background: var(--account-green); color: #08110d; }
+.account-avatar-modal-body > .account-field-error { margin: 14px 0 0; color: var(--account-red); font-size: 12px; font-weight: 700; }
+.account-avatar-modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px 20px; border-top: 1px solid var(--account-line-soft); background: var(--account-panel); }
+
+@media (max-width: 980px) {
+    .account-tool-grid,
+    .account-profile-rule-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+    .account-hero-profile { display: none; }
+    .account-avatar-modal { width: calc(100vw - 20px); max-height: calc(100vh - 20px); border-radius: 19px; }
+    .account-avatar-modal-card { max-height: calc(100vh - 20px); }
+    .account-avatar-modal-head { padding: 20px 18px 15px; }
+    .account-avatar-modal-head h2 { font-size: 24px; }
+    .account-avatar-modal-body { padding: 16px 18px; }
+    .account-avatar-modal-actions { padding: 14px 18px 17px; }
+    .account-avatar-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .account-avatar-tile-visual { width: 70px; height: 70px; }
+}
+@media (max-width: 480px) {
+    .account-avatar-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .account-avatar-modal-actions .account-button { flex: 1; justify-content: center; }
+}
+.account-character-page-actions { display: flex; justify-content: flex-end; margin-bottom: 14px; }

@@ -47,7 +47,7 @@ class PromoCodesModuleTest extends TestCase
         $this->assertTrue(Schema::hasColumn('module_promo_codes', 'deleted_at'));
         $this->assertDatabaseHas('cms_modules', [
             'id' => 'promo-codes',
-            'version' => '1.0.2',
+            'version' => '1.0.3',
             'enabled' => true,
         ]);
 
@@ -390,8 +390,9 @@ class PromoCodesModuleTest extends TestCase
         $this->actingAs($owner, 'admin')
             ->get('/admin/extensions/promo-codes/activations')
             ->assertOk()
-            ->assertSee('#57 × 100')
-            ->assertDontSee('#4037 × 1');
+            ->assertSee('Адена × 100')
+            ->assertSee('ID 57')
+            ->assertDontSee('ID 4037');
     }
 
     public function test_owner_can_delete_promo_code_without_losing_activation_history_or_granted_rewards(): void
@@ -438,7 +439,8 @@ class PromoCodesModuleTest extends TestCase
             ->get('/admin/extensions/promo-codes/activations')
             ->assertOk()
             ->assertSee('DELETE-ME')
-            ->assertSee('#57 × 100');
+            ->assertSee('Адена × 100')
+            ->assertSee('ID 57');
 
         $this->activate($user, $promoCode, (string) Str::uuid())
             ->assertSessionHasErrors('code');
@@ -498,6 +500,10 @@ class PromoCodesModuleTest extends TestCase
         $this->assertSame(array_keys($english), array_keys($russian));
         $this->assertCount(count($english), array_unique(array_map('mb_strtolower', array_keys($english))));
         $this->assertCount(count($russian), array_unique(array_map('mb_strtolower', array_keys($russian))));
+
+        foreach (['main_settings_help', 'server_help', 'server_locked_after_activation', 'validation_server_exists'] as $key) {
+            $this->assertStringNotContainsString('GameServer', $russian[$key]);
+        }
     }
 
     /**

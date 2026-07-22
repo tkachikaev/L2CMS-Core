@@ -64,6 +64,7 @@ class AdminRoleTest extends TestCase
                 AdminPermission::SettingsManage,
                 AdminPermission::AdministratorsManage,
                 AdminPermission::AuditView,
+                AdminPermission::RewardsManage,
                 AdminPermission::SystemView,
                 AdminPermission::ProfileManage,
             ]],

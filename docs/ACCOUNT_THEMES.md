@@ -7,7 +7,7 @@
 В поставку входят:
 
 - `luxury` — безопасный полный fallback-шаблон L2 Obsidian Luxury;
-- `kaev-aurelia` — светлый Kaev Aurelia Account 1.1.2, визуально согласованный с публичной темой Kaev Aurelia.
+- `kaev-aurelia` — светлый Kaev Aurelia Account 1.3.0, визуально согласованный с публичной темой Kaev Aurelia.
 
 Обновление не переключает активный шаблон кабинета автоматически. Выбор выполняется отдельно в разделе **Темы → Кабинет**.
 
@@ -67,6 +67,7 @@ public/account-themes/example/
 views/layouts/app.blade.php
 views/partials/navigation.blade.php
 views/dashboard.blade.php
+views/characters/index.blade.php
 views/game-accounts/index.blade.php
 views/game-accounts/create.blade.php
 views/game-accounts/show.blade.php

@@ -117,7 +117,7 @@ class RuntimeDiagnosticsTest extends TestCase
 
     public function test_doctor_checks_scheduler_and_database_queue_registration(): void
     {
-        $doctor = file_get_contents(base_path('doctor.ps1'));
+        $doctor = file_get_contents(base_path('deployment/windows/doctor.ps1'));
 
         $this->assertIsString($doctor);
         $this->assertStringContainsString('kaevcms:scheduler-heartbeat', $doctor);

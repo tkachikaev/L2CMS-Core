@@ -3,6 +3,7 @@
 namespace App\Services\News;
 
 use App\Models\News;
+use App\Models\NewsTranslation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -75,9 +76,14 @@ final class NewsImageStorage
             return News::withTrashed()->where('image', $path)->exists();
         }
 
+        $publicPath = $this->publicPath($path);
+
         return News::withTrashed()
-            ->where('body', 'like', '%'.$this->publicPath($path).'%')
-            ->exists();
+            ->where('body', 'like', '%'.$publicPath.'%')
+            ->exists()
+            || NewsTranslation::query()
+                ->where('body', 'like', '%'.$publicPath.'%')
+                ->exists();
     }
 
     /**

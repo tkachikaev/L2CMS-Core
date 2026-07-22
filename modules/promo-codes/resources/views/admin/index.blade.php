@@ -43,7 +43,7 @@
                                 @if($iconUrls[$promoCode->id][$reward->item_id] ?? null)
                                     <img src="{{ $iconUrls[$promoCode->id][$reward->item_id] }}" alt="" width="24" height="24">
                                 @endif
-                                #{{ $reward->item_id }} × {{ number_format($reward->amount, 0, '.', ' ') }}
+                                {{ $reward->displayName($promoCode->gameServer) }} × {{ number_format($reward->amount, 0, '.', ' ') }} <small>ID {{ $reward->item_id }}</small>
                             </span>
                         @endforeach
                     </div>

@@ -8,7 +8,7 @@
         @if ($accountCount > 1)<a wire:navigate href="{{ public_route('game-accounts.index') }}">← {{ __('My accounts') }}</a>@endif
     </div>
     <div class="account-detail-identity">
-        <span class="game-account-icon large">{{ mb_strtoupper(mb_substr($account->game_login, 0, 1)) }}</span>
+        <x-game-account-icon :large="true" aria-hidden="true" />
         <div><span class="account-eyebrow">{{ __('Game account') }}</span><div class="account-title-row"><h1>{{ $account->game_login }}</h1>@if(is_array($summary))<span class="account-chip {{ $summary['status'] === 'active' ? 'success' : 'danger' }}">{{ $summary['status'] === 'active' ? __('Active') : __('Blocked') }}</span>@endif</div><p>{{ $gameServers->map(static fn ($gameServer): string => $gameServer->nameFor())->implode(' · ') }}</p></div>
     </div>
     @if ($canCreateAccount)<a wire:navigate.hover class="account-button secondary account-button-create" href="{{ public_route('game-accounts.create') }}">{{ __('Create game account') }}</a>@endif
@@ -37,7 +37,7 @@
                 <div class="character-list">
                     @foreach($world['characters'] as $character)
                         <div class="character-row">
-                            <span class="character-avatar">{{ mb_strtoupper(mb_substr($character['name'], 0, 1)) }}</span>
+                            <x-game-character-avatar :character="$character" class="character-avatar" />
                             <div class="character-main"><strong>{{ $character['name'] }}</strong><small>{{ $character['class_name'] }} @if($character['clan'])· {{ $character['clan'] }}@endif</small>@if($character['created_at'])<small>{{ __('Created: :date', ['date' => $character['created_at']->format('d.m.Y')]) }}</small>@endif</div>
                             <div class="character-level"><span>{{ __('Level') }}</span><strong>{{ $character['level'] }}</strong></div>
                             <span class="online-state {{ $character['online'] ? 'online' : '' }}">{{ $character['online'] ? __('Online') : __('Offline') }}</span>

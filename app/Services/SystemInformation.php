@@ -287,6 +287,7 @@ final class SystemInformation
             __('News image uploads') => public_path('uploads/news'),
             __('Page image uploads') => public_path('uploads/pages'),
             __('Logo and favicon uploads') => public_path('uploads/settings'),
+            __('Account avatar uploads') => public_path('uploads/account-avatars'),
             __('Game asset uploads') => public_path('uploads/game-assets'),
         ] as $label => $path) {
             $writable = $this->canWriteDirectory($path);

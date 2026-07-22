@@ -4,6 +4,8 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
 use App\Models\News;
+use App\Models\NewsTranslation;
+use App\Services\News\NewsImageStorage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -345,6 +347,36 @@ class AdminNewsManagementTest extends TestCase
 
         $this->actingAs($admin, 'admin')->delete('/admin/news/'.$first->id);
 
+        $this->assertFileExists($absolutePath);
+    }
+
+    public function test_inline_image_referenced_only_by_translation_is_not_deleted(): void
+    {
+        $contentPath = 'news/content/2026/07/623e4567-e89b-12d3-a456-426614174001.png';
+        $absolutePath = $this->absoluteUploadPath($contentPath);
+        File::ensureDirectoryExists(dirname($absolutePath));
+        File::put($absolutePath, 'translated image');
+
+        $news = News::query()->create([
+            'title' => 'Legacy title',
+            'slug' => 'translated-image',
+            'excerpt' => 'Legacy excerpt',
+            'body' => '<p>Legacy body without image</p>',
+            'is_published' => false,
+        ]);
+        NewsTranslation::query()->create([
+            'news_id' => $news->id,
+            'locale' => 'en',
+            'title' => 'Translated image',
+            'slug' => 'translated-image-en',
+            'excerpt' => 'Description',
+            'body' => '<p>Text</p><img src="/uploads/'.$contentPath.'" alt="">',
+        ]);
+
+        $deleted = app(NewsImageStorage::class)
+            ->deleteIfUnreferenced($contentPath);
+
+        $this->assertFalse($deleted);
         $this->assertFileExists($absolutePath);
     }
 

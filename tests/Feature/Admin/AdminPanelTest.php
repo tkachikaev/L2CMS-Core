@@ -313,7 +313,7 @@ class AdminPanelTest extends TestCase
             ->assertOk()
             ->assertSee('wire:navigate', false)
             ->assertSee('data-navigate-track', false)
-            ->assertSee('livewire.js?id=', false)
+            ->assertSee('data-update-uri=', false)
             ->assertSee('data-navigate-once="true"', false);
 
         $this->assertGreaterThanOrEqual(12, substr_count($response->getContent(), 'wire:navigate'));

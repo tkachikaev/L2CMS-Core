@@ -68,7 +68,7 @@
                             <p>
                                 @foreach($activation->rewardGrant?->items ?? [] as $reward)
                                     @if($iconUrls[$activation->id][$reward->item_id] ?? null)<img src="{{ $iconUrls[$activation->id][$reward->item_id] }}" alt="" width="24" height="24">@endif
-                                    #{{ $reward->item_id }} × {{ number_format($reward->amount, 0, '.', ' ') }}@if(! $loop->last), @endif
+                                    {{ $reward->displayName($activation->game_server_id) }} × {{ number_format($reward->amount, 0, '.', ' ') }}@if(! $loop->last), @endif
                                 @endforeach
                             </p>
                         </div>

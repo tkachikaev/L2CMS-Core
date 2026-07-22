@@ -2,6 +2,8 @@
 
 namespace KaevCMS\Modules\PromoCodes\Models;
 
+use App\Models\GameServer;
+use App\Services\GameAssets\GameItemCatalog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -33,5 +35,10 @@ final class PromoCodeReward extends Model
     public function promoCode(): BelongsTo
     {
         return $this->belongsTo(PromoCode::class);
+    }
+
+    public function displayName(GameServer|int|null $server = null): string
+    {
+        return app(GameItemCatalog::class)->displayName($server, $this->item_id);
     }
 }

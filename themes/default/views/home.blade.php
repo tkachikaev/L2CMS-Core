@@ -154,7 +154,14 @@
                     </form>
                 @endauth
             </section>
-            <section id="rating" class="panel rating-panel"><div class="panel-title"><h2>{{ __('Top characters') }}</h2></div><table><thead><tr><th>#</th><th>{{ __('Character') }}</th><th>{{ __('Class') }}</th><th>{{ __('Level') }}</th></tr></thead><tbody>@foreach($topCharacters as $character)<tr><td>{{ $loop->iteration }}</td><td>{{ $character['name'] }}</td><td>{{ $character['class'] }}</td><td>{{ $character['level'] }}</td></tr>@endforeach</tbody></table></section>
+            <section id="rating" class="panel rating-panel">
+                <div class="panel-title"><h2>{{ __('Top characters') }}</h2></div>
+                @if($topCharacters === [])
+                    <p class="rating-empty">{{ __('No ranking data is available yet.') }}</p>
+                @else
+                    <table><thead><tr><th>#</th><th>{{ __('Character') }}</th><th>{{ __('Class') }}</th><th>{{ __('Level') }}</th></tr></thead><tbody>@foreach($topCharacters as $character)<tr><td>{{ $loop->iteration }}</td><td><span class="rating-character"><x-game-character-avatar :character="$character" class="rating-character-avatar" /><strong>{{ $character['name'] }}</strong></span></td><td>{{ $character['class'] }}</td><td>{{ $character['level'] }}</td></tr>@endforeach</tbody></table>
+                @endif
+            </section>
         </aside>
     </div>
 </section>

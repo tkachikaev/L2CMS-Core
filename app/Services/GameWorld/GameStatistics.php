@@ -3,6 +3,7 @@
 namespace App\Services\GameWorld;
 
 use App\Models\GameServer;
+use App\Services\GameAssets\CharacterAppearanceResolver;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -26,6 +27,7 @@ final class GameStatistics
     public function __construct(
         private readonly GameWorldDriverResolver $drivers,
         private readonly MobiusCharacterLabels $labels,
+        private readonly CharacterAppearanceResolver $appearances,
     ) {}
 
     public function navigationAvailable(): bool
@@ -130,7 +132,7 @@ final class GameStatistics
 
                 return $section === 'castles'
                     ? array_map(fn (array $row): array => $this->normalizeCastle($row), $driverRows)
-                    : array_map(fn (array $row): array => $this->normalizeCharacter($row), $driverRows);
+                    : array_map(fn (array $row): array => $this->normalizeCharacter($row, $server), $driverRows);
             });
 
             return ['available' => true, 'rows' => $rows];
@@ -164,14 +166,18 @@ final class GameStatistics
     }
 
     /** @param array<string,mixed> $row @return array<string,mixed> */
-    private function normalizeCharacter(array $row): array
+    private function normalizeCharacter(array $row, GameServer $server): array
     {
         $seconds = max(0, (int) ($row['play_time_seconds'] ?? 0));
+        $classId = (int) ($row['class_id'] ?? -1);
+        $race = (int) ($row['race'] ?? -1);
+        $gender = (int) ($row['gender'] ?? -1);
+        $appearance = $this->appearances->resolve($server, $race, $gender, $classId);
 
-        return array_merge($row, [
-            'class_name' => $this->labels->className((int) ($row['class_id'] ?? -1)),
-            'race_name' => $this->labels->raceName((int) ($row['race'] ?? -1)),
-            'gender_name' => $this->labels->genderName((int) ($row['gender'] ?? -1)),
+        return array_merge($row, $appearance, [
+            'class_name' => $this->labels->className($classId),
+            'race_name' => $this->labels->raceName($race),
+            'gender_name' => $this->labels->genderName($gender),
             'online' => (bool) ($row['online'] ?? false),
             'noble' => (bool) ($row['noble'] ?? false),
             'play_time_hours' => (int) floor($seconds / 3600),

@@ -35,3 +35,7 @@ Schedule::command('kaevcms:queue-drain')
 Schedule::command('kaevcms:queue-clean')
     ->dailyAt('03:45')
     ->withoutOverlapping();
+
+Schedule::command('kaevcms:rewards-reconcile --limit=50 --older-than=300')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(5);

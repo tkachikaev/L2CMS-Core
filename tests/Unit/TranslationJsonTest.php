@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use Illuminate\Support\Facades\File;
 use JsonException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -36,6 +37,88 @@ class TranslationJsonTest extends TestCase
             }
 
             $normalized[$caseInsensitiveKey] = $key;
+        }
+    }
+
+    /** @throws JsonException */
+    public function test_built_in_translation_catalogs_have_matching_keys_and_placeholders(): void
+    {
+        /** @var array<string,string> $english */
+        $english = json_decode((string) file_get_contents(lang_path('en.json')), true, 512, JSON_THROW_ON_ERROR);
+        /** @var array<string,string> $russian */
+        $russian = json_decode((string) file_get_contents(lang_path('ru.json')), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(array_keys($english), array_keys($russian));
+
+        foreach ($english as $key => $value) {
+            preg_match_all('/:[A-Za-z_][A-Za-z0-9_]*/', $value, $englishMatches);
+            preg_match_all('/:[A-Za-z_][A-Za-z0-9_]*/', $russian[$key], $russianMatches);
+
+            $englishPlaceholders = array_values(array_unique($englishMatches[0]));
+            $russianPlaceholders = array_values(array_unique($russianMatches[0]));
+            sort($englishPlaceholders);
+            sort($russianPlaceholders);
+
+            $this->assertSame(
+                $englishPlaceholders,
+                $russianPlaceholders,
+                "Translation placeholders differ for key: {$key}",
+            );
+        }
+    }
+
+    /** @throws JsonException */
+    public function test_literal_translation_keys_used_by_the_application_exist_in_built_in_locales(): void
+    {
+        /** @var array<string,string> $english */
+        $english = json_decode((string) file_get_contents(lang_path('en.json')), true, 512, JSON_THROW_ON_ERROR);
+        /** @var array<string,string> $russian */
+        $russian = json_decode((string) file_get_contents(lang_path('ru.json')), true, 512, JSON_THROW_ON_ERROR);
+        $catalogs = ['en' => $english, 'ru' => $russian];
+        $directories = [
+            app_path(),
+            resource_path('views'),
+            base_path('routes'),
+            base_path('themes'),
+            base_path('account-themes'),
+            base_path('modules'),
+        ];
+        $keys = [];
+
+        foreach ($directories as $directory) {
+            if (! is_dir($directory)) {
+                continue;
+            }
+
+            foreach (File::allFiles($directory) as $file) {
+                if ($file->getExtension() !== 'php') {
+                    continue;
+                }
+
+                $content = $file->getContents();
+                preg_match_all('/(?:__|@lang|trans)\(\s*([\'\"])(.*?)\1/s', $content, $matches);
+
+                foreach ($matches[2] as $key) {
+                    if ($key === ''
+                        || str_contains($key, '$')
+                        || str_contains($key, '::')
+                        || str_contains($key, '\\')) {
+                        continue;
+                    }
+
+                    $keys[$key] = true;
+                }
+            }
+        }
+
+        foreach (array_keys($keys) as $key) {
+            foreach ($catalogs as $locale => $translations) {
+                $this->assertArrayHasKey(
+                    $key,
+                    $translations,
+                    "Missing {$locale} translation for literal key: {$key}",
+                );
+            }
         }
     }
 }

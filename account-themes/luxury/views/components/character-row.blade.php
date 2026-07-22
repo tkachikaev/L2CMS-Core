@@ -3,7 +3,7 @@
     $hiddenContext = $hiddenContext ?? false;
 @endphp
 <article class="account-character-row" wire:key="character-{{ $character['server_id'] }}-{{ $character['account_id'] }}-{{ $character['id'] }}">
-    <div class="account-character-avatar {{ $character['hero'] ? 'hero' : '' }}" aria-hidden="true"><span>{{ mb_strtoupper(mb_substr($character['name'], 0, 1)) }}</span></div>
+    <x-game-character-avatar :character="$character" @class(['account-character-avatar', 'hero' => $character['hero']]) />
     <div class="account-character-identity">
         <div class="account-character-name">
             <strong>{{ $character['name'] }}</strong>

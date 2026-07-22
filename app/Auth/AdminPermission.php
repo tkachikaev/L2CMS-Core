@@ -22,6 +22,7 @@ enum AdminPermission: string
     case AdminPathManage = 'admin_path.manage';
     case AdministratorsManage = 'administrators.manage';
     case AuditView = 'audit.view';
+    case RewardsManage = 'rewards.manage';
     case SystemView = 'system.view';
     case ProfileManage = 'profile.manage';
 }

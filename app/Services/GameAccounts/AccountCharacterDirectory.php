@@ -6,6 +6,7 @@ use App\Contracts\GameAccountGateway;
 use App\Models\GameServer;
 use App\Models\User;
 use App\Models\UserGameAccount;
+use App\Services\GameAssets\CharacterAppearanceResolver;
 use App\Services\GameWorld\MobiusCharacterLabels;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +24,11 @@ use Throwable;
  *     race_name:string,
  *     gender:int,
  *     gender_name:string,
+ *     race_key:string,
+ *     gender_key:string,
+ *     archetype:string,
+ *     avatar_key:string,
+ *     avatar_url:?string,
  *     title:?string,
  *     clan:?string,
  *     online:bool,
@@ -52,6 +58,7 @@ final class AccountCharacterDirectory
     public function __construct(
         private readonly GameAccountGateway $gateway,
         private readonly MobiusCharacterLabels $labels,
+        private readonly CharacterAppearanceResolver $appearances,
     ) {}
 
     /**
@@ -201,18 +208,28 @@ final class AccountCharacterDirectory
         $title = trim((string) ($character['title'] ?? ''));
 
         $lastSeenAt = $this->lastSeenAt($lastAccess);
-        $createdAt = $character['created_at'] instanceof CarbonImmutable ? $character['created_at'] : null;
+        $createdAtValue = $character['created_at'] ?? null;
+        $createdAt = $createdAtValue instanceof CarbonImmutable ? $createdAtValue : null;
+        $classId = (int) ($character['class_id'] ?? -1);
+        $race = (int) ($character['race'] ?? -1);
+        $gender = (int) ($character['gender'] ?? -1);
+        $appearance = $this->appearances->resolve($server, $race, $gender, $classId);
 
         return [
             'id' => (int) ($character['id'] ?? 0),
             'name' => trim((string) ($character['name'] ?? '')),
             'level' => max(0, (int) ($character['level'] ?? 0)),
-            'class_id' => (int) ($character['class_id'] ?? -1),
-            'class_name' => $this->labels->className((int) ($character['class_id'] ?? -1)),
-            'race' => (int) ($character['race'] ?? -1),
-            'race_name' => $this->labels->raceName((int) ($character['race'] ?? -1)),
-            'gender' => (int) ($character['gender'] ?? -1),
-            'gender_name' => $this->labels->genderName((int) ($character['gender'] ?? -1)),
+            'class_id' => $classId,
+            'class_name' => $this->labels->className($classId),
+            'race' => $race,
+            'race_name' => $this->labels->raceName($race),
+            'gender' => $gender,
+            'gender_name' => $this->labels->genderName($gender),
+            'race_key' => $appearance['race_key'],
+            'gender_key' => $appearance['gender_key'],
+            'archetype' => $appearance['archetype'],
+            'avatar_key' => $appearance['avatar_key'],
+            'avatar_url' => $appearance['avatar_url'],
             'title' => $title !== '' ? $title : null,
             'clan' => $clan !== '' ? $clan : null,
             'online' => (bool) ($character['online'] ?? false),

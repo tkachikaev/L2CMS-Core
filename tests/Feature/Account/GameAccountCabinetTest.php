@@ -16,6 +16,8 @@ use App\Services\GameServerDeletionImpact;
 use App\Services\GameServerSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\Concerns\InteractsWithServerFixtures;
 use Tests\Fakes\FakeGameAccountGateway;
@@ -39,10 +41,11 @@ class GameAccountCabinetTest extends TestCase
     public function test_player_account_routes_require_authentication(): void
     {
         $this->get('/account')->assertRedirect(route('login'));
+        $this->get('/account/characters')->assertRedirect(route('login'));
         $this->get('/account/game-accounts/create')->assertRedirect(route('login'));
     }
 
-    public function test_single_game_account_stays_expanded_on_the_player_dashboard(): void
+    public function test_character_page_shows_all_characters_without_opening_game_accounts(): void
     {
         $user = $this->user();
         [$loginServer, $gameServer] = $this->servers();
@@ -65,9 +68,9 @@ class GameAccountCabinetTest extends TestCase
         ]];
 
         $this->actingAs($user)
-            ->get('/account')
+            ->get('/account/characters')
             ->assertOk()
-            ->assertSee('Личный кабинет игрока')
+            ->assertSee('Мои персонажи')
             ->assertSee('По серверам')
             ->assertSee('Все персонажи')
             ->assertSee('PlayerOne')
@@ -75,7 +78,48 @@ class GameAccountCabinetTest extends TestCase
             ->assertSee('Interlude x10');
     }
 
-    public function test_localized_player_account_keeps_the_character_dashboard(): void
+    public function test_player_character_directory_uses_the_resolved_avatar_when_a_file_exists(): void
+    {
+        $root = storage_path('framework/testing/character-assets-'.Str::uuid());
+        config()->set('cms.game_assets.uploads_path', $root);
+
+        try {
+            File::ensureDirectoryExists($root.'/characters/common/human/female');
+            File::put($root.'/characters/common/human/female/mage.webp', 'avatar');
+
+            $user = $this->user();
+            [$loginServer, $gameServer] = $this->servers();
+            UserGameAccount::query()->create([
+                'user_id' => $user->id,
+                'login_server_id' => $loginServer->id,
+                'registration_game_server_id' => $gameServer->id,
+                'game_login' => 'AvatarMage01',
+                'normalized_login' => 'avatarmage01',
+            ]);
+            $this->gateway->charactersByServer[$gameServer->id] = [[
+                'id' => 101,
+                'name' => 'Aurelia',
+                'level' => 80,
+                'class_id' => 10,
+                'race' => 0,
+                'gender' => 1,
+                'online' => true,
+            ]];
+
+            $this->actingAs($user)
+                ->get('/account/characters')
+                ->assertOk()
+                ->assertSee('data-character-avatar', false)
+                ->assertSee('data-character-race="human"', false)
+                ->assertSee('data-character-gender="female"', false)
+                ->assertSee('data-character-archetype="mage"', false)
+                ->assertSee('/uploads/game-assets/characters/common/human/female/mage.webp', false);
+        } finally {
+            File::deleteDirectory($root);
+        }
+    }
+
+    public function test_localized_character_page_keeps_the_character_directory(): void
     {
         $user = $this->user();
         [$loginServer, $gameServer] = $this->servers();
@@ -88,14 +132,14 @@ class GameAccountCabinetTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/ru/account')
+            ->get('/ru/account/characters')
             ->assertOk()
             ->assertSee('LocalizedOne')
             ->assertSee('По серверам')
             ->assertSee('Все персонажи');
     }
 
-    public function test_player_account_keeps_the_dashboard_when_no_game_accounts_exist(): void
+    public function test_player_overview_stays_compact_when_no_game_accounts_exist(): void
     {
         $user = $this->user();
         $this->servers();
@@ -103,8 +147,37 @@ class GameAccountCabinetTest extends TestCase
         $this->actingAs($user)
             ->get('/account')
             ->assertOk()
-            ->assertSee('Игровых аккаунтов пока нет')
-            ->assertSee('Создать игровой аккаунт');
+            ->assertSee('Выберите раздел')
+            ->assertSee('Создать игровой аккаунт')
+            ->assertDontSee('account-character-directory', false);
+    }
+
+    public function test_player_overview_does_not_mix_game_account_or_character_details_into_the_profile_summary(): void
+    {
+        $user = $this->user();
+        [$loginServer, $gameServer] = $this->servers();
+        UserGameAccount::query()->create([
+            'user_id' => $user->id,
+            'login_server_id' => $loginServer->id,
+            'registration_game_server_id' => $gameServer->id,
+            'game_login' => 'SeparateLogin01',
+            'normalized_login' => 'separatelogin01',
+        ]);
+        $this->gateway->charactersByServer[$gameServer->id] = [[
+            'id' => 105,
+            'name' => 'SeparateHero',
+            'level' => 80,
+            'class_id' => 88,
+            'online' => false,
+        ]];
+
+        $this->actingAs($user)
+            ->get('/account')
+            ->assertOk()
+            ->assertSee('Открыть персонажей')
+            ->assertDontSee('SeparateLogin01')
+            ->assertDontSee('SeparateHero')
+            ->assertDontSee('account-character-directory', false);
     }
 
     public function test_single_account_details_keep_the_create_action_when_another_account_is_allowed(): void
@@ -157,7 +230,7 @@ class GameAccountCabinetTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/account')
+            ->get('/account/game-accounts')
             ->assertOk()
             ->assertSee('Серверы')
             ->assertSee($gameServer->name)
@@ -499,7 +572,7 @@ class GameAccountCabinetTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/account')
+            ->get('/account/game-accounts')
             ->assertOk()
             ->assertSee('2 / 2')
             ->assertSee('Некоторые игровые аккаунты временно недоступны')
@@ -698,7 +771,7 @@ class GameAccountCabinetTest extends TestCase
         $this->assertNull($account->fresh()->registration_game_server_id);
 
         $this->actingAs($user)
-            ->get('/account')
+            ->get('/account/game-accounts')
             ->assertOk()
             ->assertSee('Игровых аккаунтов пока нет')
             ->assertDontSee('RemovedWorld01')
@@ -736,7 +809,7 @@ class GameAccountCabinetTest extends TestCase
         $this->assertSame($replacement->id, $account->fresh()->registration_game_server_id);
 
         $this->actingAs($user)
-            ->get('/account')
+            ->get('/account/game-accounts')
             ->assertOk()
             ->assertSee('Interlude x50')
             ->assertDontSee('Interlude x10');
@@ -865,19 +938,57 @@ class GameAccountCabinetTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(CharacterDirectory::class)
-            ->assertSet('viewMode', 'grouped')
+            ->assertSet('viewMode', 'all')
             ->assertSet('expandedServerIds', [$gameServer->id])
             ->assertSet('expandedAccountIds', [$account->id])
             ->assertSee('DirectoryHero')
             ->assertSee('Герой')
             ->assertSee('Дворянин')
             ->assertSee('В игре')
+            ->call('setViewMode', 'grouped')
+            ->assertSet('viewMode', 'grouped')
             ->call('setViewMode', 'all')
             ->assertSet('viewMode', 'all')
             ->assertSee('Interlude x10')
             ->assertSee('Аккаунт: Directory01');
 
         $this->assertSame('all', UserCharacterPreference::query()->where('user_id', $user->id)->value('view_mode'));
+    }
+
+    public function test_legacy_character_preference_is_upgraded_once_to_the_simpler_all_characters_view(): void
+    {
+        $user = $this->user();
+        $preference = UserCharacterPreference::query()->create([
+            'user_id' => $user->id,
+            'view_mode' => 'grouped',
+            'schema_version' => 1,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(CharacterDirectory::class)
+            ->assertSet('viewMode', 'all');
+
+        $preference->refresh();
+        $this->assertSame('all', $preference->view_mode);
+        $this->assertSame(2, $preference->schema_version);
+    }
+
+    public function test_explicit_grouped_character_preference_is_preserved_after_upgrade(): void
+    {
+        $user = $this->user();
+        $preference = UserCharacterPreference::query()->create([
+            'user_id' => $user->id,
+            'view_mode' => 'grouped',
+            'schema_version' => 2,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(CharacterDirectory::class)
+            ->assertSet('viewMode', 'grouped');
+
+        $preference->refresh();
+        $this->assertSame('grouped', $preference->view_mode);
+        $this->assertSame(2, $preference->schema_version);
     }
 
     public function test_hidden_character_groups_are_persisted_but_remain_available_in_all_characters(): void
@@ -904,6 +1015,7 @@ class GameAccountCabinetTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(CharacterDirectory::class)
+            ->call('setViewMode', 'grouped')
             ->call('hideAccount', $account->id)
             ->assertDontSee('StillAvailable')
             ->assertSee('Показать скрытые группы')

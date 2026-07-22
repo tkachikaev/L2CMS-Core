@@ -15,9 +15,14 @@ const signIn = async (page) => {
 test('player character display mode persists after reload', async ({ page }) => {
     await signIn(page);
 
+    await page.locator('.account-nav').getByRole('link', { name: 'Персонажи' }).click();
+    await expect(page).toHaveURL(/\/account\/characters$/);
+
     const grouped = page.getByRole('tab', { name: 'По серверам' });
     const all = page.getByRole('tab', { name: 'Все персонажи' });
 
+    await expect(all).toHaveAttribute('aria-selected', 'true');
+    await grouped.click();
     await expect(grouped).toHaveAttribute('aria-selected', 'true');
     await all.click();
     await expect(all).toHaveAttribute('aria-selected', 'true');
@@ -70,10 +75,29 @@ test('luxury player theme remains reactive after SPA navigation', async ({ page 
 
     await page.locator('.account-nav').getByRole('link', { name: 'Обзор' }).click();
     await expect(page).toHaveURL(/\/account$/);
+    await expect(page.locator('.account-character-directory')).toHaveCount(0);
 
+    await page.locator('.account-nav').getByRole('link', { name: 'Персонажи' }).click();
+    await expect(page).toHaveURL(/\/account\/characters$/);
     const allCharacters = page.getByRole('tab', { name: 'Все персонажи' });
     await allCharacters.click();
     await expect(allCharacters).toHaveAttribute('aria-selected', 'true');
+});
+
+test('player can choose an administrator-provided account avatar in a modal', async ({ page }) => {
+    await signIn(page);
+
+    await page.locator('.account-user-avatar-button').click();
+    const dialog = page.locator('[data-avatar-modal]');
+    await expect(dialog).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Выбор аватара', exact: true })).toBeVisible();
+
+    await page.locator('input[name="avatar_filename"][value="browser-avatar.png"]').check();
+    await page.getByRole('button', { name: 'Сохранить аватар', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/account$/);
+    await expect(page.getByText('Аватар сохранён.', { exact: true })).toBeVisible();
+    await expect(page.locator('.account-profile-avatar img[src*="/uploads/account-avatars/browser-avatar.png"]')).toBeVisible();
 });
 
 test('player web inventory is available from the persistent account shell', async ({ page }) => {
@@ -99,11 +123,11 @@ test('player activates a promo code into the server-bound web inventory', async 
     await expect(page).toHaveURL(/\/modules\/promo-codes$/);
     await expect(page.getByText('Награды добавлены в веб-инвентарь сервера Browser World.')).toBeVisible();
     await expect(page.getByText('BROWSER2026', { exact: true })).toBeVisible();
-    await expect(page.getByText(/#57 × 1 000 000/)).toBeVisible();
+    await expect(page.getByText(/Адена × 1 000 000/)).toBeVisible();
 
     await page.getByRole('link', { name: 'Открыть веб-инвентарь', exact: true }).click();
     await expect(page).toHaveURL(/\/account\/web-inventory$/);
-    await expect(page.getByText('Предмет №57')).toBeVisible();
+    await expect(page.getByText('Адена', { exact: true })).toBeVisible();
     await expect(page.getByText('1 000 000')).toBeVisible();
 });
 

@@ -39,7 +39,10 @@
             </a>
 
             <div class="account-user-compact">
-                <span class="account-user-compact-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                <button type="button" class="account-user-avatar-button" data-avatar-modal-open aria-label="{{ __('Change avatar') }}">
+                    <x-account-avatar :user="$user" class="account-user-compact-avatar" aria-hidden="true" />
+                    <span class="account-avatar-edit-mark" aria-hidden="true">✎</span>
+                </button>
                 <span><strong>{{ $user->name }}</strong><small>{{ __('Player profile') }}</small></span>
                 <i title="{{ __('Active session') }}"></i>
             </div>
@@ -85,7 +88,7 @@
 
                     <details class="account-profile-menu">
                         <summary>
-                            <span class="account-profile-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                            <x-account-avatar :user="$user" class="account-profile-avatar" aria-hidden="true" />
                             <span class="account-profile-copy">
                                 <strong>{{ $user->name }}</strong>
                                 <small>{{ $user->email }}</small>
@@ -97,9 +100,8 @@
                                 <strong>{{ $user->name }}</strong>
                                 <small>{{ $user->email }}</small>
                             </div>
-                            <a wire:navigate href="{{ public_route('account') }}">{{ __('Overview') }}</a>
-                            <a wire:navigate href="{{ public_route('game-accounts.index') }}">{{ __('Game accounts') }}</a>
-                            <a wire:navigate href="{{ public_route('web-inventory.index') }}">{{ __('Web inventory') }}</a>
+                            <button type="button" data-avatar-modal-open>{{ __('Change avatar') }}</button>
+                            <a wire:navigate href="{{ public_route('profile.edit') }}">{{ __('Profile') }}</a>
                             <a href="{{ public_route('home') }}">{{ __('Back to website') }}</a>
                             <form method="POST" action="{{ public_route('logout') }}">
                                 @csrf
@@ -128,6 +130,7 @@
         </div>
     </main>
 </div>
+<x-account-avatar-modal :user="$user" />
 @livewireScripts
 @stack('scripts')
 </body>

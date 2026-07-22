@@ -11,6 +11,8 @@ use Livewire\Component;
 
 class CharacterDirectory extends Component
 {
+    private const PREFERENCE_SCHEMA_VERSION = 2;
+
     /** @var array<string,mixed> */
     #[Locked]
     public array $directory = [];
@@ -29,7 +31,7 @@ class CharacterDirectory extends Component
     /** @var list<int> */
     public array $expandedAccountIds = [];
 
-    public string $viewMode = 'grouped';
+    public string $viewMode = 'all';
 
     public string $search = '';
 
@@ -47,10 +49,11 @@ class CharacterDirectory extends Component
     {
         $user = $this->user();
         $preference = $this->preference($user);
+        $this->upgradePreference($preference);
         $this->directory = $characters->for($user);
         $this->viewMode = in_array($preference->view_mode, ['grouped', 'all'], true)
             ? $preference->view_mode
-            : 'grouped';
+            : 'all';
         $this->hiddenServerIds = $this->integerList($preference->hidden_game_server_ids);
         $this->hiddenAccountIds = $this->integerList($preference->hidden_game_account_ids);
         $this->initializeExpandedGroups();
@@ -63,6 +66,7 @@ class CharacterDirectory extends Component
         $this->viewMode = $mode;
         $preference = $this->preference($this->user());
         $preference->view_mode = $mode;
+        $preference->schema_version = self::PREFERENCE_SCHEMA_VERSION;
         $preference->save();
     }
 
@@ -391,6 +395,17 @@ class CharacterDirectory extends Component
     private function preference(User $user): UserCharacterPreference
     {
         return UserCharacterPreference::query()->firstOrCreate(['user_id' => $user->id]);
+    }
+
+    private function upgradePreference(UserCharacterPreference $preference): void
+    {
+        if ($preference->schema_version >= self::PREFERENCE_SCHEMA_VERSION) {
+            return;
+        }
+
+        $preference->view_mode = 'all';
+        $preference->schema_version = self::PREFERENCE_SCHEMA_VERSION;
+        $preference->save();
     }
 
     private function user(): User

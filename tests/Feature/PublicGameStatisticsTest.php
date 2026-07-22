@@ -80,6 +80,26 @@ class PublicGameStatisticsTest extends TestCase
             ->assertSee('>Статистика</a>', false);
     }
 
+    public function test_home_uses_configured_game_statistics_instead_of_mock_characters(): void
+    {
+        $this->statisticsServer();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Хрюшка')
+            ->assertDontSee('TheGreatPlayer');
+    }
+
+    public function test_home_shows_honest_empty_ranking_without_configured_statistics(): void
+    {
+        GameServer::query()->update(['statistics_enabled' => false]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Данные рейтинга пока недоступны.')
+            ->assertDontSee('TheGreatPlayer');
+    }
+
     public function test_mobius_pvp_ranking_is_rendered_with_normalized_character_data(): void
     {
         $server = $this->statisticsServer();

@@ -572,6 +572,10 @@ tbody tr:hover { background: rgba(141, 161, 147, .07); }
 .statistics-table td { padding: 17px 18px; vertical-align: middle; }
 .statistics-rank { width: 34px; height: 34px; display: inline-grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--ink-soft); font: 500 14px var(--serif); }
 .statistics-table tbody tr:nth-child(1) .statistics-rank { border-color: var(--gold); background: rgba(216,199,158,.14); color: var(--gold-dark); }
+.statistics-character { display: flex; align-items: center; gap: 11px; min-width: 180px; }
+.statistics-character > span { min-width: 0; }
+.statistics-character-avatar { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 40px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--panel-soft); color: var(--gold-dark); font-weight: 800; }
+.statistics-character-avatar > img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
 .statistics-character strong, .statistics-character small { display: block; }
 .statistics-character small { margin-top: 3px; color: var(--muted); font-size: 10px; }
 .statistics-value { color: var(--gold-dark); font-size: 15px; }

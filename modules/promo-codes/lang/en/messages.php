@@ -100,7 +100,7 @@ return [
     'rewards' => 'Rewards',
     'remove_reward' => 'Remove item from promo code',
     'reward_limit_reached' => 'The limit of 100 rewards per promo code has been reached.',
-    'rewards_help' => 'Enter the item ID and amount on one row. Duplicate item IDs are not allowed.',
+    'rewards_help' => 'Enter the item ID and amount on one row. The name is read from lang/{locale}/items.php, so it is shared by all promo codes and shown in the player locale. Duplicate item IDs are not allowed.',
     'save' => 'Save changes',
     'select_server' => 'Select server',
     'server_help' => 'Rewards from this code will be permanently bound to the selected GameServer.',

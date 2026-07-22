@@ -22,6 +22,10 @@ Every grant, inventory item and transfer contains a `game_server_id`. A reward c
 
 Online characters are allowed because KaevCMS is not changing their inventory. The administrator-owned consumer decides when and how actual delivery is safe.
 
+## Names and icons
+
+Player-facing pages resolve `item_id` through `lang/{locale}/items.php` and do not expose a raw `Item #ID` label. Administrators still see the technical ID in journals. Existing rewards immediately use updated catalog names without a database migration. Icons are loaded independently from `public/uploads/game-assets/items`. See `docs/GAME_ITEMS.md`.
+
 ## Required GameServer table
 
 Run this once in every participating GameServer database:

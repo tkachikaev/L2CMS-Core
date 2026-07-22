@@ -237,6 +237,10 @@
 .statistics-table tbody tr:nth-child(1) .statistics-rank { border-color: #b68a35; background: rgba(182,138,53,.13); color: #f0cf7a; }
 .statistics-table tbody tr:nth-child(2) .statistics-rank { border-color: #7d8589; background: rgba(125,133,137,.12); color: #d1d5d6; }
 .statistics-table tbody tr:nth-child(3) .statistics-rank { border-color: #8f5f37; background: rgba(143,95,55,.12); color: #d59a67; }
+.statistics-character { display: flex; align-items: center; gap: 11px; min-width: 180px; }
+.statistics-character > span { min-width: 0; }
+.statistics-character-avatar { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 38px; overflow: hidden; border: 1px solid #353b3d; border-radius: 10px; background: #171c1f; color: #d9c7a7; font-weight: 800; }
+.statistics-character-avatar > img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
 .statistics-character strong,.statistics-character small { display: block; }
 .statistics-character strong { color: #f0e7d7; font-size: 14px; }
 .statistics-character small { margin-top: 3px; color: var(--muted); font-size: 11px; }
@@ -264,3 +268,7 @@
 .castle-owner-card dl div:first-child { padding-left: 0; border-left: 0; }
 .castle-owner-card dd { overflow-wrap: anywhere; }
 @media(max-width:780px){.statistics-toolbar{align-items:flex-start;flex-direction:column}.statistics-server-switcher{width:100%}.statistics-server-switcher a{flex:1}.statistics-page{padding-top:22px}.castle-owner-card{grid-template-columns:1fr}.castle-owner-card dl{grid-template-columns:1fr}.castle-owner-card dl div{padding:10px 0;border-left:0;border-top:1px solid #252b2d}}
+/* Character avatar foundation 0.31.0 */
+.rating-character { display: inline-flex; align-items: center; gap: 8px; }
+.rating-character-avatar { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 30px; overflow: hidden; border: 1px solid #353b3d; border-radius: 8px; background: #171c1f; color: #d9c7a7; font-weight: 800; }
+.rating-character-avatar > img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }

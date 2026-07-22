@@ -10,6 +10,7 @@
 - [Языки и переводы](LANGUAGES.md)
 - [Пользователи сайта](USERS.md)
 - [Личный кабинет игрока](PLAYER_ACCOUNT.md)
+- [Названия и иконки игровых предметов](GAME_ITEMS.md)
 - [Почтовая система](MAIL.md)
 - [Новости](NEWS.md)
 - [Страницы сайта](PAGES.md)
@@ -26,3 +27,5 @@
 - [Добавление событий в журнал](development/AUDIT_LOGGING.md)
 - [Локализация ядра, тем и модулей](development/LOCALIZATION.md)
 - [Дорожная карта](ROADMAP.md)
+
+- [Web Installer](WEB_INSTALLER.md) — установка KaevCMS через браузер на обычном PHP/MySQL-хостинге.

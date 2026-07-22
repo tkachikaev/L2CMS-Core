@@ -132,10 +132,10 @@ PHPUnit проверяет серверную разметку и регистр
 
 ```powershell
 # Один раз при доступном интернете
-.\browser-setup.ps1
+.\deployment\windows\browser-setup.ps1
 
 # Последующие запуски работают локально
-.\browser-quality.ps1
+.\deployment\windows\browser-quality.ps1
 ```
 
 Браузерный набор всегда использует отдельную временную SQLite-базу и администратора из `BrowserTestSeeder`.

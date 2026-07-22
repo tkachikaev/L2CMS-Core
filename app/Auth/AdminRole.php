@@ -47,6 +47,7 @@ enum AdminRole: string
                 AdminPermission::SettingsManage,
                 AdminPermission::AdministratorsManage,
                 AdminPermission::AuditView,
+                AdminPermission::RewardsManage,
                 AdminPermission::SystemView,
                 AdminPermission::ProfileManage,
             ],

@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Services\GameAccounts\AccountCharacterDirectory;
 
 /**
- * @phpstan-type RewardCharacter array{id:int,name:string,online:bool,level:int,account_id:int,account_login:string,server_id:int,server_name:string}
+ * @phpstan-type RewardCharacter array{id:int,name:string,online:bool,level:int,race_key:string,gender_key:string,archetype:string,avatar_key:string,avatar_url:?string,account_id:int,account_login:string,server_id:int,server_name:string}
  */
 final class RewardCharacterDirectory
 {

@@ -25,11 +25,7 @@ class AccountController extends Controller
             abort(401);
         }
 
-        $accounts = $user->availableGameAccounts()
-            ->with(['loginServer.gameServers.translations', 'registrationGameServer.translations'])
-            ->latest('id')
-            ->get();
-
+        $availableAccountCount = $user->availableGameAccounts()->count();
         $quotaAccountCount = $quota->count($user);
 
         $availableServers = GameServer::query()
@@ -44,9 +40,8 @@ class AccountController extends Controller
 
         return view('account-theme::dashboard', [
             'user' => $user,
-            'accounts' => $accounts,
             'quotaAccountCount' => $quotaAccountCount,
-            'hiddenAccountCount' => max(0, $quotaAccountCount - $accounts->count()),
+            'hiddenAccountCount' => max(0, $quotaAccountCount - $availableAccountCount),
             'settings' => $settings->values(),
             'availableServers' => $availableServers,
         ]);

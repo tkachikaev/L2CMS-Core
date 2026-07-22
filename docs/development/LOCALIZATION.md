@@ -7,6 +7,7 @@ KaevCMS использует штатный переводчик Laravel и JSON
 ```text
 lang/<locale>/language.php
 lang/<locale>.json
+lang/<locale>/items.php    # optional game-item catalog
 ```
 
 Пример `lang/de/language.php`:
@@ -43,7 +44,10 @@ xx-YY
 }
 ```
 
+
 Английский JSON используется как эталон для расчёта процента заполнения.
+
+Необязательный `lang/<locale>/items.php` содержит названия игровых предметов по `item_id`. Он не влияет на процент заполнения системного перевода. Если файла или конкретного ID нет, KaevCMS проверяет настроенный резервный и основной языки. Формат описан в [`docs/GAME_ITEMS.md`](../GAME_ITEMS.md).
 
 ## Использование в PHP и Blade
 

@@ -3697,3 +3697,17 @@ a.admin-data-card:hover {
         flex-direction: column;
     }
 }
+
+/* Reward queue journal 0.31.4 */
+.reward-queue-table{min-width:1180px}
+.reward-queue-table td{vertical-align:middle}
+.reward-queue-items{display:grid;gap:8px;min-width:210px}
+.reward-queue-item{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:9px}
+.reward-queue-item-icon{display:grid!important;width:32px;height:32px;place-items:center;overflow:hidden;border:1px solid var(--admin-border);border-radius:7px;background:var(--admin-surface-muted,#f8fafc);color:var(--admin-text-muted);font-size:12px;font-weight:800}
+.reward-queue-item-icon img{width:100%;height:100%;object-fit:cover}
+.reward-queue-item-copy{display:block!important;min-width:0}
+.reward-queue-item-copy strong,.reward-queue-item-copy small{display:block}
+.reward-queue-item-copy small{margin-top:2px;color:var(--admin-text-muted);font-size:10px;white-space:nowrap}
+.reward-queue-table form{margin:0}
+.promo-reward-name-preview{display:block;margin-top:5px;color:var(--admin-primary);font-weight:700}
+.content-row-meta small{color:var(--admin-text-muted);font-size:10px}

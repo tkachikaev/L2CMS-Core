@@ -11,11 +11,13 @@ use App\Models\RewardInventoryItem;
 use App\Models\User;
 use App\Models\UserGameAccount;
 use App\Services\GameServerSettings;
+use App\Services\Rewards\RewardDeliveryReconciler;
 use App\Services\Rewards\RewardInventoryService;
 use App\Support\Rewards\RewardGrantItem;
 use App\Support\Rewards\RewardQueueWriteResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\InteractsWithServerFixtures;
 use Tests\Fakes\FakeGameAccountGateway;
 use Tests\Fakes\FakeGameRewardQueueGateway;
@@ -118,6 +120,27 @@ class WebInventoryTest extends TestCase
             ->get('/ru/account/web-inventory')
             ->assertOk()
             ->assertSee('Веб-инвентарь');
+    }
+
+    public function test_player_inventory_uses_localized_item_catalog_without_exposing_item_id(): void
+    {
+        $user = User::factory()->create(['locale' => 'ru']);
+        [, $server] = $this->freshMobiusServerPair();
+        app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'localized-catalog:57',
+            sourceType: 'promo_code',
+            items: [new RewardGrantItem(57, 1000000)],
+        );
+
+        $this->actingAs($user)
+            ->get('/account/web-inventory')
+            ->assertOk()
+            ->assertSee('Адена')
+            ->assertSee('1 000 000')
+            ->assertDontSee('Предмет №57')
+            ->assertDontSee('ID 57');
     }
 
     public function test_missing_gameserver_queue_disables_transfer_with_clear_message(): void
@@ -226,6 +249,153 @@ class WebInventoryTest extends TestCase
         $this->assertSame(RewardInventoryItem::STATUS_RESERVED, $grant->items->first()->fresh()->status);
     }
 
+    public function test_uncertain_queue_write_can_be_reconciled_without_duplicate_local_delivery(): void
+    {
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_UNKNOWN;
+        [$user, $server] = $this->userWithCharacter();
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'queue-reconcile:1',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+
+        $this->actingAs($user)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $grant->items->modelKeys(),
+            'request_token' => '06b66ca4-b22a-46b4-a525-3d7ac79b3775',
+        ])->assertRedirect();
+
+        $delivery = RewardDelivery::query()->firstOrFail();
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_QUEUED;
+        $reconciled = app(RewardDeliveryReconciler::class)->reconcile($delivery);
+
+        $this->assertSame(RewardDelivery::STATUS_QUEUED, $reconciled->status);
+        $this->assertSame(RewardInventoryItem::STATUS_TRANSFERRED, $grant->items->first()->fresh()->status);
+        $this->assertDatabaseCount('reward_deliveries', 1);
+        $this->assertCount(2, $this->rewardQueue->payloads);
+        $this->assertSame(
+            $this->rewardQueue->payloads[0]->requestUuid,
+            $this->rewardQueue->payloads[1]->requestUuid,
+        );
+    }
+
+    public function test_reconciliation_restores_reserved_rewards_when_queue_confirms_no_write(): void
+    {
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_UNKNOWN;
+        [$user, $server] = $this->userWithCharacter();
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'queue-reconcile:2',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+
+        $this->actingAs($user)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $grant->items->modelKeys(),
+            'request_token' => '1e472848-4cc9-4929-aaab-c6dd92f0a236',
+        ])->assertRedirect();
+
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_FAILED;
+        $this->rewardQueue->failureCode = 'reward_queue_write_failed';
+        $reconciled = app(RewardDeliveryReconciler::class)
+            ->reconcile(RewardDelivery::query()->firstOrFail());
+
+        $this->assertSame(RewardDelivery::STATUS_FAILED, $reconciled->status);
+        $this->assertSame(RewardInventoryItem::STATUS_AVAILABLE, $grant->items->first()->fresh()->status);
+    }
+
+    public function test_payload_conflict_stays_in_review_and_does_not_release_rewards(): void
+    {
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_UNKNOWN;
+        [$user, $server] = $this->userWithCharacter();
+        $grant = app(RewardInventoryService::class)->grant(
+            user: $user,
+            server: $server,
+            grantKey: 'queue-reconcile:3',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+
+        $this->actingAs($user)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $server->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $grant->items->modelKeys(),
+            'request_token' => 'ace8d55d-30c7-45a9-a779-254ef40f21fa',
+        ])->assertRedirect();
+
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_FAILED;
+        $this->rewardQueue->failureCode = 'reward_queue_payload_conflict';
+        $reconciled = app(RewardDeliveryReconciler::class)
+            ->reconcile(RewardDelivery::query()->firstOrFail());
+
+        $this->assertSame(RewardDelivery::STATUS_REVIEW, $reconciled->status);
+        $this->assertSame('reward_queue_payload_conflict', $reconciled->failure_code);
+        $this->assertSame(RewardInventoryItem::STATUS_RESERVED, $grant->items->first()->fresh()->status);
+    }
+
+    public function test_scheduler_reconciles_stale_pending_operations_but_does_not_retry_review_forever(): void
+    {
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_UNKNOWN;
+        [$firstUser, $firstServer] = $this->userWithCharacter();
+        $firstGrant = app(RewardInventoryService::class)->grant(
+            user: $firstUser,
+            server: $firstServer,
+            grantKey: 'queue-scheduler:1',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(57, 1000, 'Adena')],
+        );
+        $this->actingAs($firstUser)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $firstServer->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $firstGrant->items->modelKeys(),
+            'request_token' => 'd811388a-e3aa-4585-af2b-6cd4892ef1a5',
+        ])->assertRedirect();
+        $pending = RewardDelivery::query()->firstOrFail();
+
+        [$secondUser, $secondServer] = $this->userWithCharacter(
+            server: $firstServer,
+            gameLogin: 'RewardPlayerTwo',
+        );
+        $secondGrant = app(RewardInventoryService::class)->grant(
+            user: $secondUser,
+            server: $secondServer,
+            grantKey: 'queue-scheduler:2',
+            sourceType: 'admin_gift',
+            items: [new RewardGrantItem(4037, 5, 'Coin of Luck')],
+        );
+        $this->actingAs($secondUser)->post('/account/web-inventory/transfers', [
+            'game_server_id' => $secondServer->id,
+            'character_id' => 9001,
+            'inventory_item_ids' => $secondGrant->items->modelKeys(),
+            'request_token' => '3e5a1b36-79ef-426b-b99f-b504257e4d24',
+        ])->assertRedirect();
+        $review = RewardDelivery::query()->latest('id')->firstOrFail();
+
+        DB::table('reward_deliveries')->where('id', $pending->id)->update([
+            'status' => RewardDelivery::STATUS_PENDING,
+            'updated_at' => now()->subMinutes(10),
+        ]);
+        DB::table('reward_deliveries')->where('id', $review->id)->update([
+            'updated_at' => now()->subMinutes(10),
+        ]);
+
+        $this->rewardQueue->payloads = [];
+        $this->rewardQueue->outcome = RewardQueueWriteResult::STATUS_QUEUED;
+
+        $this->artisan('kaevcms:rewards-reconcile --older-than=300')->assertSuccessful();
+
+        $this->assertCount(1, $this->rewardQueue->payloads);
+        $this->assertSame($pending->operation_uuid, $this->rewardQueue->payloads[0]->requestUuid);
+        $this->assertSame(RewardDelivery::STATUS_QUEUED, $pending->fresh()->status);
+        $this->assertSame(RewardDelivery::STATUS_REVIEW, $review->fresh()->status);
+    }
+
     public function test_user_cannot_transfer_another_users_reward_or_character(): void
     {
         $owner = User::factory()->create();
@@ -251,13 +421,19 @@ class WebInventoryTest extends TestCase
     }
 
     /** @return array{User,GameServer,UserGameAccount} */
-    private function userWithCharacter(bool $online = false): array
-    {
+    private function userWithCharacter(
+        bool $online = false,
+        ?GameServer $server = null,
+        string $gameLogin = 'RewardPlayer',
+    ): array {
         $user = User::factory()->create();
-        [, $server] = $this->freshMobiusServerPair();
+        if ($server === null) {
+            [, $server] = $this->freshMobiusServerPair();
+        }
+
         $account = UserGameAccount::factory()->for($user)->registeredOn($server)->create([
-            'game_login' => 'RewardPlayer',
-            'normalized_login' => 'rewardplayer',
+            'game_login' => $gameLogin,
+            'normalized_login' => strtolower($gameLogin),
         ]);
         $this->gameAccounts->charactersByServer[$server->id] = [[
             'id' => 9001,

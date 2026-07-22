@@ -52,6 +52,7 @@ class WebInventoryController extends Controller
         $deliveries = RewardDelivery::query()->whereRaw('1 = 0')->paginate(20);
         $characterRows = [];
         $itemIconUrls = [];
+        $deliveryItemIconUrls = [];
         $capabilities = RewardQueueCapabilities::unsupported('reward_queue_not_installed');
 
         if ($selectedServer instanceof GameServer) {
@@ -75,6 +76,12 @@ class WebInventoryController extends Controller
                 ->paginate(20)
                 ->withQueryString();
 
+            foreach ($deliveries as $delivery) {
+                foreach ($delivery->items as $item) {
+                    $deliveryItemIconUrls[$item->id] = $assets->itemIcon($selectedServer, $item->item_id);
+                }
+            }
+
             $capabilities = $rewardQueue->capabilities($selectedServer);
             if ($capabilities->supported) {
                 $characterRows = $characters->forServer($user, $selectedServer);
@@ -88,6 +95,7 @@ class WebInventoryController extends Controller
             'activeView' => $activeView,
             'availableItems' => $availableItems,
             'itemIconUrls' => $itemIconUrls,
+            'deliveryItemIconUrls' => $deliveryItemIconUrls,
             'deliveries' => $deliveries,
             'characters' => $characterRows,
             'capabilities' => $capabilities,

@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\GameServer;
 use App\Models\RewardDelivery;
+use App\Services\GameAssets\GameAssetUrlResolver;
+use App\Services\Rewards\RewardDeliveryReconciler;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class RewardDeliveryController extends Controller
+final class RewardDeliveryController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, GameAssetUrlResolver $assets): View
     {
         $status = strtolower(trim((string) $request->query('status')));
         if (! in_array($status, [
@@ -35,16 +38,38 @@ class RewardDeliveryController extends Controller
             $query->where('game_server_id', $serverId);
         }
 
+        $deliveries = $query->paginate(50)->withQueryString();
+        $itemIconUrls = [];
+        foreach ($deliveries as $delivery) {
+            foreach ($delivery->items as $item) {
+                $itemIconUrls[$item->id] = $assets->itemIcon($delivery->gameServer, $item->item_id);
+            }
+        }
+
         return view('admin.rewards.index', [
-            'deliveries' => $query->paginate(50)->withQueryString(),
+            'deliveries' => $deliveries,
+            'itemIconUrls' => $itemIconUrls,
             'activeStatus' => $status,
             'activeServerId' => $serverId,
             'servers' => GameServer::query()->with('translations')->orderBy('sort_order')->orderBy('id')->get(),
-            'counts' => RewardDelivery::query()
-                ->selectRaw('status, COUNT(*) as aggregate')
-                ->groupBy('status')
-                ->pluck('aggregate', 'status'),
             'totalCount' => RewardDelivery::query()->count(),
         ]);
+    }
+
+    public function reconcile(
+        RewardDelivery $delivery,
+        RewardDeliveryReconciler $reconciler,
+    ): RedirectResponse {
+        $delivery = $reconciler->reconcile($delivery);
+
+        $message = match ($delivery->status) {
+            RewardDelivery::STATUS_QUEUED => __('The reward transfer was confirmed in the GameServer queue.'),
+            RewardDelivery::STATUS_FAILED => __('The queue contains no matching operation. Reserved rewards were returned to the web inventory.'),
+            default => __('The transfer result is still uncertain. The rewards remain reserved to prevent duplicate delivery.'),
+        };
+
+        return redirect()
+            ->route('admin.rewards.index')
+            ->with('status', $message);
     }
 }

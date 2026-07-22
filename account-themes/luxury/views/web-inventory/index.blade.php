@@ -29,7 +29,7 @@
             <div class="reward-history-list">
                 @foreach($deliveries as $delivery)
                     <article class="reward-history-card">
-                        <div class="reward-history-main"><span class="reward-item-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($delivery->character_name, 0, 1)) }}</span><div><small>{{ $delivery->gameServer->nameFor() }}</small><h3>{{ $delivery->character_name }}</h3><p>@foreach($delivery->items as $item){{ $item->displayName() }} × {{ number_format($item->amount, 0, '.', ' ') }}@if(! $loop->last), @endif @endforeach</p></div></div>
+                        <div class="reward-history-main"><span class="reward-item-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($delivery->character_name, 0, 1)) }}</span><div><small>{{ $delivery->gameServer->nameFor() }}</small><h3>{{ $delivery->character_name }}</h3><p class="reward-history-items">@foreach($delivery->items as $item)<span>@if($deliveryItemIconUrls[$item->id] ?? null)<img src="{{ $deliveryItemIconUrls[$item->id] }}" alt="" width="24" height="24">@endif{{ $item->displayName($delivery->game_server_id) }} × {{ number_format($item->amount, 0, '.', ' ') }}</span>@endforeach</p></div></div>
                         <div class="reward-history-status"><span class="reward-status reward-status-{{ $delivery->status }}">{{ $delivery->statusLabel() }}</span><small>{{ $delivery->requested_at?->format('d.m.Y H:i') }}</small></div>
                     </article>
                 @endforeach
@@ -75,7 +75,7 @@
 
             <div class="reward-transfer-panel">
                 <div><span class="account-eyebrow">{{ __('Transfer to GameServer queue') }}</span><h2>{{ __('Choose a character') }}</h2><p>{{ __('Only characters belonging to your game accounts on :server are shown.', ['server' => $selectedServer->nameFor()]) }}</p><p>{{ __('KaevCMS writes the selected data to kaev_reward_queue. Actual item delivery is handled by the GameServer administrator.') }}</p></div>
-                <label class="reward-character-select"><span>{{ __('Character') }}</span><select name="character_id" @disabled(! $capabilities->supported || $characters === [])><option value="">{{ __('Select character') }}</option>@foreach($characters as $character)<option value="{{ $character['id'] }}" @selected((int) old('character_id') === $character['id']) >{{ $character['name'] }} — {{ __('Level :level', ['level' => $character['level']]) }}{{ $character['online'] ? ' · '.__('Online') : '' }}</option>@endforeach</select></label>
+                <label class="reward-character-select"><span>{{ __('Character') }}</span><select name="character_id" @disabled(! $capabilities->supported || $characters === [])><option value="">{{ __('Select character') }}</option>@foreach($characters as $character)<option value="{{ $character['id'] }}" data-avatar-url="{{ $character['avatar_url'] ?? '' }}" data-character-race="{{ $character['race_key'] ?? 'unknown' }}" data-character-gender="{{ $character['gender_key'] ?? 'neutral' }}" data-character-archetype="{{ $character['archetype'] ?? 'default' }}" @selected((int) old('character_id') === $character['id'])>{{ $character['name'] }} — {{ __('Level :level', ['level' => $character['level']]) }}{{ $character['online'] ? ' · '.__('Online') : '' }}</option>@endforeach</select></label>
                 <button class="account-button primary" type="submit" @disabled(! $capabilities->supported || $characters === [])>{{ __('Send selected rewards to queue') }}</button>
             </div>
         </form>

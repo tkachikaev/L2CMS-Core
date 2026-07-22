@@ -117,8 +117,11 @@
                                         <td><span class="statistics-rank">{{ $loop->iteration }}</span></td>
                                         <td>
                                             <div class="statistics-character">
-                                                <strong>{{ $row['name'] }}</strong>
-                                                <small>{{ $row['gender_name'] }}@if(trim((string) ($row['title'] ?? '')) !== '') · {{ $row['title'] }}@endif</small>
+                                                <x-game-character-avatar :character="$row" class="statistics-character-avatar" />
+                                                <span>
+                                                    <strong>{{ $row['name'] }}</strong>
+                                                    <small>{{ $row['gender_name'] }}@if(trim((string) ($row['title'] ?? '')) !== '') · {{ $row['title'] }}@endif</small>
+                                                </span>
                                             </div>
                                         </td>
                                         <td>{{ $row['level'] }}</td>

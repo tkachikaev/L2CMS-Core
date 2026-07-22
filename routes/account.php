@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Account\CharacterController;
 use App\Http\Controllers\Account\GameAccountController;
 use App\Http\Controllers\Account\GameAccountPasswordController;
+use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\RewardTransferController;
 use App\Http\Controllers\Account\WebInventoryController;
 use App\Http\Controllers\Auth\AccountController;
@@ -25,6 +27,13 @@ $registerAccountRoutes = static function (bool $localized = false): void {
 
         Route::middleware('site.verified')->group(function () use ($namePrefix): void {
             Route::get('/account', AccountController::class)->name($namePrefix.'account');
+            Route::get('/account/profile', [ProfileController::class, 'edit'])
+                ->name($namePrefix.'profile.edit');
+            Route::get('/account/characters', CharacterController::class)
+                ->name($namePrefix.'characters.index');
+            Route::put('/account/profile/avatar', [ProfileController::class, 'updateAvatar'])
+                ->middleware('throttle:20,1')
+                ->name($namePrefix.'profile.avatar.update');
             Route::get('/account/game-accounts', [GameAccountController::class, 'index'])
                 ->name($namePrefix.'game-accounts.index');
             Route::get('/account/game-accounts/create', [GameAccountController::class, 'create'])

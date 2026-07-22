@@ -1,3 +1,4 @@
+@inject('gameItemCatalog', 'App\Services\GameAssets\GameItemCatalog')
 @php
     $adminPath = request()->route('adminPath');
     $rows = array_values(old('rewards', $rewardRows));
@@ -80,6 +81,11 @@
                                 data-promo-reward-item
                                 @disabled(! $canManage)
                             >
+                            @php($previewItemId = (int) (is_array($row) ? ($row['item_id'] ?? 0) : 0))
+                            @php($previewServerId = (int) old('game_server_id', $promoCode->game_server_id ?? 0))
+                            @if($previewItemId > 0 && ($previewItemName = $gameItemCatalog->knownName($previewServerId, $previewItemId)))
+                                <small class="promo-reward-name-preview">{{ $previewItemName }}</small>
+                            @endif
                         </div>
                         <div class="form-group">
                             <label for="reward_amount_{{ $index }}">{{ __('module-promo-codes::messages.amount') }}</label>

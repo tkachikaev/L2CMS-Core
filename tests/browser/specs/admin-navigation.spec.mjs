@@ -147,13 +147,15 @@ test('settings use one sidebar entry and local tabs', async ({ page }) => {
 });
 
 test('module foundation is available from the administrator sidebar', async ({ page }) => {
-    await page.getByRole('link', { name: 'Модули', exact: true }).click();
+    await openMenuGroup(page, 'modules');
+    await page.locator('[data-admin-menu-group="modules"]').getByRole('link', { name: 'Модули', exact: true }).click();
 
     await expect(page).toHaveURL(/\/admin\/modules$/);
     await expect(page.getByRole('heading', { name: 'Модули' }).first()).toBeVisible();
     await expect(page.getByText('Жизненный цикл модулей')).toBeVisible();
     await expect(page.getByText(/При отключении модуля его данные сохраняются/)).toBeVisible();
-    await expect(page.getByText(/Модули не найдены/)).toBeVisible();
+    const promoModule = page.locator('.module-card').filter({ hasText: 'Promo Codes' });
+    await expect(promoModule).toBeVisible();
 });
 
 test('login server settings keep network fields on a separate tab and footer fixed after connection test', async ({ page }) => {
@@ -316,7 +318,9 @@ test('promo code module provides compact dynamic rewards deletion and status con
     await expect(page.getByText('Укажите 0, чтобы общий лимит не применялся.')).toBeVisible();
     await expect(page.locator('[data-promo-reward-row]')).toHaveCount(1);
 
-    await page.getByRole('button', { name: 'Добавить предмет', exact: true }).click();
+    const addRewardButton = page.locator('[data-promo-reward-add]');
+    await expect(addRewardButton).toContainText('Добавить предмет');
+    await addRewardButton.click();
     await expect(page.locator('[data-promo-reward-row]')).toHaveCount(2);
     await page.locator('[data-promo-reward-row]').nth(1).getByRole('button', { name: 'Удалить предмет из промокода' }).click();
     await expect(page.locator('[data-promo-reward-row]')).toHaveCount(1);
@@ -330,7 +334,7 @@ test('promo code module provides compact dynamic rewards deletion and status con
     await expect(page).toHaveURL(/\/admin\/extensions\/promo-codes$/);
     const createdCode = page.locator('.content-row').filter({ hasText: 'BROWSER-NEW' });
     await expect(createdCode).toBeVisible();
-    await expect(page.getByText('без лимита', { exact: true }).first()).toBeVisible();
+    await expect(createdCode).toContainText('Общий лимит: без лимита');
 
     page.once('dialog', (dialog) => dialog.accept());
     await createdCode.getByRole('button', { name: 'Удалить', exact: true }).click();
