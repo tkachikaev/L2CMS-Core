@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.32.14 - 2026-07-23
+
+- Restored the release quality gate after the 0.32.13 hardening work: fixed two Pint formatting failures, one unreachable PHPStan branch, and three stale Feature-test assumptions.
+- The VDS CLI updater regression now uses a migrated test database, verifies the actual Symfony command signature for `--yes`, and keeps the behavior-level missing-package assertion.
+- Windows release metadata tests now accept both LF and native CRLF line endings without weakening the SHA256 fingerprint check.
+- Composer/npm dependencies, database migrations, application behavior, and deployment layouts were not changed.
+
 ## 0.32.13 - 2026-07-23
 
 - Hardened shared-hosting packages: runtime uploads, public storage, and hot-reload markers are excluded; the public uploads skeleton blocks PHP-like execution; production Composer dependencies are rebuilt from an empty `vendor`; output paths are canonicalized before recursive cleanup.

@@ -36,7 +36,7 @@ if (! is_string($root) || ! is_dir($root)) {
 }
 
 if ($output === '' || ! validVersion($minimum) || ! validVersion($maximum) || version_compare($minimum, $maximum, '>')) {
-    fwrite(STDERR, "Usage: php deployment/updates/build-package.php --root=PATH --output=FILE.zip --minimum=0.32.0 --maximum=0.32.13 [--target=0.33.0] [--previous-root=PATH]\n");
+    fwrite(STDERR, "Usage: php deployment/updates/build-package.php --root=PATH --output=FILE.zip --minimum=0.32.0 --maximum=0.32.14 [--target=0.33.0] [--previous-root=PATH]\n");
     exit(1);
 }
 

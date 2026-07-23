@@ -19,7 +19,7 @@ mkdir($temp, 0700, true);
 try {
     $example = $temp.'/.env.example';
     $active = $temp.'/.env';
-    file_put_contents($example, "APP_NAME=KaevCMS\nAPP_KEY=\nDB_PASSWORD=\n");
+    file_put_contents($example, 'APP_NAME=KaevCMS'.PHP_EOL.'APP_KEY='.PHP_EOL.'DB_PASSWORD='.PHP_EOL);
     file_put_contents($active, "APP_NAME=Old\nAPP_KEY=\"base64:KEEP_EXISTING_KEY\"\nDB_PASSWORD=\"old\"\n");
 
     $specialName = 'My "L2" # Server';
@@ -154,10 +154,10 @@ try {
     mkdir($publicRoot.'/uploads', 0775, true);
     mkdir($temp.'/storage', 0775, true);
     mkdir($temp.'/bootstrap/cache', 0775, true);
-    file_put_contents($temp.'/.env', "APP_DEBUG=false
+    file_put_contents($temp.'/.env', 'APP_DEBUG=false
 APP_FORCE_HTTPS=true
 SESSION_SECURE_COOKIE=true
-");
+');
     file_put_contents($temp.'/installed.lock', '{}');
     $securityChecks = postInstallSecurityChecks($temp, $publicRoot, $temp.'/.env', $temp.'/installed.lock', $text);
     assertInstaller(count($securityChecks) === 9, 'The completed installer must report the full security checklist.');

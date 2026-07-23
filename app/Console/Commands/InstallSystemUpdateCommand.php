@@ -44,11 +44,6 @@ final class InstallSystemUpdateCommand extends Command
             return self::FAILURE;
         }
 
-        if (! is_string($currentVersion) || $currentVersion === '') {
-            $this->error('The installed KaevCMS version is not recorded.');
-
-            return self::FAILURE;
-        }
 
         $uuid = (string) Str::uuid();
         $packageDirectory = storage_path('app/kaevcms/updates/packages');

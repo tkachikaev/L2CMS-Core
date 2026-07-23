@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\SystemUpdate;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CliSystemUpdaterReleaseTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_cli_updater_rejects_a_missing_package_without_creating_state(): void
     {
         $this->artisan('kaevcms:update', [
@@ -26,7 +28,7 @@ class CliSystemUpdaterReleaseTest extends TestCase
         $this->assertIsString($source);
         $this->assertStringContainsString("protected \$signature = 'kaevcms:update", $source);
         $this->assertStringContainsString('SystemUpdateInstaller $installer', $source);
-        $this->assertStringContainsString("'--yes'", $source);
+        $this->assertStringContainsString('{--yes', $source);
         $this->assertStringContainsString('chmod($path, 0600)', $source);
     }
 }

@@ -6,7 +6,7 @@ KaevCMS is distributed as:
 - a Windows patch from the previous version;
 - a cumulative Update ZIP covering a supported installed-version range.
 
-A single cumulative package may update, for example, `0.32.5` directly to `0.32.13`. Intermediate releases do not need to be installed when the current version is inside the package range.
+A single cumulative package may update, for example, `0.32.5` directly to `0.32.14`. Intermediate releases do not need to be installed when the current version is inside the package range.
 
 ## Before updating
 

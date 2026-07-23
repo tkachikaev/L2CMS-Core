@@ -133,7 +133,7 @@ class ReleaseMetadataTest extends TestCase
             $updateScript,
         );
         $this->assertMatchesRegularExpression(
-            '/^\$legacyApplySha256 = \'[a-f0-9]{64}\'$/m',
+            '/^\$legacyApplySha256 = \'[a-f0-9]{64}\'\r?$/m',
             $updateScript,
         );
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
