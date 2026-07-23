@@ -15,6 +15,7 @@ class WebInstallerReleaseTest extends TestCase
             'deployment/hosting/web-installer/installer.php',
             'deployment/hosting/web-installer/tests/installer-regression.php',
             'deployment/hosting/build-shared-hosting-package.php',
+            'deployment/hosting/archive-shared-hosting-package.php',
             'deployment/hosting/shared-hosting/README.md',
             'deployment/hosting/shared-hosting/public/index.php',
             'deployment/hosting/shared-hosting/public/install/index.php',
@@ -57,6 +58,9 @@ class WebInstallerReleaseTest extends TestCase
         $this->assertStringContainsString('DROP TABLE {$quoted}', $installer);
         $this->assertStringContainsString('buildEnvironmentContent', $installer);
         $this->assertStringContainsString('publicInstallerError', $installer);
+        $this->assertStringContainsString('postInstallSecurityChecks', $installer);
+        $this->assertStringContainsString('securityReviewBody', $installer);
+        $this->assertStringContainsString('installerSensitivePermissionsAreBroad', $installer);
         $this->assertStringContainsString('hash_equals($expected, $provided)', $installer);
         $this->assertStringContainsString('PDO::ATTR_EMULATE_PREPARES => false', $installer);
         $this->assertStringContainsString('field($text[\'db_password\'], \'db_password\', \'\', \'password\'', $installer);
@@ -113,7 +117,9 @@ class WebInstallerReleaseTest extends TestCase
         $this->assertStringContainsString('[System.IO.Compression.ZipFile]::OpenRead($zipPath)', $packageBuilder);
         $this->assertStringContainsString('$entryName -match \'\\\\\'', $packageBuilder);
         $this->assertStringContainsString('Get-FileHash', $packageBuilder);
-        $this->assertStringNotContainsString('--no-zip', $packageBuilder);
+        $this->assertStringContainsString('--no-zip', $packageBuilder);
+        $this->assertStringContainsString('archive-shared-hosting-package.php', $packageBuilder);
+        $this->assertStringContainsString("'--no-dev'", $packageBuilder);
         $this->assertStringNotContainsString('CreateFromDirectory', $packageBuilder);
     }
 }

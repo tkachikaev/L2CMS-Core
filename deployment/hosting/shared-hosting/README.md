@@ -1,16 +1,13 @@
-# Shared-hosting split layout
+# Shared-hosting package / Пакет для обычного хостинга
 
-Этот режим используется только тогда, когда панель хостинга не позволяет назначить `KaevCMS/public` корнем домена.
+## English
 
-Подготовленный пакет содержит две соседние папки:
+The package contains a private core, a public directory with the exact name passed through `-PublicDirectoryName`, and `INSTALL-SHARED-HOSTING.txt`. Extract it into the parent directory, not inside the public directory.
 
-```text
-kaevcms-core/   — ядро, `.env`, `vendor`, `storage`; папка не публикуется
-public_html/    — только публичные файлы сайта
-```
+The Windows wrapper rebuilds `vendor` from an empty directory with production Composer dependencies, excludes existing `public/uploads`, `public/storage`, and `public/hot`, and uses the PHP ZIP implementation so Linux hosting receives portable `/` entry names.
 
-Архив необходимо распаковать в каталоге аккаунта хостинга, а домен направить на `public_html`. Если технический домен уже привязан к собственной папке, укажите её имя при сборке пакета или перенесите в неё содержимое `public_html` и скорректируйте `kaevcms-path.php`.
+## Русский
 
-Прямое размещение всего проекта в web-root и запуск через `/public/` считается небезопасным и блокируется проверкой Web Installer.
+Пакет содержит закрытое ядро, публичный каталог с точным именем из `-PublicDirectoryName` и `INSTALL-SHARED-HOSTING.txt`. Распаковывайте его в родительский каталог, а не внутрь публичной папки.
 
-ZIP собирается PHP-сборщиком с разделителями `/` внутри архива. Windows-обёртка проверяет SHA256, отсутствие обратных слешей и допустимый верхний уровень до выдачи готового файла.
+Windows-скрипт пересобирает `vendor` с нуля только с production-зависимостями, исключает существующие `public/uploads`, `public/storage` и `public/hot`, а также использует PHP ZIP, чтобы Linux-хостинг получил переносимые пути с `/`.

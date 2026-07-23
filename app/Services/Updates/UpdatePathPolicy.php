@@ -65,13 +65,18 @@ final class UpdatePathPolicy
 
         $segments = explode('/', $normalized);
         foreach ($segments as $segment) {
-            if ($segment === '.env' || str_starts_with($segment, '.env.')) {
+            if (($segment === '.env' || str_starts_with($segment, '.env.'))
+                && $normalized !== 'core/.env.example') {
                 return false;
             }
         }
 
         if (str_starts_with($normalized, 'core/database/') && str_ends_with($normalized, '.sqlite')) {
             return false;
+        }
+
+        if (in_array($normalized, ['public/uploads/.gitignore', 'public/uploads/.htaccess'], true)) {
+            return true;
         }
 
         foreach ([...self::FORBIDDEN_CORE_PREFIXES, ...self::FORBIDDEN_PUBLIC_PREFIXES] as $forbidden) {

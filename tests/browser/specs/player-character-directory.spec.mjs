@@ -92,7 +92,7 @@ test('player can choose an administrator-provided account avatar in a modal', as
     await expect(dialog).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Выбор аватара', exact: true })).toBeVisible();
 
-    await page.locator('input[name="avatar_filename"][value="browser-avatar.png"]').check();
+    await page.locator('label:has(input[name="avatar_filename"][value="browser-avatar.png"])').click();
     await page.getByRole('button', { name: 'Сохранить аватар', exact: true }).click();
 
     await expect(page).toHaveURL(/\/account$/);

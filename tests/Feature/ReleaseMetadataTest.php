@@ -47,6 +47,7 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('deployment\hosting\web-installer\installer.php', $applyScript);
         $this->assertStringContainsString('deployment\hosting\web-installer\tests\installer-regression.php', $applyScript);
         $this->assertStringContainsString('deployment\hosting\build-shared-hosting-package.php', $applyScript);
+        $this->assertStringContainsString('deployment\hosting\archive-shared-hosting-package.php', $applyScript);
         $this->assertStringContainsString('deployment\hosting\shared-hosting\tests\layout-regression.php', $applyScript);
         $this->assertStringContainsString('deployment\hosting\shared-hosting\tests\package-builder-regression.php', $applyScript);
         $this->assertStringContainsString('deployment\windows\build-shared-hosting-package.ps1', $applyScript);
@@ -77,6 +78,37 @@ class ReleaseMetadataTest extends TestCase
         $browserQuality = $this->readReleaseFile('deployment/windows/browser-quality.ps1');
         $this->assertStringContainsString('node_modules\@playwright\test\package.json', $browserQuality);
         $this->assertStringNotContainsString('require.resolve(\'@playwright/test\')', $browserQuality);
+    }
+
+    public function test_documentation_is_bilingual_and_current(): void
+    {
+        foreach ([
+            'docs/en/README.md',
+            'docs/en/INSTALLATION.md',
+            'docs/en/SHARED_HOSTING.md',
+            'docs/en/SECURITY.md',
+            'docs/ru/README.md',
+            'docs/ru/INSTALLATION.md',
+            'docs/ru/SHARED_HOSTING.md',
+            'docs/ru/SECURITY.md',
+        ] as $documentation) {
+            $this->assertFileExists(base_path($documentation));
+        }
+
+        $englishHosting = $this->readReleaseFile('docs/en/SHARED_HOSTING.md');
+        $russianHosting = $this->readReleaseFile('docs/ru/SHARED_HOSTING.md');
+        $this->assertStringContainsString('-PublicDirectoryName', $englishHosting);
+        $this->assertStringContainsString('-CoreDirectoryName', $englishHosting);
+        $this->assertStringContainsString('-IncludeDevelopmentDependencies', $englishHosting);
+        $this->assertStringContainsString('Beget', $englishHosting);
+        $this->assertStringContainsString('Jino', $englishHosting);
+        $this->assertStringContainsString('-PublicDirectoryName', $russianHosting);
+        $this->assertStringContainsString('Beget', $russianHosting);
+        $this->assertStringContainsString('Jino', $russianHosting);
+
+        $documentationIndex = $this->readReleaseFile('docs/README.md');
+        $this->assertStringContainsString('English documentation', $documentationIndex);
+        $this->assertStringContainsString('Русская документация', $documentationIndex);
     }
 
     public function test_promo_code_reward_model_has_a_single_line_ending_at_eof(): void
@@ -297,6 +329,9 @@ class ReleaseMetadataTest extends TestCase
         $this->assertStringContainsString('Kaev Aurelia Account 1.3.0', $aureliaCss);
         $this->assertStringContainsString('.promo-activation-surface {', $aureliaCss);
         $this->assertStringContainsString('.reward-history-main p img {', $aureliaCss);
+        $this->assertStringContainsString('Kaev Aurelia Account 1.3.1', $aureliaCss);
+        $this->assertStringContainsString('.account-dashboard-tools {', $aureliaCss);
+        $this->assertStringContainsString('border-radius: 24px;', $aureliaCss);
 
         $aureliaNavigation = $this->readReleaseFile('account-themes/kaev-aurelia/views/partials/navigation.blade.php');
         $this->assertStringContainsString('wire:current="active"', $aureliaNavigation);

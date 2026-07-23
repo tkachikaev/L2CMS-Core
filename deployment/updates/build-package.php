@@ -36,7 +36,7 @@ if (! is_string($root) || ! is_dir($root)) {
 }
 
 if ($output === '' || ! validVersion($minimum) || ! validVersion($maximum) || version_compare($minimum, $maximum, '>')) {
-    fwrite(STDERR, "Usage: php deployment/updates/build-package.php --root=PATH --output=FILE.zip --minimum=0.32.0 --maximum=0.32.10 [--target=0.33.0] [--previous-root=PATH]\n");
+    fwrite(STDERR, "Usage: php deployment/updates/build-package.php --root=PATH --output=FILE.zip --minimum=0.32.0 --maximum=0.32.13 [--target=0.33.0] [--previous-root=PATH]\n");
     exit(1);
 }
 
@@ -263,6 +263,10 @@ function excluded(string $path): bool
         return true;
     }
 
+    if (in_array($path, ['public/uploads/.gitignore', 'public/uploads/.htaccess'], true)) {
+        return false;
+    }
+
     foreach ([
         '.git/',
         'node_modules/',
@@ -434,9 +438,14 @@ function validLogicalTarget(string $path): bool
     $normalized = strtolower($path);
     foreach ($segments as $segment) {
         $segment = strtolower($segment);
-        if ($segment === '.env' || str_starts_with($segment, '.env.')) {
+        if (($segment === '.env' || str_starts_with($segment, '.env.'))
+            && $normalized !== 'core/.env.example') {
             return false;
         }
+    }
+
+    if (in_array($normalized, ['public/uploads/.gitignore', 'public/uploads/.htaccess'], true)) {
+        return true;
     }
 
     foreach ([

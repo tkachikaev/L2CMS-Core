@@ -1,36 +1,31 @@
-# KaevCMS GameServer reward queue
+# GameServer reward queue / Очередь наград GameServer
 
-KaevCMS writes selected web-inventory rewards to one neutral table named `kaev_reward_queue` in the selected GameServer database.
+## English
 
-KaevCMS does **not** write to `items`, allocate `object_id`, patch GameServer sources, run a heartbeat or require a protocol version. After a row is written successfully, processing belongs to the GameServer administrator.
+KaevCMS writes selected web-inventory rewards to the neutral `kaev_reward_queue` table in the selected GameServer database. It does not write to `items`, allocate `object_id`, patch GameServer sources, or require a heartbeat/protocol version.
 
-## Installation
+Run `install.sql` once in every GameServer database that should accept rewards. One player transfer may create several rows sharing `request_uuid` and using different `line_number` values. Recommended statuses are `pending`, `processing`, `delivered`, and `failed`.
 
-Run `install.sql` once in every GameServer database that should accept rewards.
+The server owner chooses the consumer:
 
+- GameServer plugin or script;
+- stored procedure or scheduled database event;
+- external service;
+- manual processing.
 
-The CMS only requires the documented columns. Additional columns and indexes are allowed when extra columns are nullable, generated or have defaults. Future compatible changes must be additive so an administrator-owned consumer is not broken by a KaevCMS update.
+`consumer-template.sql` is intentionally incomplete because object-ID allocation and inventory columns differ between Lineage II distributions. Operational examples are provided in `pending.sql`, `mark-delivered.example.sql`, and `mark-failed.example.sql`.
 
-## Queue meaning
+## Русский
 
-One selected reward creates one row. Rows from one player action share the same `request_uuid` and have different `line_number` values.
+KaevCMS записывает выбранные награды веб-инвентаря в нейтральную таблицу `kaev_reward_queue` нужной базы GameServer. CMS не изменяет `items`, не создаёт `object_id`, не патчит исходники GameServer и не требует heartbeat или версии протокола.
 
-Initial status is `pending`. An administrator-owned consumer may use any workflow, but these values are recommended:
+Выполните `install.sql` один раз в каждой игровой базе, которая должна принимать награды. Один перенос игрока может создать несколько строк с общим `request_uuid` и разными `line_number`. Рекомендуемые статусы: `pending`, `processing`, `delivered` и `failed`.
 
-- `pending` — waiting for a consumer;
-- `processing` — claimed by a consumer;
-- `delivered` — the consumer confirmed item delivery;
-- `failed` — the consumer confirmed a failure.
+Владелец сервера сам выбирает обработчик:
 
-KaevCMS does not poll or reinterpret these statuses. Its responsibility ends after it verifies that the expected rows exist in the queue. Consumers must keep the immutable request, account, character and item fields unchanged and should update the status instead of deleting a row immediately.
+- плагин или скрипт внутри GameServer;
+- хранимая процедура или плановое событие базы;
+- внешний сервис;
+- ручная обработка.
 
-## Processing options
-
-- a plugin or script inside GameServer;
-- a stored procedure or scheduled database event;
-- an external service;
-- manual processing by an administrator.
-
-`consumer-template.sql` is deliberately incomplete. There is no safe universal SQL statement for inserting into every Lineage II inventory schema. The administrator must implement object ID allocation and item fields according to the selected distribution.
-
-`pending.sql`, `mark-delivered.example.sql` and `mark-failed.example.sql` are operational examples.
+`consumer-template.sql` намеренно не завершён: генерация object ID и состав колонок инвентаря различаются между сборками Lineage II. Рабочие примеры находятся в `pending.sql`, `mark-delivered.example.sql` и `mark-failed.example.sql`.

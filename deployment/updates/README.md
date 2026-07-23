@@ -1,31 +1,37 @@
-# KaevCMS Web Update Packages
+# Web Update packages / Пакеты Web Update
 
-The web updater accepts a ZIP archive with `kaevcms-update.json` at the archive root and logical payload files under `payload/core/` and `payload/public/`.
+## English
 
-- `core/` is written to the KaevCMS application root.
-- `public/` is written to Laravel's active public path. This supports both standard and split shared-hosting installations.
-- `.env`, `storage`, SQLite runtime databases, uploads and the split-layout path configuration are protected and cannot be changed by an update package.
+A Web Update ZIP contains `kaevcms-update.json` at the archive root and payload files under `payload/core/` and `payload/public/`.
 
-A cumulative package supports every installed version between `minimum_version` and `maximum_version`. Laravel runs every missing core migration in order, so intermediate releases do not need to be installed separately.
+- `core/` targets the private application root.
+- `public/` targets the active public path in standard and split layouts.
+- `.env`, `storage`, SQLite runtime files, user uploads, and split-path configuration are protected. Only the release-owned `public/uploads/.gitignore` and `.htaccess` control files may be updated.
+- Every payload file has a SHA256 hash.
+- Packages with changed Composer dependencies are rejected and require a full deployment.
 
-Build a package from an extracted target release:
+Example builder command:
 
 ```powershell
 php deployment/updates/build-package.php `
-    --root="C:\Releases\KaevCMS-0.33.0" `
-    --output="C:\Releases\KaevCMS-update-to-0.33.0.zip" `
+    --root="C:\Releases\KaevCMS-0.32.13" `
+    --output="C:\Releases\KaevCMS-update-to-0.32.13.zip" `
     --minimum=0.32.0 `
-    --maximum=0.32.10 `
-    --target=0.33.0 `
+    --maximum=0.32.12 `
+    --target=0.32.13 `
     --delete-file=deployment/updates/deletions.json `
-    --previous-root="C:\Releases\KaevCMS-0.32.10" `
+    --previous-root="C:\Releases\KaevCMS-0.32.12" `
     --update-history
 ```
 
-The package builder adds per-file SHA256 hashes. These hashes detect archive damage and tampering after the manifest was created. Public release authenticity will additionally require a release-signing key before automatic remote downloads are enabled.
+## Русский
 
-Web Updater 1.0 excludes `vendor/` and rejects packages whose `composer.lock` differs from the installed release. Dependency changes require a full deployment until the updater gains a separate post-replacement bootstrap phase.
+Web Update ZIP содержит `kaevcms-update.json` в корне и файлы в `payload/core/` и `payload/public/`.
 
-Before installation the owner receives a one-time maintenance bypass URL. If the request is interrupted, that URL restores access to the updater page, where the persisted database and file backup manifests can be used for manual rollback.
+- `core/` применяется к закрытому корню приложения.
+- `public/` применяется к активному публичному каталогу в стандартной и split-схеме.
+- `.env`, `storage`, runtime SQLite, пользовательские uploads и конфигурация split-пути защищены. Обновляться могут только служебные `public/uploads/.gitignore` и `.htaccess`, принадлежащие релизу.
+- Для каждого файла проверяется SHA256.
+- Изменение Composer-зависимостей требует полного развёртывания и блокируется Web Updater.
 
-`deletions.json` хранит историю удалений по целевым версиям. `--previous-root` автоматически вычисляет пути, присутствовавшие в предыдущем релизе и отсутствующие в целевом. Пакет получает объединение всех удалений новее `minimum_version`, поэтому старые файлы корректно убираются при переходе через несколько версий.
+`deletions.json` хранит историю удалений по версиям. `--previous-root` добавляет пути, которые существовали в предыдущем релизе и отсутствуют в новом. При прерванном обновлении владелец использует сохранённое состояние и резервные копии для восстановления.

@@ -297,7 +297,7 @@ test('reward queue journal is available from the administrator sidebar', async (
     await page.getByRole('link', { name: 'Очередь наград', exact: true }).click();
 
     await expect(page).toHaveURL(/\/admin\/reward-deliveries$/);
-    await expect(page.getByRole('heading', { name: 'Передачи в очередь наград' }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Очередь наград', exact: true }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Передач в очередь пока нет', exact: true })).toBeVisible();
 });
 

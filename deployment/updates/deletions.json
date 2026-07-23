@@ -28,5 +28,14 @@
     ],
     "0.32.10": [
         "core/deployment/windows/apply-0.32.9.ps1"
+    ],
+    "0.32.11": [
+        "core/deployment/windows/apply-0.32.10.ps1"
+    ],
+    "0.32.12": [
+        "core/deployment/windows/apply-0.32.11.ps1"
+    ],
+    "0.32.13": [
+        "core/deployment/windows/apply-0.32.12.ps1"
     ]
 }

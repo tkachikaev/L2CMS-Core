@@ -33,7 +33,7 @@ class UpdatePackageInspectorTest extends TestCase
             $this->assertSame('0.33.0', $package->targetVersion);
             $this->assertSame('0.32.4', $package->currentVersion);
             $this->assertSame('0.32.0', $package->minimumVersion);
-            $this->assertSame('0.32.10', $package->maximumVersion);
+            $this->assertSame('0.32.12', $package->maximumVersion);
             $this->assertCount(2, $package->files);
         } finally {
             File::deleteDirectory($package->stagingPath);
@@ -84,7 +84,7 @@ class UpdatePackageInspectorTest extends TestCase
         $this->expectExceptionMessage(
             __('This package supports KaevCMS :minimum through :maximum; the installed version is :current.', [
                 'minimum' => '0.32.0',
-                'maximum' => '0.32.10',
+                'maximum' => '0.32.12',
                 'current' => '0.31.12',
             ]),
         );
@@ -144,7 +144,7 @@ class UpdatePackageInspectorTest extends TestCase
             'name' => 'KaevCMS 0.33.0',
             'target_version' => '0.33.0',
             'minimum_version' => '0.32.0',
-            'maximum_version' => '0.32.10',
+            'maximum_version' => '0.32.12',
             'requires' => [
                 'php' => '8.3.0',
                 'extensions' => ['zip'],

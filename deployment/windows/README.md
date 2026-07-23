@@ -1,18 +1,27 @@
-# KaevCMS on Windows
+# Windows tooling / Windows-инструменты
 
-All Windows PowerShell tooling is stored in this directory and runs directly from here. Scripts determine the project root automatically; do not copy them back to the root.
+## English
+
+All scripts resolve the project root from `$PSScriptRoot` and may be started from any working directory.
 
 ```powershell
 .\deployment\windows\setup.ps1
-.\deployment\windows\serve.ps1
-.\deployment\windows\doctor.ps1
 .\deployment\windows\quality.ps1
-.\deployment\windows\browser-setup.ps1
 .\deployment\windows\browser-quality.ps1
-.\deployment\windows\security-audit.ps1
-.\deployment\windows\build-shared-hosting-package.ps1
+.\deployment\windows\build-shared-hosting-package.ps1 -PublicDirectoryName public_html
 ```
 
-For an update, extract the patch over the project and run the current apply script from this directory.
+The shared-hosting builder accepts `-PublicDirectoryName`, `-CoreDirectoryName`, `-OutputDirectory`, and the diagnostic-only `-IncludeDevelopmentDependencies` switch. No interactive provider menu is used.
 
-`build-shared-hosting-package.ps1` создаёт безопасный hosting ZIP с закрытым ядром и отдельной публичной папкой для панелей без настройки Document Root. Архив создаётся PHP-сборщиком с переносимыми путями `/`, а PowerShell проверяет SHA256 и структуру ZIP.
+## Русский
+
+Все скрипты определяют корень проекта через `$PSScriptRoot` и могут запускаться из любого текущего каталога.
+
+```powershell
+.\deployment\windows\setup.ps1
+.\deployment\windows\quality.ps1
+.\deployment\windows\browser-quality.ps1
+.\deployment\windows\build-shared-hosting-package.ps1 -PublicDirectoryName public_html
+```
+
+Сборщик shared-hosting принимает `-PublicDirectoryName`, `-CoreDirectoryName`, `-OutputDirectory` и диагностический ключ `-IncludeDevelopmentDependencies`. Интерактивного меню провайдеров нет.

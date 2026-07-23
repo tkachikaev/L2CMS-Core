@@ -49,6 +49,9 @@ try {
     php deployment/updates/tests-package-builder.php
     if ($LASTEXITCODE -ne 0) { throw "Web update package builder regression checks failed with exit code $LASTEXITCODE." }
 
+    php deployment/vds/tests/documentation-regression.php
+    if ($LASTEXITCODE -ne 0) { throw "Ubuntu VDS documentation regression checks failed with exit code $LASTEXITCODE." }
+
     composer validate --strict --no-check-publish
     if ($LASTEXITCODE -ne 0) { throw "Composer validation failed with exit code $LASTEXITCODE." }
 
@@ -64,7 +67,7 @@ try {
     php artisan route:clear
     if ($LASTEXITCODE -ne 0) { throw "Route cache cleanup failed with exit code $LASTEXITCODE." }
 
-    Write-Host 'Offline quality checks completed successfully: PowerShell updater, audit policy, Web Installer, shared-hosting and Web Updater package regressions, Composer validation, Pint, PHPStan, PHPUnit and route cache.' -ForegroundColor Green
+    Write-Host 'Offline quality checks completed successfully: PowerShell updater, audit policy, Web Installer, shared-hosting, Web Updater and Ubuntu VDS documentation regressions, Composer validation, Pint, PHPStan, PHPUnit and route cache.' -ForegroundColor Green
     Write-Host 'Run .\deployment\windows\security-audit.ps1 separately when internet access is available.' -ForegroundColor DarkGray
 } finally {
     if ($hadComposerNetworkSetting) {

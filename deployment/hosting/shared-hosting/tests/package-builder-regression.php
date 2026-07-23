@@ -18,13 +18,17 @@ $source = $temp.'/source';
 $target = $temp.'/target';
 
 try {
-    mkdir($source.'/public', 0775, true);
+    mkdir($source.'/public/uploads/news', 0775, true);
+    mkdir($source.'/public/storage', 0775, true);
     mkdir($source.'/tests', 0775, true);
     mkdir($source.'/app', 0775, true);
     mkdir($source.'/storage/app', 0775, true);
     mkdir($source.'/database', 0775, true);
     file_put_contents($source.'/app/keep.php', '<?php');
     file_put_contents($source.'/public/index.php', '<?php');
+    file_put_contents($source.'/public/uploads/news/private.webp', 'private upload');
+    file_put_contents($source.'/public/storage/private.txt', 'private storage');
+    file_put_contents($source.'/public/hot', 'http://127.0.0.1:5173');
     file_put_contents($source.'/tests/remove.php', '<?php');
     file_put_contents($source.'/.env', 'SECRET=1');
     file_put_contents($source.'/.env.backup', 'SECRET=2');
@@ -50,8 +54,20 @@ try {
     assertPackageBuilder(is_file($target.'/storage/framework/sessions/.gitignore'), 'The clean package must recreate writable runtime directories.');
     assertPackageBuilder(is_file($target.'/bootstrap/cache/.gitignore'), 'The clean package must recreate bootstrap/cache.');
 
+    $publicTarget = $temp.'/public-target';
+    copyPackageTree($source.'/public', $publicTarget, ['uploads', 'storage', 'hot']);
+    createCleanPublicRuntimeSkeleton($publicTarget);
+    assertPackageBuilder(is_file($publicTarget.'/index.php'), 'Public application assets must remain in the package.');
+    assertPackageBuilder(! is_file($publicTarget.'/uploads/news/private.webp'), 'Existing user uploads must never enter a shared-hosting package.');
+    assertPackageBuilder(! file_exists($publicTarget.'/storage'), 'A public storage link or directory must never enter a shared-hosting package.');
+    assertPackageBuilder(! is_file($publicTarget.'/hot'), 'The Vite hot marker must never enter a shared-hosting package.');
+    assertPackageBuilder(is_file($publicTarget.'/uploads/.gitignore'), 'The package must recreate an empty public uploads directory.');
+    assertPackageBuilder(is_file($publicTarget.'/uploads/.htaccess'), 'The package must block executable PHP files inside public uploads.');
+
     $relative = absolutePackagePath('dist', '/tmp/example');
     assertPackageBuilder(str_ends_with(str_replace('\\', '/', $relative), '/tmp/example/dist'), 'Relative output paths must resolve against the working directory.');
+    assertPackageBuilder(absolutePackagePath('dist/../dist/release', '/tmp/example') === '/tmp/example/dist/release', 'Output paths must be canonicalized before recursive cleanup.');
+    assertPackageBuilder(absolutePackagePath('C:\\Projects\\KaevCMS\\dist\\..\\release', 'C:\\ignored') === 'C:/Projects/KaevCMS/release', 'Windows output paths must be canonicalized before recursive cleanup.');
 
     assertPackageBuilder(packageRelativePath('/srv/kaevcms', '/srv/kaevcms/dist/package') === 'dist/package', 'Paths inside the project must be converted to relative paths.');
     assertPackageBuilder(packageRelativePath('/srv/kaevcms', '/srv/releases/package') === null, 'Paths outside the project must remain external.');
@@ -90,9 +106,18 @@ try {
 
     $windowsWrapper = file_get_contents(dirname(__DIR__, 4).'/deployment/windows/build-shared-hosting-package.ps1');
     assertPackageBuilder(is_string($windowsWrapper), 'The Windows shared-hosting wrapper must be readable.');
-    assertPackageBuilder(! str_contains($windowsWrapper, '--no-zip'), 'The Windows wrapper must use the ZIP produced by the PHP builder.');
+    assertPackageBuilder(str_contains($windowsWrapper, '--no-zip'), 'The Windows wrapper must prepare the package before removing development dependencies.');
+    assertPackageBuilder(str_contains($windowsWrapper, 'archive-shared-hosting-package.php'), 'The Windows wrapper must use the portable PHP archiver after production Composer preparation.');
+    assertPackageBuilder(str_contains($windowsWrapper, "'--no-dev'"), 'Production shared-hosting packages must remove Composer development dependencies by default.');
+    assertPackageBuilder(str_contains($windowsWrapper, 'Remove-Item -LiteralPath $packageVendor -Recurse -Force'), 'Production Composer dependencies must be rebuilt from an empty vendor directory.');
+    assertPackageBuilder(str_contains($windowsWrapper, 'IncludeDevelopmentDependencies'), 'A deliberate testing switch must be available when development dependencies are required.');
     assertPackageBuilder(! str_contains($windowsWrapper, 'CreateFromDirectory'), 'The Windows wrapper must not repack paths with platform separators.');
     assertPackageBuilder(str_contains($windowsWrapper, 'ZipFile]::OpenRead'), 'The Windows wrapper must validate the generated ZIP.');
+
+    $portableArchiver = dirname(__DIR__, 2).'/archive-shared-hosting-package.php';
+    assertPackageBuilder(is_file($portableArchiver), 'The portable shared-hosting archiver must be shipped.');
+    $archiverSource = file_get_contents($portableArchiver);
+    assertPackageBuilder(is_string($archiverSource) && str_contains($archiverSource, 'createPackageZip'), 'The portable archiver must reuse the forward-slash ZIP implementation.');
 
     fwrite(STDOUT, "Shared-hosting package builder regression checks passed.\n");
 } finally {

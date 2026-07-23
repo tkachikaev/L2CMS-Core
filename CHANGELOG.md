@@ -1,3 +1,33 @@
+# Changelog
+
+## 0.32.13 - 2026-07-23
+
+- Hardened shared-hosting packages: runtime uploads, public storage, and hot-reload markers are excluded; the public uploads skeleton blocks PHP-like execution; production Composer dependencies are rebuilt from an empty `vendor`; output paths are canonicalized before recursive cleanup.
+- Hardened update backups with private `0700` directories and `0600` database/metadata files on Unix-like systems, including verification of the resulting mode.
+- Hardened Web Installer password-bearing actions: HTTPS is required outside loopback development, resume locks are bound to the originating installation token, proxy HTTPS headers are trusted only from private/local proxies, and session rate limits protect database and install actions.
+- Added the cumulative `php artisan kaevcms:update` command for VDS deployments so application code remains owned by the deployment user instead of becoming writable by PHP-FPM.
+- Updated Ubuntu nginx guidance to execute only the front controllers and explicitly prevent PHP execution inside public uploads.
+- Updated English and Russian installation/update documentation and fixed stale PHPUnit, browser, and formatting expectations reported by the production audit.
+- Publisher signatures, atomic release directories, and expanded public-release CI remain deferred while KaevCMS is privately tested by one owner. Composer/npm dependencies and database migrations were not changed.
+
+## 0.32.12 - 2026-07-23
+
+- Added complete maintained English and Russian Ubuntu VDS deployment guides for Ubuntu Server 24.04 LTS, nginx, PHP 8.3-FPM, MySQL, HTTPS, permissions, scheduler, systemd queue worker, updates, verification, and troubleshooting.
+- Documented Ubuntu 24.04 as the initial validated VDS baseline because its native PHP 8.3 matches the Composer platform; Ubuntu 26.04 with PHP 8.5 remains a separate compatibility target until the complete quality gate passes.
+- Linked the VDS guide from the root README, bilingual documentation indexes, installation manuals, and `deployment/vds`.
+- Added a release regression that verifies both VDS manuals, the secure `public/` Document Root, temporary installer permissions, post-install hardening, cron, systemd, HTTPS, and bilingual parity.
+- Composer/npm dependencies and database migrations were not changed.
+
+## 0.32.11 - 2026-07-23
+
+- Rounded the Kaev Aurelia Account quick-access section so its background matches the other dashboard surfaces on desktop and mobile.
+- Added PHP 5.5-compatible public entry guards that show a readable bilingual PHP 8.3 requirement before Laravel or the Web Installer is parsed.
+- Expanded Web Installer hosting diagnostics with detected paths, HTTPS warnings, permission details, and a post-install security review for the private core, `.env`, debug mode, runtime directories, uploads, and installer lock.
+- Changed the Windows shared-hosting builder to prepare a production-only Composer `vendor` by default and archive it with portable forward-slash ZIP paths; development dependencies require an explicit diagnostic switch.
+- Rebuilt the documentation as maintained English and Russian manuals, preserved old mixed-language references under `docs/history`, and added practical Beget, Jino, generic Document Root, permissions, and build-key examples.
+- Updated shared-hosting package instructions, Windows tooling documentation, VDS notes, Web Update documentation, and reward-queue guidance in both languages.
+- Composer/npm dependencies and database migrations were not changed.
+
 ## 0.32.10 - 2026-07-23
 
 - Исправлен Web Installer: если выбранная база уже содержит владельца KaevCMS, установка теперь останавливается с понятным сообщением вместо молчаливого использования прежнего пароля.
@@ -23,7 +53,6 @@
 - Добавлена регрессия, которая реально создаёт тестовый ZIP и проверяет POSIX-разделители путей; текстовые release-тесты защищают Windows-обёртку от возврата к повторной упаковке.
 - Composer/npm-зависимости и миграции базы не изменялись.
 
-# Changelog
 
 ## 0.32.6 - 2026-07-23
 

@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 Set-Location -LiteralPath $ProjectRoot
 
-$fromVersion = '0.32.9'
-$toVersion = '0.32.10'
+$fromVersion = '0.32.12'
+$toVersion = '0.32.13'
 
 if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot 'artisan') -PathType Leaf)) {
     throw 'The KaevCMS project root could not be found.'
@@ -31,20 +31,35 @@ $requiredFiles = @(
     'CHANGELOG.md'
     'README.md'
     'VERSION'
+    'app\Console\Commands\InstallSystemUpdateCommand.php'
+    'public\uploads\.htaccess'
     'public\index.php'
     'public\.htaccess'
     'public\install\index.php'
     'bootstrap\app.php'
     'bootstrap\cache\.gitignore'
     'deployment\hosting\README.md'
+    'deployment\vds\README.md'
+    'deployment\vds\tests\documentation-regression.php'
     'deployment\hosting\build-shared-hosting-package.php'
+    'deployment\hosting\archive-shared-hosting-package.php'
     'deployment\hosting\web-installer\installer.php'
     'deployment\hosting\web-installer\tests\installer-regression.php'
     'deployment\hosting\shared-hosting\README.md'
     'deployment\hosting\shared-hosting\public\index.php'
+    'deployment\hosting\shared-hosting\public\install\index.php'
     'deployment\hosting\shared-hosting\public\kaevcms-path.php.template'
     'deployment\hosting\shared-hosting\tests\layout-regression.php'
     'deployment\hosting\shared-hosting\tests\package-builder-regression.php'
+    'docs\README.md'
+    'docs\en\INSTALLATION.md'
+    'docs\en\VDS_UBUNTU.md'
+    'docs\en\SHARED_HOSTING.md'
+    'docs\en\SECURITY.md'
+    'docs\ru\INSTALLATION.md'
+    'docs\ru\VDS_UBUNTU.md'
+    'docs\ru\SHARED_HOSTING.md'
+    'docs\ru\SECURITY.md'
     'docs\WEB_INSTALLER.md'
     'docs\WEB_UPDATER.md'
     'routes\admin.php'
@@ -74,6 +89,8 @@ $requiredFiles = @(
     'resources\views\admin\settings\updates\show.blade.php'
     'resources\views\admin\partials\navigation.blade.php'
     'public\assets\admin\css\app.css'
+    'public\account-themes\kaev-aurelia\assets\css\app.css'
+    'account-themes\kaev-aurelia\theme.json'
     'deployment\updates\README.md'
     'deployment\updates\build-package.php'
     'deployment\updates\deletions.json'
@@ -105,6 +122,8 @@ $requiredFiles = @(
     'tests\Unit\TranslationJsonTest.php'
     'resources\views\admin\settings\updates\index.blade.php'
     'tests\Feature\ReleaseMetadataTest.php'
+    'tests\Feature\VdsDocumentationReleaseTest.php'
+    'tests\Feature\CliSystemUpdaterReleaseTest.php'
 )
 
 foreach ($requiredFile in $requiredFiles) {
@@ -115,7 +134,7 @@ foreach ($requiredFile in $requiredFiles) {
 }
 
 Write-Host "KaevCMS $fromVersion -> $toVersion update"
-Write-Host 'Web Installer now rejects existing owners and verifies the newly stored owner password.'
+Write-Host 'Installer, shared-hosting packaging, update backups, and VDS cumulative CLI updates were hardened.'
 Write-Host ''
 
 & (Join-Path $PSScriptRoot 'update.ps1') -SkipTests:$SkipTests
@@ -125,6 +144,7 @@ Write-Host "KaevCMS $toVersion is ready." -ForegroundColor Green
 Write-Host 'Windows setup: .\deployment\windows\setup.ps1'
 Write-Host 'Windows quality: .\deployment\windows\quality.ps1'
 Write-Host 'Web installer: /install/'
-Write-Host 'Web Updater: Administrator panel -> Settings -> System information -> Updates'
+Write-Host 'Shared hosting updater: Administrator panel -> Settings -> System information -> Updates'
+Write-Host 'VDS updater: php artisan kaevcms:update C:\path\to\KaevCMS-update.zip'
 Write-Host 'Shared hosting package: .\deployment\windows\build-shared-hosting-package.ps1'
 Write-Host 'Composer/npm dependencies and database migrations were not changed.'

@@ -60,7 +60,8 @@ $excluded = [
 ];
 copyPackageTree($projectRoot, $coreTarget, $excluded);
 createCleanRuntimeSkeleton($coreTarget);
-copyPackageTree($projectRoot.'/public', $publicTarget, []);
+copyPackageTree($projectRoot.'/public', $publicTarget, ['uploads', 'storage', 'hot']);
+createCleanPublicRuntimeSkeleton($publicTarget);
 
 copy($projectRoot.'/deployment/hosting/shared-hosting/public/index.php', $publicTarget.'/index.php');
 copy($projectRoot.'/deployment/hosting/shared-hosting/public/.htaccess', $publicTarget.'/.htaccess');
@@ -79,35 +80,50 @@ $bootstrapOverride = "<?php\n\ndeclare(strict_types=1);\n\nreturn dirname(__DIR_
 file_put_contents($coreTarget.'/bootstrap/kaevcms-public-path.php', $bootstrapOverride, LOCK_EX);
 
 $instructions = <<<TXT
-KaevCMS {$version} — shared hosting package
+KaevCMS {$version} — shared-hosting package
 
 РУССКИЙ
-1. Распакуйте ОБЕ папки в одном родительском каталоге:
+1. В панели хостинга узнайте фактическую публичную папку домена (Document Root).
+2. Распакуйте архив в РОДИТЕЛЬСКИЙ каталог так, чтобы рядом находились:
    - {$coreDirectory}/ — закрытое ядро приложения;
-   - {$publicDirectory}/ — публичная папка сайта.
-2. Направьте домен только на {$publicDirectory}/.
-3. Включите HTTPS и откройте домен — появится /install/.
-4. Никогда не направляйте домен на {$coreDirectory}/ и не переносите ядро внутрь публичной папки.
+   - {$publicDirectory}/ — публичная папка домена.
+3. Домен должен быть направлен только на {$publicDirectory}/.
+4. Включите PHP 8.3+, необходимые расширения и HTTPS.
+5. Откройте домен и завершите установку через /install/.
+6. После установки проверьте итоговый отчёт безопасности. Не назначайте 0777 всему проекту.
 
-Если хостинг уже создал папку домена с другим именем, пересоберите пакет:
-php deployment/hosting/build-shared-hosting-package.php --public-dir=ИМЯ_ПАПКИ_ДОМЕНА
+Примеры сборки в PowerShell:
+- Beget/cPanel с public_html:
+  .\deployment\windows\build-shared-hosting-package.ps1
+- Jino или другой каталог домена:
+  .\deployment\windows\build-shared-hosting-package.ps1 -PublicDirectoryName example.hosting.test
+- Собственное имя закрытого ядра:
+  .\deployment\windows\build-shared-hosting-package.ps1 -CoreDirectoryName private-kaevcms
 
 ENGLISH
-1. Extract BOTH directories into the same parent directory:
+1. Find the domain's actual public directory (Document Root) in the hosting control panel.
+2. Extract the archive into its PARENT directory so these directories are siblings:
    - {$coreDirectory}/ — private application core;
-   - {$publicDirectory}/ — website document root.
-2. Point the domain only to {$publicDirectory}/.
-3. Enable HTTPS and open the domain — /install/ appears.
-4. Never point the domain to {$coreDirectory}/ and never move the core into the public directory.
+   - {$publicDirectory}/ — domain public directory.
+3. The domain must point only to {$publicDirectory}/.
+4. Enable PHP 8.3+, required extensions, and HTTPS.
+5. Open the domain and complete /install/.
+6. Review the final security report. Do not assign 0777 to the whole project.
 
-To use an existing domain-directory name, rebuild with:
-php deployment/hosting/build-shared-hosting-package.php --public-dir=YOUR_DOMAIN_DIRECTORY
+PowerShell build examples:
+- Beget/cPanel with public_html:
+  .\deployment\windows\build-shared-hosting-package.ps1
+- Jino or another domain directory:
+  .\deployment\windows\build-shared-hosting-package.ps1 -PublicDirectoryName example.hosting.test
+- Custom private core name:
+  .\deployment\windows\build-shared-hosting-package.ps1 -CoreDirectoryName private-kaevcms
 
 TXT;
+
 file_put_contents($packageDirectory.'/INSTALL-SHARED-HOSTING.txt', $instructions, LOCK_EX);
 
-if (is_dir($projectRoot.'/vendor/phpunit') || is_dir($projectRoot.'/vendor/larastan')) {
-    fwrite(STDOUT, "WARNING: vendor appears to include development dependencies. Prefer composer install --no-dev --optimize-autoloader.\n");
+if (! isset($options['no-zip']) && (is_dir($projectRoot.'/vendor/phpunit') || is_dir($projectRoot.'/vendor/larastan'))) {
+    fwrite(STDOUT, "WARNING: direct PHP packaging copies the current vendor directory. Use the Windows wrapper for an automatic production-only vendor, or run Composer with --no-dev in the prepared core before archiving.\n");
 }
 
 if (! isset($options['no-zip'])) {
@@ -157,11 +173,49 @@ function validateDirectoryName(string $value, string $option): string
 
 function absolutePackagePath(string $path, string $base): string
 {
-    if (preg_match('#^(?:[A-Za-z]:[\\\\/]|/)#', $path) === 1) {
-        return rtrim(str_replace('\\', '/', $path), '/');
+    $combined = preg_match('#^(?:[A-Za-z]:[\\\\/]|/)#', $path) === 1
+        ? $path
+        : rtrim($base, '/\\').'/'.$path;
+
+    return canonicalPackagePath($combined);
+}
+
+function canonicalPackagePath(string $path): string
+{
+    $path = str_replace('\\', '/', trim($path));
+    if ($path === '' || str_starts_with($path, '//')) {
+        failPackage('Package paths must be absolute local filesystem paths.');
     }
 
-    return rtrim(str_replace('\\', '/', $base.'/'.$path), '/');
+    $prefix = '';
+    if (preg_match('/\A([A-Za-z]:)(?:\/|$)/', $path, $matches) === 1) {
+        $prefix = strtoupper($matches[1]).'/';
+        $path = substr($path, strlen($matches[1]));
+    } elseif (str_starts_with($path, '/')) {
+        $prefix = '/';
+    } else {
+        failPackage('Package paths must resolve to an absolute path.');
+    }
+
+    $segments = [];
+    foreach (explode('/', ltrim($path, '/')) as $segment) {
+        if ($segment === '' || $segment === '.') {
+            continue;
+        }
+        if ($segment === '..') {
+            if ($segments === []) {
+                failPackage('Package path escapes its filesystem root.');
+            }
+            array_pop($segments);
+
+            continue;
+        }
+        $segments[] = $segment;
+    }
+
+    $normalized = $prefix.implode('/', $segments);
+
+    return rtrim($normalized, '/') ?: $prefix;
 }
 
 function packageOutputAllowed(string $root, string $output): bool
@@ -252,6 +306,26 @@ function createCleanRuntimeSkeleton(string $coreTarget): void
         ensurePackageDirectory($directory);
         file_put_contents($directory.'/.gitignore', "*\n!.gitignore\n", LOCK_EX);
     }
+}
+
+function createCleanPublicRuntimeSkeleton(string $publicTarget): void
+{
+    $uploads = $publicTarget.'/uploads';
+    ensurePackageDirectory($uploads);
+    file_put_contents($uploads.'/.gitignore', "*\n!.gitignore\n!.htaccess\n", LOCK_EX);
+    file_put_contents(
+        $uploads.'/.htaccess',
+        "<FilesMatch \"\\.(?:php[0-9]?|phtml|phar)$\">\n"
+        ."    <IfModule mod_authz_core.c>\n"
+        ."        Require all denied\n"
+        ."    </IfModule>\n"
+        ."    <IfModule !mod_authz_core.c>\n"
+        ."        Order allow,deny\n"
+        ."        Deny from all\n"
+        ."    </IfModule>\n"
+        ."</FilesMatch>\n",
+        LOCK_EX,
+    );
 }
 
 function ensurePackageDirectory(string $path): void

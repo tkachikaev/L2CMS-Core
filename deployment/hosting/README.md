@@ -1,56 +1,41 @@
-# KaevCMS на PHP/MySQL-хостинге
+# Hosting deployment / Развёртывание на хостинге
 
-KaevCMS поддерживает два безопасных способа размещения. Один и тот же исходный проект используется для обоих вариантов.
+## English
 
-## Вариант 1 — стандартный Document Root
+KaevCMS supports two secure layouts:
 
-Используйте его в первую очередь.
+1. Standard: the full Laravel project is private and the domain Document Root points to `public/`.
+2. Split shared hosting: a generated private core and a provider-specific public directory are siblings.
 
-1. Загрузите KaevCMS вместе с `vendor/`.
-2. Направьте домен на каталог `KaevCMS/public`.
-3. Включите HTTPS.
-4. Откройте домен — при отсутствии `.env` появится `/install/`.
-
-В URL не должно быть `/public`.
-
-## Вариант 2 — split package для ограниченного shared-хостинга
-
-Используйте его, когда панель не позволяет назначить `public/` корнем домена.
-
-На Windows сначала подготовьте пакет:
-
-```powershell
-.\deployment\windows\build-shared-hosting-package.ps1
-```
-
-Перед сборкой должна существовать папка `vendor`. Для production-поставки рекомендуется:
-
-```powershell
-composer install --no-dev --optimize-autoloader
-```
-
-Готовый архив создаётся в `dist/`. Локальный `.env`, SQLite-база, журналы, сессии, кэш и lock-файлы в него не попадают, поэтому сборщик безопасно запускать после локального `setup.ps1`.
-
-Архив содержит:
-
-```text
-kaevcms-core/   — закрытое ядро приложения
-public_html/    — публичная папка домена
-```
-
-Обе папки распаковываются рядом. Домен направляется только на `public_html/`. Внутри неё нет `.env`, `vendor`, `storage`, исходников или тестов.
-
-Для панели с уже заданным именем папки домена:
+For shared hosting use:
 
 ```powershell
 .\deployment\windows\build-shared-hosting-package.ps1 `
-    -PublicDirectoryName "имя-папки-домена"
+    -PublicDirectoryName public_html
 ```
 
-Не размещайте весь Laravel-проект в web-root и не оставляйте сайт работающим по адресу `/public/`. Web Installer 0.32.10 распознаёт такую схему как небезопасную и блокирует продолжение.
+Use the exact directory name shown in the provider control panel. Jino may use a domain-name directory; Beget commonly uses `public_html`.
 
-## Установщик
+The Web Installer blocks a domain that exposes the project root through `/public/`, checks PHP 8.3+, extensions, paths, permissions, and database privileges, requires HTTPS before database or owner passwords are submitted, and shows a final security review.
 
-Web Installer проверяет PHP 8.3+, расширения, Composer-зависимости, права записи и реальные права MySQL. Он создаёт `.env`, сохраняет стабильный `APP_KEY`, выполняет миграции, создаёт владельца и блокирует повторную установку. Если выбранная база уже содержит администратора KaevCMS, мастер останавливается и не подменяет введённые учётные данные старым паролем. После создания владельца пароль сразу проверяется тем же Laravel-хешером.
+See `docs/en/INSTALLATION.md`, `docs/en/SHARED_HOSTING.md`, and `docs/en/SECURITY.md`.
 
-Пароли не возвращаются в HTML и не записываются в журнал. Внутренние ошибки сохраняются в закрытом `storage/logs/installer.log`.
+## Русский
+
+KaevCMS поддерживает две безопасные схемы:
+
+1. Стандартная: весь Laravel-проект закрыт, а Document Root домена направлен на `public/`.
+2. Split shared-hosting: подготовленное закрытое ядро и публичный каталог провайдера находятся рядом.
+
+Для обычного хостинга используйте:
+
+```powershell
+.\deployment\windows\build-shared-hosting-package.ps1 `
+    -PublicDirectoryName public_html
+```
+
+Передавайте точное имя каталога из панели хостинга. На Jino это может быть папка с именем домена, на Beget обычно используется `public_html`.
+
+Web Installer блокирует схему, где корень проекта открыт через `/public/`, проверяет PHP 8.3+, расширения, пути, права и доступ пользователя базы, требует HTTPS перед отправкой паролей базы и владельца, а после установки показывает отчёт безопасности.
+
+См. `docs/ru/INSTALLATION.md`, `docs/ru/SHARED_HOSTING.md` и `docs/ru/SECURITY.md`.

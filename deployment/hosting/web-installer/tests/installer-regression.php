@@ -102,6 +102,42 @@ try {
     }
     releaseInstallationLock($firstLock);
     assertInstaller($busyDetected, 'A concurrent installer process must not acquire the same lock.');
+    assertInstaller(installationLockOwnedByToken($lockPath, 'first-token'), 'The interrupted installer state must remain bound to its original browser token.');
+    assertInstaller(! installationLockOwnedByToken($lockPath, 'second-token'), 'A different browser token must not resume an interrupted installation.');
+
+    $serverBackup = $_SERVER;
+    $_SERVER = [
+        'HTTPS' => 'off',
+        'SERVER_PORT' => '80',
+        'HTTP_HOST' => 'example.test',
+        'REMOTE_ADDR' => '203.0.113.10',
+        'HTTP_X_FORWARDED_PROTO' => 'https',
+    ];
+    assertInstaller(! isHttpsRequest(), 'A public client must not be able to spoof HTTPS with X-Forwarded-Proto.');
+    assertInstaller(! installerAllowsSensitiveSubmission(), 'Remote HTTP requests must not submit database or owner passwords.');
+
+    $_SERVER['REMOTE_ADDR'] = '10.0.0.10';
+    assertInstaller(isHttpsRequest(), 'A private reverse proxy may report HTTPS through X-Forwarded-Proto.');
+
+    $_SERVER = [
+        'HTTPS' => 'off',
+        'SERVER_PORT' => '8000',
+        'HTTP_HOST' => '127.0.0.1:8000',
+        'REMOTE_ADDR' => '127.0.0.1',
+    ];
+    assertInstaller(installerAllowsSensitiveSubmission(), 'Local development must remain installable over loopback HTTP.');
+
+    $rateState = [];
+    enforceInstallerRateLimit($rateState, 'database', 2, 60, 'limited');
+    enforceInstallerRateLimit($rateState, 'database', 2, 60, 'limited');
+    $rateLimited = false;
+    try {
+        enforceInstallerRateLimit($rateState, 'database', 2, 60, 'limited');
+    } catch (InstallerValidationException) {
+        $rateLimited = true;
+    }
+    assertInstaller($rateLimited, 'Repeated database probes must be rate limited within the installer session.');
+    $_SERVER = $serverBackup;
 
     $unsafeLayout = installerDeploymentSafety('/public/install/index.php', false);
     $unsafeDirectoryLayout = installerDeploymentSafety('/public/install/', false);
@@ -111,6 +147,38 @@ try {
     assertInstaller($standardLayout['ok'] === true, 'The standard public Document Root layout must remain valid.');
     $splitLayout = installerDeploymentSafety('/install/index.php', true);
     assertInstaller($splitLayout['ok'] === true, 'The shared-hosting split layout must remain valid.');
+
+    assertInstaller(hasFailedRequirements([['label' => 'HTTPS', 'ok' => true, 'warning' => true, 'details' => 'warning']]) === false, 'Non-critical hosting warnings must not block installation.');
+
+    $publicRoot = $temp.'/public';
+    mkdir($publicRoot.'/uploads', 0775, true);
+    mkdir($temp.'/storage', 0775, true);
+    mkdir($temp.'/bootstrap/cache', 0775, true);
+    file_put_contents($temp.'/.env', "APP_DEBUG=false
+APP_FORCE_HTTPS=true
+SESSION_SECURE_COOKIE=true
+");
+    file_put_contents($temp.'/installed.lock', '{}');
+    $securityChecks = postInstallSecurityChecks($temp, $publicRoot, $temp.'/.env', $temp.'/installed.lock', $text);
+    assertInstaller(count($securityChecks) === 9, 'The completed installer must report the full security checklist.');
+    assertInstaller($securityChecks[0]['status'] === 'ok', 'A standard private core must pass the post-install location check.');
+    assertInstaller($securityChecks[2]['status'] === 'ok', 'APP_DEBUG=false must pass the post-install debug check.');
+    assertInstaller($securityChecks[3]['status'] === 'ok', 'HTTPS and secure cookies must pass the post-install transport check.');
+    assertInstaller(str_contains(securityReviewBody($text, $securityChecks), 'Installation security review'), 'The final page must render the security review.');
+
+    $legacyCompatibleEntries = [
+        dirname(__DIR__, 4).'/public/index.php',
+        dirname(__DIR__, 4).'/public/install/index.php',
+        dirname(__DIR__, 2).'/shared-hosting/public/index.php',
+        dirname(__DIR__, 2).'/shared-hosting/public/install/index.php',
+    ];
+    foreach ($legacyCompatibleEntries as $entry) {
+        $entrySource = file_get_contents($entry);
+        assertInstaller(is_string($entrySource), 'Every public entry point must be readable.');
+        assertInstaller(str_contains($entrySource, "version_compare(PHP_VERSION, '8.3.0', '<')"), 'Every public entry point must show a readable PHP version error before Laravel starts.');
+        assertInstaller(! str_contains($entrySource, '??'), 'The compatibility entry point must not contain null-coalescing syntax unsupported by PHP 5.5.');
+        assertInstaller(! str_contains($entrySource, 'declare(strict_types=1)'), 'The compatibility entry point must not contain strict_types syntax unsupported by old PHP runtimes.');
+    }
 
     $generic = publicInstallerError(new RuntimeException('raw SQL and /private/path'), $text, 'ABC12345');
     assertInstaller(! str_contains($generic, 'raw SQL'), 'Unexpected internal errors must not be exposed to the browser.');

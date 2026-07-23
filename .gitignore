@@ -7,6 +7,7 @@
 /public/storage
 /public/uploads/*
 !/public/uploads/.gitignore
+!/public/uploads/.htaccess
 /storage/*.key
 /storage/app/kaevcms/installed-version.json
 /storage/app/kaevcms/installed-version.json.tmp.*

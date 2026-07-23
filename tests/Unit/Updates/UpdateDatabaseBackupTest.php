@@ -60,6 +60,12 @@ class UpdateDatabaseBackupTest extends TestCase
         $backup = $service->create($this->backupRoot, $log);
         $service->verify($backup);
 
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $this->assertSame(0700, fileperms($this->backupRoot) & 0777);
+            $this->assertSame(0600, fileperms($backup['path']) & 0777);
+            $this->assertSame(0600, fileperms($this->backupRoot.DIRECTORY_SEPARATOR.'backup.json') & 0777);
+        }
+
         DB::table('update_state')->where('id', 1)->update(['value' => 'after']);
         $this->assertSame('after', DB::table('update_state')->value('value'));
 

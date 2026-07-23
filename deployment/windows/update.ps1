@@ -6,10 +6,10 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 Set-Location -LiteralPath $ProjectRoot
 
-$expectedFromVersion = '0.32.9'
-$expectedToVersion = '0.32.10'
-$legacyApplyScriptName = 'deployment\windows\apply-0.32.9.ps1'
-$legacyApplySha256 = '1fd3075f221f580f1eb9a655b7c4e5ea15c61e369c64cbb82a2a702721099614'
+$expectedFromVersion = '0.32.12'
+$expectedToVersion = '0.32.13'
+$legacyApplyScriptName = 'deployment\windows\apply-0.32.12.ps1'
+$legacyApplySha256 = 'c5d1598c9cbfd71fe511ed62486fbde619b97bf591ea4f75015f2ae577b477ab'
 $previousComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $currentComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $supersededPendingTargets = @()

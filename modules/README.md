@@ -1,48 +1,17 @@
-# KaevCMS modules
+# KaevCMS modules / Модули KaevCMS
 
-Each module is stored in its own directory and must contain a valid `module.json` manifest.
+## English
 
-Minimal manifest:
+Modules are trusted PHP packages installed under `modules/<id>`. They use a strict manifest, scoped routes, views, translations, navigation entries, and immutable migrations. Only the owner may change module state or approve a new version. Modules are not sandboxed.
 
-```json
-{
-  "schema": 1,
-  "id": "example-module",
-  "name": "Example Module",
-  "version": "1.0.0",
-  "author": "Module author",
-  "description": "Example KaevCMS extension.",
-  "cms_min": "0.24.1",
-  "cms_max": null
-}
-```
+The bundled `promo-codes` module grants server-bound rewards through the core web inventory and preserves activation history when disabled.
 
-Optional runtime and database entry points:
+See `docs/en/MODULES.md`.
 
-```json
-{
-  "namespace": "Vendor\\ExampleModule\\",
-  "autoload": "src",
-  "bootstrap": "bootstrap.php",
-  "views": "resources/views",
-  "lang": "lang",
-  "migrations": "database/migrations",
-  "routes": {
-    "web": "routes/web.php",
-    "admin": "routes/admin.php"
-  }
-}
-```
+## Русский
 
-Migration files must use names such as `2026_07_21_000001_create_example_table.php`, return a Laravel migration instance, and provide both `up()` and `down()` methods. Applied files are immutable: publish a new migration instead of editing or deleting an old one.
+Модули являются доверенными PHP-пакетами в `modules/<id>`. Они используют строгий manifest, scoped routes, views, переводы, навигацию и неизменяемые миграции. Только владелец меняет состояние модуля и подтверждает новую версию. Sandbox отсутствует.
 
-Disabling a module stops its runtime code but preserves all database tables and data.
+Встроенный `promo-codes` выдаёт привязанные к GameServer награды через основной веб-инвентарь и сохраняет историю после отключения.
 
-An enabled module is trusted PHP code. KaevCMS validates the manifest and prevents path traversal, but it cannot sandbox PHP. Install modules only from trusted sources.
-
-See `docs/MODULES.md` for the complete lifecycle and security contract.
-
-
-## Bundled module
-
-KaevCMS 0.26.0 ships `promo-codes`. It is installed and enabled explicitly by the owner, applies its own immutable migrations, grants rewards through the core web inventory and preserves all data when disabled. See `docs/PROMO_CODES.md`.
+См. `docs/ru/MODULES.md`.

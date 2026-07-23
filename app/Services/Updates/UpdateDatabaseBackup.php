@@ -20,9 +20,10 @@ final class UpdateDatabaseBackup
         $connection = $this->database->connection();
         $driver = $connection->getDriverName();
 
-        if (! is_dir($backupRoot) && ! mkdir($backupRoot, 0775, true) && ! is_dir($backupRoot)) {
+        if (! is_dir($backupRoot) && ! mkdir($backupRoot, 0700, true) && ! is_dir($backupRoot)) {
             throw new RuntimeException(__('Unable to create the update backup directory.'));
         }
+        $this->protectDirectory($backupRoot);
 
         $backup = match ($driver) {
             'sqlite' => $this->backupSqlite($backupRoot, $log),
@@ -114,6 +115,7 @@ final class UpdateDatabaseBackup
         if (! is_file($backupPath)) {
             throw new RuntimeException(__('Unable to create the SQLite update backup.'));
         }
+        $this->protectFile($backupPath);
 
         $log->write('SQLite database backup created.');
 
@@ -175,6 +177,7 @@ final class UpdateDatabaseBackup
         } finally {
             fclose($stream);
         }
+        $this->protectFile($backupPath);
 
         $log->write('MySQL database backup created.');
 
@@ -300,9 +303,43 @@ final class UpdateDatabaseBackup
             'sha256' => $backup['sha256'],
         ];
         $encoded = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $metadataPath = rtrim($backupRoot, '/\\').DIRECTORY_SEPARATOR.'backup.json';
         if (! is_string($encoded)
-            || file_put_contents(rtrim($backupRoot, '/\\').DIRECTORY_SEPARATOR.'backup.json', $encoded."\n", LOCK_EX) === false) {
+            || file_put_contents($metadataPath, $encoded."\n", LOCK_EX) === false) {
             throw new RuntimeException(__('Unable to write the update database backup metadata.'));
+        }
+        $this->protectFile($metadataPath);
+    }
+
+    private function protectDirectory(string $path): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            return;
+        }
+
+        if (! @chmod($path, 0700)) {
+            throw new RuntimeException(__('Unable to secure the update backup directory permissions.'));
+        }
+
+        $mode = @fileperms($path);
+        if (is_int($mode) && ($mode & 0777) !== 0700) {
+            throw new RuntimeException(__('The update backup directory permissions are too broad.'));
+        }
+    }
+
+    private function protectFile(string $path): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            return;
+        }
+
+        if (! @chmod($path, 0600)) {
+            throw new RuntimeException(__('Unable to secure the update backup file permissions.'));
+        }
+
+        $mode = @fileperms($path);
+        if (is_int($mode) && ($mode & 0777) !== 0600) {
+            throw new RuntimeException(__('The update backup file permissions are too broad.'));
         }
     }
 

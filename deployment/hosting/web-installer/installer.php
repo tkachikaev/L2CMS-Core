@@ -81,6 +81,19 @@ function runWebInstaller(): void
 
     $language = $state['language'];
     $text = installerTranslations($language);
+
+    if (is_file($installingPath) && ! installationLockOwnedByToken($installingPath, (string) $state['install_token'])) {
+        renderPage(
+            $text['installed_title'],
+            '<div class="alert alert-error">'.e($text['resume_denied']).'</div>',
+            $language,
+            $version,
+            423,
+        );
+
+        return;
+    }
+
     $step = (string) ($_GET['step'] ?? 'welcome');
     $allowedSteps = ['welcome', 'requirements', 'database', 'administrator', 'complete'];
     if (! in_array($step, $allowedSteps, true)) {
@@ -95,7 +108,7 @@ function runWebInstaller(): void
 
     $isCompletionView = $step === 'complete' && isset($state['complete']);
     if (! $isCompletionView && installerIsLocked($lockPath, $installingPath, $envPath)) {
-        renderPage($text['installed_title'], installedBody($text), $language, $version, 200);
+        renderPage($text['installed_title'], installedBody($text, postInstallSecurityChecks($root, $publicRoot, $envPath, $lockPath, $text)), $language, $version, 200);
 
         return;
     }
@@ -111,6 +124,8 @@ function runWebInstaller(): void
             }
 
             if ($action === 'test_database' || $action === 'continue_database') {
+                requireSecureInstallerSubmission($text);
+                enforceInstallerRateLimit($state, 'database', 10, 60, $text['rate_limit']);
                 $database = validateDatabaseInput($_POST, $text, $state['database']['password'] ?? null);
                 $site = validateSiteInput($_POST, $text);
                 $state['database'] = $database;
@@ -126,6 +141,8 @@ function runWebInstaller(): void
             }
 
             if ($action === 'install') {
+                requireSecureInstallerSubmission($text);
+                enforceInstallerRateLimit($state, 'install', 5, 300, $text['rate_limit']);
                 $requirements = requirementChecks($root, $publicRoot, $text);
                 if (hasFailedRequirements($requirements)) {
                     throw new InstallerValidationException($text['requirements_failed']);
@@ -167,6 +184,7 @@ function runWebInstaller(): void
                         'email' => $installedOwnerEmail,
                         'admin_url' => rtrim($siteUrl, '/').'/admin',
                         'site_url' => rtrim($siteUrl, '/').'/',
+                        'security_checks' => postInstallSecurityChecks($root, $publicRoot, $envPath, $lockPath, $text),
                     ],
                 ];
                 redirectTo('complete', $language);
@@ -222,6 +240,7 @@ function installerTranslations(string $language): array
         'details' => 'Подробности',
         'ok' => 'Готово',
         'failed' => 'Ошибка',
+        'warning' => 'Предупреждение',
         'recheck' => 'Проверить снова',
         'next' => 'Далее',
         'requirements_failed' => 'Требования хостинга ещё не выполнены.',
@@ -229,6 +248,13 @@ function installerTranslations(string $language): array
         'safe_web_root_standard' => 'Домен направлен на public — стандартный безопасный режим.',
         'safe_web_root_split' => 'Ядро и публичная папка разделены — безопасный shared-hosting режим.',
         'safe_web_root_unsafe' => 'Домен направлен на корень проекта. Используйте Document Root public/ или подготовленный split-пакет.',
+        'detected_public_root' => 'Определённая публичная папка',
+        'private_core' => 'Закрытое ядро',
+        'private_core_safe' => 'Ядро находится вне публичной папки.',
+        'private_core_unsafe' => 'Ядро находится внутри публичной папки и может быть раскрыто через веб-сервер.',
+        'https_check' => 'HTTPS',
+        'https_ready' => 'Запрос установщика защищён HTTPS.',
+        'https_missing' => 'HTTPS не обнаружен. Для рабочей установки сначала подключите SSL-сертификат.',
         'database_title' => 'Сайт и база данных',
         'database_text' => 'Данные выдаёт панель управления хостингом. Пароль базы не выводится на страницу и не записывается в журналы.',
         'site_name' => 'Название сайта',
@@ -253,6 +279,33 @@ function installerTranslations(string $language): array
         'admin_panel' => 'Административная панель',
         'owner' => 'Владелец',
         'finish_note' => 'Следующий шаг — войти в админку, подключить LoginServer/GameServer и настроить почту.',
+        'security_review_title' => 'Проверка безопасности установки',
+        'security_review_text' => 'Критические ошибки необходимо исправить сразу. Предупреждения не блокируют сайт, но показывают рекомендуемые настройки хостинга.',
+        'security_review_ok' => 'Защищено',
+        'security_review_warning' => 'Проверьте',
+        'security_review_error' => 'Ошибка',
+        'security_core_location' => 'Размещение ядра',
+        'security_env_location' => 'Размещение .env',
+        'security_debug' => 'Режим отладки',
+        'security_https' => 'HTTPS и защищённые cookie',
+        'security_storage' => 'Каталог storage',
+        'security_cache' => 'Каталог bootstrap/cache',
+        'security_uploads' => 'Каталог uploads',
+        'security_env_permissions' => 'Права файла .env',
+        'security_lock' => 'Блокировка установщика',
+        'security_outside_public' => 'Файл находится вне публичной папки.',
+        'security_inside_public' => 'Файл находится внутри публичной папки.',
+        'security_debug_disabled' => 'APP_DEBUG выключен.',
+        'security_debug_enabled' => 'APP_DEBUG включён или не определён.',
+        'security_https_enabled' => 'Сайт настроен на HTTPS и защищённые cookie.',
+        'security_https_disabled' => 'Сайт установлен без HTTPS или защищённых cookie.',
+        'security_writable' => 'Каталог доступен на запись.',
+        'security_not_writable' => 'Каталог недоступен на запись.',
+        'security_permission_preferred' => 'Права ограничены рекомендуемым значением.',
+        'security_permission_broad' => 'Права шире рекомендуемых; ограничьте доступ через файловый менеджер хостинга.',
+        'security_permission_unknown' => 'Хостинг не позволяет надёжно определить POSIX-права.',
+        'security_lock_present' => 'Повторный запуск Web Installer заблокирован.',
+        'security_lock_missing' => 'Файл installed.lock отсутствует.',
         'php_version' => 'PHP 8.3 или новее',
         'vendor' => 'Composer-зависимости',
         'extension' => 'Расширение PHP: :name',
@@ -261,7 +314,10 @@ function installerTranslations(string $language): array
         'version_file' => 'Файл VERSION',
         'back' => 'Назад',
         'resume_notice' => 'Обнаружена незавершённая установка. Мастер безопасно продолжит её с текущего шага.',
-        'https_warning' => 'Соединение не защищено HTTPS. Пароли передаются по сети в открытом виде. Для реального сайта сначала включите SSL-сертификат.',
+        'https_warning' => 'Соединение не защищено HTTPS. Проверка базы и установка заблокированы, пока не будет включён SSL-сертификат.',
+        'https_required' => 'Для отправки паролей установщику требуется HTTPS. Подключите SSL-сертификат и повторите попытку.',
+        'resume_denied' => 'Найдена незавершённая установка, принадлежащая другой сессии браузера. Продолжите в исходном браузере или удалите storage/app/installing.lock через файловый менеджер, если процесс точно остановлен.',
+        'rate_limit' => 'Слишком много попыток за короткое время. Подождите и повторите действие.',
         'password_saved_hint' => 'Проверенный пароль уже сохранён только в серверной сессии. Оставьте поле пустым, чтобы использовать его повторно.',
         'invalid_action' => 'Неизвестное действие установщика.',
         'site_name_invalid' => 'Название сайта должно содержать от 1 до 100 символов.',
@@ -290,6 +346,7 @@ function installerTranslations(string $language): array
         'details' => 'Details',
         'ok' => 'Ready',
         'failed' => 'Failed',
+        'warning' => 'Warning',
         'recheck' => 'Check again',
         'next' => 'Next',
         'requirements_failed' => 'Hosting requirements are not satisfied yet.',
@@ -297,6 +354,13 @@ function installerTranslations(string $language): array
         'safe_web_root_standard' => 'The domain points to public — standard secure mode.',
         'safe_web_root_split' => 'The core and public directory are separated — secure shared-hosting mode.',
         'safe_web_root_unsafe' => 'The domain points to the project root. Use Document Root public/ or the generated split package.',
+        'detected_public_root' => 'Detected public directory',
+        'private_core' => 'Private application core',
+        'private_core_safe' => 'The application core is outside the public directory.',
+        'private_core_unsafe' => 'The application core is inside the public directory and may be exposed by the web server.',
+        'https_check' => 'HTTPS',
+        'https_ready' => 'The installer request is protected by HTTPS.',
+        'https_missing' => 'HTTPS was not detected. Enable an SSL certificate before a production installation.',
         'database_title' => 'Website and database',
         'database_text' => 'These values are provided by your hosting control panel. The database password is never rendered or written to logs.',
         'site_name' => 'Website name',
@@ -321,6 +385,33 @@ function installerTranslations(string $language): array
         'admin_panel' => 'Administration panel',
         'owner' => 'Owner',
         'finish_note' => 'Next, sign in to the administration panel, connect LoginServer/GameServer, and configure email.',
+        'security_review_title' => 'Installation security review',
+        'security_review_text' => 'Fix critical errors immediately. Warnings do not block the website, but identify recommended hosting settings.',
+        'security_review_ok' => 'Protected',
+        'security_review_warning' => 'Review',
+        'security_review_error' => 'Failed',
+        'security_core_location' => 'Core location',
+        'security_env_location' => '.env location',
+        'security_debug' => 'Debug mode',
+        'security_https' => 'HTTPS and secure cookies',
+        'security_storage' => 'storage directory',
+        'security_cache' => 'bootstrap/cache directory',
+        'security_uploads' => 'uploads directory',
+        'security_env_permissions' => '.env permissions',
+        'security_lock' => 'Installer lock',
+        'security_outside_public' => 'The file is outside the public directory.',
+        'security_inside_public' => 'The file is inside the public directory.',
+        'security_debug_disabled' => 'APP_DEBUG is disabled.',
+        'security_debug_enabled' => 'APP_DEBUG is enabled or undefined.',
+        'security_https_enabled' => 'The website uses HTTPS and secure cookies.',
+        'security_https_disabled' => 'The website was installed without HTTPS or secure cookies.',
+        'security_writable' => 'The directory is writable.',
+        'security_not_writable' => 'The directory is not writable.',
+        'security_permission_preferred' => 'Permissions are restricted to the recommended level.',
+        'security_permission_broad' => 'Permissions are broader than recommended; restrict them in the hosting file manager.',
+        'security_permission_unknown' => 'The hosting environment does not expose reliable POSIX permissions.',
+        'security_lock_present' => 'Web Installer cannot be started again.',
+        'security_lock_missing' => 'installed.lock is missing.',
         'php_version' => 'PHP 8.3 or newer',
         'vendor' => 'Composer dependencies',
         'extension' => 'PHP extension: :name',
@@ -329,7 +420,10 @@ function installerTranslations(string $language): array
         'version_file' => 'VERSION file',
         'back' => 'Back',
         'resume_notice' => 'An incomplete installation was detected. The wizard will safely resume it from the current step.',
-        'https_warning' => 'This connection is not protected by HTTPS. Passwords are sent over the network in plain text. Enable an SSL certificate before installing a real website.',
+        'https_warning' => 'This connection is not protected by HTTPS. Database checks and installation are blocked until an SSL certificate is enabled.',
+        'https_required' => 'HTTPS is required before passwords can be submitted to the installer. Enable an SSL certificate and try again.',
+        'resume_denied' => 'An incomplete installation belongs to another browser session. Continue in the original browser or remove storage/app/installing.lock through the file manager only after confirming that no installation process is running.',
+        'rate_limit' => 'Too many attempts were made in a short period. Wait and try again.',
         'password_saved_hint' => 'The verified password is stored only in the server-side session. Leave this field empty to reuse it.',
         'invalid_action' => 'Unknown installer action.',
         'site_name_invalid' => 'The website name must contain between 1 and 100 characters.',
@@ -386,7 +480,7 @@ function installerDeploymentSafety(?string $script = null, ?bool $sharedHosting 
     return ['ok' => true, 'mode' => 'standard', 'details' => 'public directory is the web root'];
 }
 
-/** @return list<array{label:string,ok:bool,details:string}> */
+/** @return list<array{label:string,ok:bool,warning?:bool,details:string}> */
 function requirementChecks(string $root, ?string $publicRoot = null, array $text = []): array
 {
     $publicRoot ??= installerPublicRoot($root);
@@ -406,6 +500,26 @@ function requirementChecks(string $root, ?string $publicRoot = null, array $text
         'label' => (string) ($text['safe_web_root'] ?? 'Safe public directory'),
         'ok' => $deploymentSafety['ok'],
         'details' => (string) ($text[$safetyKey] ?? $deploymentSafety['details']),
+    ];
+    $checks[] = [
+        'label' => (string) ($text['detected_public_root'] ?? 'Detected public directory'),
+        'ok' => true,
+        'details' => installerDisplayPath($publicRoot),
+    ];
+
+    $privateCore = ! installerPathInside($root, $publicRoot);
+    $checks[] = [
+        'label' => (string) ($text['private_core'] ?? 'Private application core'),
+        'ok' => $privateCore,
+        'details' => (string) ($text[$privateCore ? 'private_core_safe' : 'private_core_unsafe'] ?? installerDisplayPath($root)),
+    ];
+
+    $https = isHttpsRequest();
+    $checks[] = [
+        'label' => (string) ($text['https_check'] ?? 'HTTPS'),
+        'ok' => true,
+        'warning' => ! $https,
+        'details' => (string) ($text[$https ? 'https_ready' : 'https_missing'] ?? ($https ? 'HTTPS' : 'HTTP')),
     ];
 
     foreach (['pdo', 'pdo_mysql', 'mbstring', 'fileinfo', 'dom', 'openssl', 'tokenizer', 'ctype', 'json', 'session'] as $extension) {
@@ -434,27 +548,89 @@ function requirementChecks(string $root, ?string $publicRoot = null, array $text
 
     foreach (['storage', 'storage/app', 'storage/framework', 'storage/framework/cache', 'storage/framework/sessions', 'storage/framework/views', 'storage/logs', 'bootstrap/cache'] as $relative) {
         $path = $root.'/'.$relative;
+        $writable = ensureWritableDirectory($path);
         $checks[] = [
             'label' => $relative,
-            'ok' => ensureWritableDirectory($path),
-            'details' => is_dir($path) && is_writable($path) ? 'writable' : 'not writable',
+            'ok' => $writable,
+            'warning' => $writable && installerWorldWritable($path),
+            'details' => installerWritableDetails($path, $writable),
         ];
     }
 
     $uploadsPath = $publicRoot.'/uploads';
+    $uploadsWritable = ensureWritableDirectory($uploadsPath);
     $checks[] = [
         'label' => 'public/uploads',
-        'ok' => ensureWritableDirectory($uploadsPath),
-        'details' => is_dir($uploadsPath) && is_writable($uploadsPath) ? 'writable' : 'not writable',
+        'ok' => $uploadsWritable,
+        'warning' => $uploadsWritable && installerWorldWritable($uploadsPath),
+        'details' => installerWritableDetails($uploadsPath, $uploadsWritable),
     ];
 
+    $envTarget = is_file($root.'/.env') ? $root.'/.env' : $root;
+    $envWritable = is_file($root.'/.env') ? is_writable($root.'/.env') : is_writable($root);
     $checks[] = [
         'label' => '.env',
-        'ok' => is_file($root.'/.env') ? is_writable($root.'/.env') : is_writable($root),
-        'details' => is_file($root.'/.env') ? 'file writable' : 'project root writable',
+        'ok' => $envWritable,
+        'warning' => is_file($root.'/.env') && installerSensitivePermissionsAreBroad($root.'/.env'),
+        'details' => installerWritableDetails($envTarget, $envWritable),
     ];
 
     return $checks;
+}
+
+function installerDisplayPath(string $path): string
+{
+    return str_replace('\\', '/', $path);
+}
+
+function installerPathInside(string $path, string $directory): bool
+{
+    $normalizedPath = rtrim(installerDisplayPath($path), '/');
+    $normalizedDirectory = rtrim(installerDisplayPath($directory), '/');
+    if (PHP_OS_FAMILY === 'Windows') {
+        $normalizedPath = strtolower($normalizedPath);
+        $normalizedDirectory = strtolower($normalizedDirectory);
+    }
+
+    return $normalizedPath === $normalizedDirectory
+        || str_starts_with($normalizedPath.'/', $normalizedDirectory.'/');
+}
+
+function installerPermissionMode(string $path): ?int
+{
+    if (PHP_OS_FAMILY === 'Windows' || ! file_exists($path)) {
+        return null;
+    }
+
+    $permissions = @fileperms($path);
+
+    return is_int($permissions) ? ($permissions & 0777) : null;
+}
+
+function installerPermissionLabel(string $path): string
+{
+    $mode = installerPermissionMode($path);
+
+    return $mode === null ? 'permissions unavailable' : sprintf('%04o', $mode);
+}
+
+function installerWorldWritable(string $path): bool
+{
+    $mode = installerPermissionMode($path);
+
+    return $mode !== null && ($mode & 0002) !== 0;
+}
+
+function installerSensitivePermissionsAreBroad(string $path): bool
+{
+    $mode = installerPermissionMode($path);
+
+    return $mode !== null && (($mode & 0007) !== 0 || ($mode & 0020) !== 0);
+}
+
+function installerWritableDetails(string $path, bool $writable): string
+{
+    return ($writable ? 'writable' : 'not writable').' · '.installerPermissionLabel($path);
 }
 
 function ensureWritableDirectory(string $path): bool
@@ -872,9 +1048,73 @@ function normalizeAppUrl(string $url): string
 
 function isHttpsRequest(): bool
 {
-    return (! empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
-        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
-        || strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0])) === 'https';
+    if ((! empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443) {
+        return true;
+    }
+
+    $forwardedProto = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+
+    return $forwardedProto === 'https' && installerTrustedProxyAddress((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+}
+
+function installerTrustedProxyAddress(string $address): bool
+{
+    if ($address === '' || filter_var($address, FILTER_VALIDATE_IP) === false) {
+        return false;
+    }
+
+    if (in_array($address, ['127.0.0.1', '::1'], true)) {
+        return true;
+    }
+
+    return filter_var(
+        $address,
+        FILTER_VALIDATE_IP,
+        FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+    ) === false;
+}
+
+function installerLocalRequest(): bool
+{
+    $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+    $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+    $host = trim($host, '[]');
+    $remoteAddress = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+
+    return in_array($host, ['localhost', '127.0.0.1', '::1'], true)
+        && in_array($remoteAddress, ['', '127.0.0.1', '::1'], true);
+}
+
+function installerAllowsSensitiveSubmission(): bool
+{
+    return isHttpsRequest() || installerLocalRequest();
+}
+
+function requireSecureInstallerSubmission(array $text): void
+{
+    if (! installerAllowsSensitiveSubmission()) {
+        throw new InstallerValidationException((string) $text['https_required']);
+    }
+}
+
+function enforceInstallerRateLimit(array &$state, string $key, int $maximumAttempts, int $windowSeconds, string $message): void
+{
+    $now = time();
+    $rateLimits = is_array($state['rate_limits'] ?? null) ? $state['rate_limits'] : [];
+    $attempts = is_array($rateLimits[$key] ?? null) ? $rateLimits[$key] : [];
+    $attempts = array_values(array_filter(
+        $attempts,
+        static fn (mixed $timestamp): bool => is_int($timestamp) && $timestamp > $now - $windowSeconds,
+    ));
+
+    if (count($attempts) >= $maximumAttempts) {
+        throw new InstallerValidationException($message);
+    }
+
+    $attempts[] = $now;
+    $rateLimits[$key] = $attempts;
+    $state['rate_limits'] = $rateLimits;
 }
 
 function detectedAppUrl(): string
@@ -885,6 +1125,20 @@ function detectedAppUrl(): string
     $publicBase = preg_replace('#/install/index\.php$#', '', $script) ?? '';
 
     return $scheme.'://'.$host.rtrim($publicBase, '/');
+}
+
+function installationLockOwnedByToken(string $path, string $installToken): bool
+{
+    if (! is_file($path) || $installToken === '') {
+        return false;
+    }
+
+    $payload = json_decode((string) @file_get_contents($path), true);
+    $expectedHash = is_array($payload) ? ($payload['token_hash'] ?? null) : null;
+
+    return is_string($expectedHash)
+        && preg_match('/\A[a-f0-9]{64}\z/', $expectedHash) === 1
+        && hash_equals($expectedHash, hash('sha256', $installToken));
 }
 
 function installerIsLocked(string $lockPath, string $installingPath, string $envPath): bool
@@ -1144,7 +1398,10 @@ function requirementsBody(array $text, array $checks, array $state): string
 {
     $rows = '';
     foreach ($checks as $check) {
-        $rows .= '<tr><td>'.e($check['label']).'</td><td><span class="status '.($check['ok'] ? 'ok' : 'bad').'">'.e($check['ok'] ? $text['ok'] : $text['failed']).'</span></td><td>'.e($check['details']).'</td></tr>';
+        $warning = (bool) ($check['warning'] ?? false);
+        $statusClass = ! $check['ok'] ? 'bad' : ($warning ? 'warning' : 'ok');
+        $statusLabel = ! $check['ok'] ? $text['failed'] : ($warning ? $text['warning'] : $text['ok']);
+        $rows .= '<tr><td>'.e($check['label']).'</td><td><span class="status '.$statusClass.'">'.e($statusLabel).'</span></td><td>'.e($check['details']).'</td></tr>';
     }
 
     $next = hasFailedRequirements($checks)
@@ -1189,20 +1446,119 @@ function administratorBody(array $text, array $state): string
         .'<div class="actions span-2"><a class="button" href="?step=database">'.e($text['back']).'</a><button class="button primary" name="action" value="install">'.e($text['install']).'</button></div></form>';
 }
 
+/** @return list<array{label:string,status:string,details:string}> */
+function postInstallSecurityChecks(string $root, string $publicRoot, string $envPath, string $lockPath, array $text): array
+{
+    $envValues = is_file($envPath) ? parseSimpleEnv($envPath) : [];
+    $debugValue = strtolower(trim((string) ($envValues['APP_DEBUG'] ?? '')));
+    $debugDisabled = in_array($debugValue, ['false', '0', 'off', 'no'], true);
+    $httpsConfigured = strtolower(trim((string) ($envValues['APP_FORCE_HTTPS'] ?? ''))) === 'true'
+        && strtolower(trim((string) ($envValues['SESSION_SECURE_COOKIE'] ?? ''))) === 'true';
+
+    $coreSafe = ! installerPathInside($root, $publicRoot);
+    $envSafe = is_file($envPath) && ! installerPathInside($envPath, $publicRoot);
+    $storageWritable = is_dir($root.'/storage') && is_writable($root.'/storage');
+    $cacheWritable = is_dir($root.'/bootstrap/cache') && is_writable($root.'/bootstrap/cache');
+    $uploadsWritable = is_dir($publicRoot.'/uploads') && is_writable($publicRoot.'/uploads');
+
+    $envMode = installerPermissionMode($envPath);
+    $envPermissionsStatus = $envMode === null
+        ? 'warning'
+        : (installerSensitivePermissionsAreBroad($envPath) ? 'warning' : 'ok');
+    $envPermissionsText = $envMode === null
+        ? $text['security_permission_unknown']
+        : ($envPermissionsStatus === 'ok' ? $text['security_permission_preferred'] : $text['security_permission_broad']);
+
+    return [
+        [
+            'label' => $text['security_core_location'],
+            'status' => $coreSafe ? 'ok' : 'error',
+            'details' => ($coreSafe ? $text['private_core_safe'] : $text['private_core_unsafe']).' '.installerDisplayPath($root),
+        ],
+        [
+            'label' => $text['security_env_location'],
+            'status' => $envSafe ? 'ok' : 'error',
+            'details' => ($envSafe ? $text['security_outside_public'] : $text['security_inside_public']).' '.installerDisplayPath($envPath),
+        ],
+        [
+            'label' => $text['security_debug'],
+            'status' => $debugDisabled ? 'ok' : 'error',
+            'details' => $debugDisabled ? $text['security_debug_disabled'] : $text['security_debug_enabled'],
+        ],
+        [
+            'label' => $text['security_https'],
+            'status' => $httpsConfigured ? 'ok' : 'warning',
+            'details' => $httpsConfigured ? $text['security_https_enabled'] : $text['security_https_disabled'],
+        ],
+        [
+            'label' => $text['security_storage'],
+            'status' => $storageWritable ? (installerWorldWritable($root.'/storage') ? 'warning' : 'ok') : 'error',
+            'details' => ($storageWritable ? $text['security_writable'] : $text['security_not_writable']).' '.installerPermissionLabel($root.'/storage'),
+        ],
+        [
+            'label' => $text['security_cache'],
+            'status' => $cacheWritable ? (installerWorldWritable($root.'/bootstrap/cache') ? 'warning' : 'ok') : 'error',
+            'details' => ($cacheWritable ? $text['security_writable'] : $text['security_not_writable']).' '.installerPermissionLabel($root.'/bootstrap/cache'),
+        ],
+        [
+            'label' => $text['security_uploads'],
+            'status' => $uploadsWritable ? (installerWorldWritable($publicRoot.'/uploads') ? 'warning' : 'ok') : 'error',
+            'details' => ($uploadsWritable ? $text['security_writable'] : $text['security_not_writable']).' '.installerPermissionLabel($publicRoot.'/uploads'),
+        ],
+        [
+            'label' => $text['security_env_permissions'],
+            'status' => $envPermissionsStatus,
+            'details' => $envPermissionsText.' '.installerPermissionLabel($envPath),
+        ],
+        [
+            'label' => $text['security_lock'],
+            'status' => is_file($lockPath) ? 'ok' : 'error',
+            'details' => is_file($lockPath) ? $text['security_lock_present'] : $text['security_lock_missing'],
+        ],
+    ];
+}
+
+/** @param list<array{label:string,status:string,details:string}> $checks */
+function securityReviewBody(array $text, array $checks): string
+{
+    if ($checks === []) {
+        return '';
+    }
+
+    $rows = '';
+    foreach ($checks as $check) {
+        $status = in_array($check['status'], ['ok', 'warning', 'error'], true) ? $check['status'] : 'error';
+        $class = $status === 'error' ? 'bad' : $status;
+        $label = match ($status) {
+            'ok' => $text['security_review_ok'],
+            'warning' => $text['security_review_warning'],
+            default => $text['security_review_error'],
+        };
+        $rows .= '<tr><td>'.e($check['label']).'</td><td><span class="status '.$class.'">'.e($label).'</span></td><td>'.e($check['details']).'</td></tr>';
+    }
+
+    return '<section class="security-review"><h2>'.e($text['security_review_title']).'</h2><p>'.e($text['security_review_text']).'</p><div class="table-wrap"><table><thead><tr><th>'.e($text['component']).'</th><th>'.e($text['status']).'</th><th>'.e($text['details']).'</th></tr></thead><tbody>'.$rows.'</tbody></table></div></section>';
+}
+
 function completeBody(array $text, array $state): string
 {
     $complete = $state['complete'];
+    $securityChecks = is_array($complete['security_checks'] ?? null) ? $complete['security_checks'] : [];
 
     return '<section class="hero"><span class="success-mark">✓</span><h1>'.e($text['complete_title']).'</h1><p>'.e($text['complete_text']).'</p></section>'
         .'<dl class="summary"><div><dt>'.e($text['admin_panel']).'</dt><dd><a href="'.e($complete['admin_url']).'">'.e($complete['admin_url']).'</a></dd></div><div><dt>'.e($text['owner']).'</dt><dd>'.e($complete['email']).'</dd></div></dl>'
+        .securityReviewBody($text, $securityChecks)
         .'<p class="muted">'.e($text['finish_note']).'</p><div class="actions"><a class="button primary" href="'.e($complete['admin_url']).'">'.e($text['admin_panel']).'</a><a class="button" href="'.e($complete['site_url']).'">'.e($text['open_site']).'</a></div>';
 }
 
-function installedBody(array $text): string
+/** @param list<array{label:string,status:string,details:string}> $securityChecks */
+function installedBody(array $text, array $securityChecks = []): string
 {
     $url = detectedAppUrl();
 
-    return '<section class="hero"><span class="success-mark">✓</span><h1>'.e($text['installed_title']).'</h1><p>'.e($text['installed_text']).'</p></section><div class="actions"><a class="button primary" href="'.e($url.'/').'">'.e($text['open_site']).'</a></div>';
+    return '<section class="hero"><span class="success-mark">✓</span><h1>'.e($text['installed_title']).'</h1><p>'.e($text['installed_text']).'</p></section>'
+        .securityReviewBody($text, $securityChecks)
+        .'<div class="actions"><a class="button primary" href="'.e($url.'/').'">'.e($text['open_site']).'</a></div>';
 }
 
 function field(string $label, string $name, string $value, string $type = 'text', string $autocomplete = 'off', string $hint = '', bool $required = true): string
@@ -1223,6 +1579,6 @@ function renderPage(string $title, string $body, string $language, string $versi
 function installerCss(): string
 {
     return <<<'CSS'
-:root{color-scheme:light;--bg:#f4efe7;--card:#fffdf9;--ink:#28231f;--muted:#766d64;--line:#e5d9cc;--accent:#8d5f3d;--accent2:#6e452b;--ok:#2e7d52;--bad:#a13d3d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#fffaf1 0,#f4efe7 45%,#ece4d9 100%);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}.shell{width:min(980px,calc(100% - 32px));margin:0 auto;padding:34px 0}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.brand{font:700 24px Georgia,serif;color:var(--ink);text-decoration:none}.version,.language{display:inline-flex;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#fff9;color:var(--muted);font-size:13px}.language{margin-left:8px;text-decoration:none;color:var(--accent2);font-weight:700}.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:clamp(24px,5vw,52px);box-shadow:0 20px 70px #59432a1a}.hero{max-width:700px}.eyebrow{display:inline-block;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px}h1{font:700 clamp(30px,5vw,48px)/1.1 Georgia,serif;margin:12px 0 16px}p{color:var(--muted);max-width:760px}.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:28px}.button{appearance:none;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:700 15px system-ui;padding:12px 18px;text-decoration:none;cursor:pointer}.button:hover{transform:translateY(-1px);box-shadow:0 8px 24px #4f38221a}.button.primary{background:var(--accent);border-color:var(--accent);color:#fff}.button.primary:hover{background:var(--accent2)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px;margin-top:24px}table{border-collapse:collapse;width:100%;min-width:600px}th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line)}th{font-size:13px;color:var(--muted);background:#f8f2ea}.status{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800}.status.ok{color:var(--ok);background:#e8f5ed}.status.bad{color:var(--bad);background:#faeaea}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}.form-grid label{display:grid;gap:7px;color:var(--muted);font-size:13px;font-weight:700}.form-grid input{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 13px;color:var(--ink);font:16px system-ui;outline:none}.form-grid input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #8d5f3d18}.span-2{grid-column:1/-1}.alert{padding:13px 15px;border-radius:12px;margin-bottom:20px}.alert-error{color:var(--bad);background:#faeaea;border:1px solid #edcaca}.alert-success{color:var(--ok);background:#e8f5ed;border:1px solid #cae7d5}.alert-warning{color:#805b18;background:#fff3d6;border:1px solid #ead39a}.form-grid small{font-size:12px;font-weight:500;color:var(--muted)}.success-mark{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#e8f5ed;color:var(--ok);font-size:28px;font-weight:900}.summary{display:grid;gap:0;border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-top:24px}.summary div{display:grid;grid-template-columns:190px 1fr;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line)}.summary div:last-child{border-bottom:0}.summary dt{color:var(--muted);font-weight:700}.summary dd{margin:0}.summary a{color:var(--accent2)}.muted{font-size:14px}footer{text-align:center;color:var(--muted);font-size:13px;padding:20px}@media(max-width:680px){.shell{width:min(100% - 18px,980px);padding-top:14px}.card{border-radius:18px;padding:24px 18px}.form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.summary div{grid-template-columns:1fr;gap:4px}.actions .button{width:100%;text-align:center}}
+:root{color-scheme:light;--bg:#f4efe7;--card:#fffdf9;--ink:#28231f;--muted:#766d64;--line:#e5d9cc;--accent:#8d5f3d;--accent2:#6e452b;--ok:#2e7d52;--bad:#a13d3d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#fffaf1 0,#f4efe7 45%,#ece4d9 100%);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}.shell{width:min(980px,calc(100% - 32px));margin:0 auto;padding:34px 0}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.brand{font:700 24px Georgia,serif;color:var(--ink);text-decoration:none}.version,.language{display:inline-flex;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#fff9;color:var(--muted);font-size:13px}.language{margin-left:8px;text-decoration:none;color:var(--accent2);font-weight:700}.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:clamp(24px,5vw,52px);box-shadow:0 20px 70px #59432a1a}.hero{max-width:700px}.eyebrow{display:inline-block;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px}h1{font:700 clamp(30px,5vw,48px)/1.1 Georgia,serif;margin:12px 0 16px}h2{font:700 26px/1.2 Georgia,serif;margin:0 0 10px}.security-review{margin-top:32px;padding-top:28px;border-top:1px solid var(--line)}p{color:var(--muted);max-width:760px}.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:28px}.button{appearance:none;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:700 15px system-ui;padding:12px 18px;text-decoration:none;cursor:pointer}.button:hover{transform:translateY(-1px);box-shadow:0 8px 24px #4f38221a}.button.primary{background:var(--accent);border-color:var(--accent);color:#fff}.button.primary:hover{background:var(--accent2)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px;margin-top:24px}table{border-collapse:collapse;width:100%;min-width:600px}th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line)}th{font-size:13px;color:var(--muted);background:#f8f2ea}.status{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800}.status.ok{color:var(--ok);background:#e8f5ed}.status.bad{color:var(--bad);background:#faeaea}.status.warning{color:#805b18;background:#fff3d6}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}.form-grid label{display:grid;gap:7px;color:var(--muted);font-size:13px;font-weight:700}.form-grid input{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 13px;color:var(--ink);font:16px system-ui;outline:none}.form-grid input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #8d5f3d18}.span-2{grid-column:1/-1}.alert{padding:13px 15px;border-radius:12px;margin-bottom:20px}.alert-error{color:var(--bad);background:#faeaea;border:1px solid #edcaca}.alert-success{color:var(--ok);background:#e8f5ed;border:1px solid #cae7d5}.alert-warning{color:#805b18;background:#fff3d6;border:1px solid #ead39a}.form-grid small{font-size:12px;font-weight:500;color:var(--muted)}.success-mark{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#e8f5ed;color:var(--ok);font-size:28px;font-weight:900}.summary{display:grid;gap:0;border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-top:24px}.summary div{display:grid;grid-template-columns:190px 1fr;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line)}.summary div:last-child{border-bottom:0}.summary dt{color:var(--muted);font-weight:700}.summary dd{margin:0}.summary a{color:var(--accent2)}.muted{font-size:14px}footer{text-align:center;color:var(--muted);font-size:13px;padding:20px}@media(max-width:680px){.shell{width:min(100% - 18px,980px);padding-top:14px}.card{border-radius:18px;padding:24px 18px}.form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.summary div{grid-template-columns:1fr;gap:4px}.actions .button{width:100%;text-align:center}}
 CSS;
 }
