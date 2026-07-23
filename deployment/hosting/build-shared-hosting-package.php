@@ -288,9 +288,8 @@ function createPackageZip(string $sourceDirectory, string $zipPath): void
         new RecursiveDirectoryIterator($sourceDirectory, FilesystemIterator::SKIP_DOTS),
         RecursiveIteratorIterator::SELF_FIRST,
     );
-    $prefixLength = strlen(rtrim($sourceDirectory, '/\\')).DIRECTORY_SEPARATOR;
     foreach ($iterator as $item) {
-        $relative = str_replace('\\', '/', substr($item->getPathname(), $prefixLength));
+        $relative = portablePackageRelativePath($sourceDirectory, $item->getPathname());
         if ($item->isDir()) {
             $zip->addEmptyDir($relative);
         } else {
@@ -300,6 +299,24 @@ function createPackageZip(string $sourceDirectory, string $zipPath): void
     if (! $zip->close()) {
         failPackage('Unable to finalize ZIP archive.');
     }
+}
+
+function portablePackageRelativePath(string $sourceDirectory, string $path): string
+{
+    $normalizedSource = rtrim(str_replace('\\', '/', $sourceDirectory), '/');
+    $normalizedPath = str_replace('\\', '/', $path);
+    $prefix = $normalizedSource.'/';
+
+    if (! str_starts_with($normalizedPath, $prefix)) {
+        failPackage('ZIP entry is outside the package source directory: '.$path);
+    }
+
+    $relative = substr($normalizedPath, strlen($prefix));
+    if ($relative === '') {
+        failPackage('ZIP entry path is empty: '.$path);
+    }
+
+    return $relative;
 }
 
 function failPackage(string $message): never

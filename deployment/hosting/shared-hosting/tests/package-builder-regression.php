@@ -58,6 +58,14 @@ try {
     assertPackageBuilder(packageOutputAllowed('/srv/kaevcms', '/srv/kaevcms/dist'), 'The canonical dist directory must be accepted.');
     assertPackageBuilder(! packageOutputAllowed('/srv/kaevcms', '/srv/kaevcms/build-output'), 'Arbitrary output directories inside the source tree must be rejected.');
     assertPackageBuilder(packageOutputAllowed('/srv/kaevcms', '/srv/releases'), 'An output directory outside the source tree must be accepted.');
+    assertPackageBuilder(
+        portablePackageRelativePath('C:\\Projects\\KaevCMS\\package', 'C:\\Projects\\KaevCMS\\package\\nested\\file.txt') === 'nested/file.txt',
+        'Windows package paths must be converted to portable ZIP entry names.',
+    );
+    assertPackageBuilder(
+        portablePackageRelativePath('C:/Projects/KaevCMS/package', 'C:\\Projects\\KaevCMS\\package\\nested\\file.txt') === 'nested/file.txt',
+        'Mixed Windows path separators must not affect ZIP prefix removal.',
+    );
 
     if (class_exists(ZipArchive::class)) {
         $zipSource = $temp.'/zip-source';

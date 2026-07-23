@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 [CmdletBinding()]
 param()
 
@@ -13,6 +13,13 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
 if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot 'vendor\autoload.php'))) {
     throw 'Dependencies are not installed. Run composer install first.'
 }
+
+$supportScript = Join-Path $PSScriptRoot 'support\release-update-support.ps1'
+if (-not (Test-Path -LiteralPath $supportScript -PathType Leaf)) {
+    throw 'Release update support script is missing.'
+}
+. $supportScript
+Initialize-KaevCmsRuntimeDirectories -ProjectRoot $ProjectRoot
 
 # The regular quality gate is intentionally deterministic and offline.
 # Dependency advisories are checked separately by .\deployment\windows\security-audit.ps1.

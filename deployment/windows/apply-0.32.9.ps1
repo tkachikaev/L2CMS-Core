@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$SkipTests
 )
 
@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 Set-Location -LiteralPath $ProjectRoot
 
-$fromVersion = '0.32.6'
-$toVersion = '0.32.7'
+$fromVersion = '0.32.8'
+$toVersion = '0.32.9'
 
 if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot 'artisan') -PathType Leaf)) {
     throw 'The KaevCMS project root could not be found.'
@@ -35,6 +35,7 @@ $requiredFiles = @(
     'public\.htaccess'
     'public\install\index.php'
     'bootstrap\app.php'
+    'bootstrap\cache\.gitignore'
     'deployment\hosting\README.md'
     'deployment\hosting\build-shared-hosting-package.php'
     'deployment\hosting\web-installer\installer.php'
@@ -114,7 +115,7 @@ foreach ($requiredFile in $requiredFiles) {
 }
 
 Write-Host "KaevCMS $fromVersion -> $toVersion update"
-Write-Host 'Shared-hosting ZIP paths were corrected for Linux hosting panels.'
+Write-Host 'Runtime directories are restored before Laravel quality checks.'
 Write-Host ''
 
 & (Join-Path $PSScriptRoot 'update.ps1') -SkipTests:$SkipTests

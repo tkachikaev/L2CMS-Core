@@ -1,4 +1,4 @@
-function Test-KaevCmsVersion {
+﻿function Test-KaevCmsVersion {
     param([Parameter(Mandatory = $true)][string]$Version)
 
     return $Version -match '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$'
@@ -190,6 +190,25 @@ function Remove-KaevCmsUpdateBackups {
     $backupRoot = Join-Path $ProjectRoot (Join-Path 'storage\app\kaevcms\update-backups' $TargetVersion)
     if (Test-Path -LiteralPath $backupRoot) {
         Remove-Item -LiteralPath $backupRoot -Recurse -Force -ErrorAction Stop
+    }
+}
+
+function Initialize-KaevCmsRuntimeDirectories {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+
+    foreach ($relativePath in @(
+        'bootstrap\cache',
+        'storage\app\private',
+        'storage\app\public',
+        'storage\framework\cache\data',
+        'storage\framework\sessions',
+        'storage\framework\views',
+        'storage\logs'
+    )) {
+        $directoryPath = Join-Path $ProjectRoot $relativePath
+        if (-not (Test-Path -LiteralPath $directoryPath -PathType Container)) {
+            New-Item -Path $directoryPath -ItemType Directory -Force | Out-Null
+        }
     }
 }
 

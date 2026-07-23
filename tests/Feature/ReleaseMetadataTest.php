@@ -66,6 +66,13 @@ class ReleaseMetadataTest extends TestCase
         $this->assertFileDoesNotExist(base_path('setup.ps1'));
         $this->assertFileExists(base_path('deployment/windows/quality.ps1'));
         $this->assertFileExists(base_path('deployment/windows/setup.ps1'));
+        $this->assertFileExists(base_path('bootstrap/cache/.gitignore'));
+
+        $quality = $this->readReleaseFile('deployment/windows/quality.ps1');
+        $this->assertStringContainsString('Initialize-KaevCmsRuntimeDirectories -ProjectRoot $ProjectRoot', $quality);
+
+        $runtimeSupport = $this->readReleaseFile('deployment/windows/support/release-update-support.ps1');
+        $this->assertStringContainsString('function Initialize-KaevCmsRuntimeDirectories', $runtimeSupport);
 
         $browserQuality = $this->readReleaseFile('deployment/windows/browser-quality.ps1');
         $this->assertStringContainsString('node_modules\@playwright\test\package.json', $browserQuality);

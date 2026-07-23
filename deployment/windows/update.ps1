@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$SkipTests
 )
 
@@ -6,10 +6,10 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 Set-Location -LiteralPath $ProjectRoot
 
-$expectedFromVersion = '0.32.6'
-$expectedToVersion = '0.32.7'
-$legacyApplyScriptName = 'deployment\windows\apply-0.32.6.ps1'
-$legacyApplySha256 = '92cc5927c6d5892aa56cd6022f1c949836f08390b43e835f4de1942be57b714d'
+$expectedFromVersion = '0.32.8'
+$expectedToVersion = '0.32.9'
+$legacyApplyScriptName = 'deployment\windows\apply-0.32.8.ps1'
+$legacyApplySha256 = '64e94f40ad86a11cd8936f506fad4170fc08e27febbce055f6e94761f31069b3'
 $previousComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $currentComposerLockSha256 = '53bb4fc6ea6a488af1bdbf428afcd1086dcabca9613b54f11c06700abe100ab4'
 $supersededPendingTargets = @()

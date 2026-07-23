@@ -101,6 +101,7 @@ class WebInstallerReleaseTest extends TestCase
         $this->assertNotFalse($packageBuilder);
         $this->assertStringContainsString('Join-Path $PSScriptRoot \'..\\..\'', $quality);
         $this->assertStringContainsString('tests\\update-workflow.ps1', $quality);
+        $this->assertStringContainsString('Initialize-KaevCmsRuntimeDirectories -ProjectRoot $ProjectRoot', $quality);
         $this->assertStringContainsString('deployment/hosting/web-installer/tests/installer-regression.php', $quality);
         $this->assertStringContainsString('deployment/hosting/shared-hosting/tests/layout-regression.php', $quality);
         $this->assertStringContainsString('deployment/hosting/shared-hosting/tests/package-builder-regression.php', $quality);
