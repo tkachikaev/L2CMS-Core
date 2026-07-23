@@ -14,13 +14,13 @@ Example builder command:
 
 ```powershell
 php deployment/updates/build-package.php `
-    --root="C:\Releases\KaevCMS-0.32.14" `
-    --output="C:\Releases\KaevCMS-update-to-0.32.14.zip" `
+    --root="C:\Releases\KaevCMS-0.32.15" `
+    --output="C:\Releases\KaevCMS-update-to-0.32.15.zip" `
     --minimum=0.32.0 `
-    --maximum=0.32.12 `
-    --target=0.32.14 `
+    --maximum=0.32.14 `
+    --target=0.32.15 `
     --delete-file=deployment/updates/deletions.json `
-    --previous-root="C:\Releases\KaevCMS-0.32.12" `
+    --previous-root="C:\Releases\KaevCMS-0.32.14" `
     --update-history
 ```
 

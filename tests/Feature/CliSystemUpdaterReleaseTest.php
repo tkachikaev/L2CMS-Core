@@ -9,6 +9,7 @@ use Tests\TestCase;
 class CliSystemUpdaterReleaseTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_cli_updater_rejects_a_missing_package_without_creating_state(): void
     {
         $this->artisan('kaevcms:update', [

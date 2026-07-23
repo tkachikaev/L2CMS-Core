@@ -40,5 +40,8 @@
     ],
     "0.32.14": [
         "core/deployment/windows/apply-0.32.13.ps1"
+    ],
+    "0.32.15": [
+        "core/deployment/windows/apply-0.32.14.ps1"
     ]
 }

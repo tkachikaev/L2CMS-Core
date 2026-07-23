@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.32.15 - 2026-07-23
+
+- Corrected the remaining 0.32.14 release-gate blockers reported by the complete Windows audit: two Laravel Pint formatting issues and one unreachable PHPStan branch in the VDS CLI updater.
+- `InstallSystemUpdateCommand` now handles the documented `getcwd(): string|false` result directly, and the CLI updater Feature test follows the required trait-to-method spacing.
+- Application behavior, Composer/npm dependencies, database migrations, deployment layouts, and update-package semantics were not changed.
+
 ## 0.32.14 - 2026-07-23
 
 - Restored the release quality gate after the 0.32.13 hardening work: fixed two Pint formatting failures, one unreachable PHPStan branch, and three stale Feature-test assumptions.

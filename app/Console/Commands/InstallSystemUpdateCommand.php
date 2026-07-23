@@ -44,7 +44,6 @@ final class InstallSystemUpdateCommand extends Command
             return self::FAILURE;
         }
 
-
         $uuid = (string) Str::uuid();
         $packageDirectory = storage_path('app/kaevcms/updates/packages');
         $storedPath = $packageDirectory.DIRECTORY_SEPARATOR.$uuid.'.zip';
@@ -145,7 +144,7 @@ final class InstallSystemUpdateCommand extends Command
 
         if (! $this->isAbsolutePath($path)) {
             $workingDirectory = getcwd();
-            if (! is_string($workingDirectory) || $workingDirectory === '') {
+            if ($workingDirectory === false) {
                 return null;
             }
             $path = $workingDirectory.DIRECTORY_SEPARATOR.$path;
