@@ -22,8 +22,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot 'vendor\autoload.php') 
 php $builder `
     "--public-dir=$PublicDirectoryName" `
     "--core-dir=$CoreDirectoryName" `
-    "--output=$OutputDirectory" `
-    --no-zip
+    "--output=$OutputDirectory"
 
 if ($LASTEXITCODE -ne 0) {
     throw "Shared-hosting package build failed with exit code $LASTEXITCODE."
@@ -42,20 +41,53 @@ $shaPath = "$zipPath.sha256"
 if (-not (Test-Path -LiteralPath $packageDirectory -PathType Container)) {
     throw "Prepared package directory was not found: $packageDirectory"
 }
+if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) {
+    throw 'Shared-hosting ZIP was not created. Enable the PHP zip extension and run the builder again.'
+}
+if (-not (Test-Path -LiteralPath $shaPath -PathType Leaf)) {
+    throw "Shared-hosting SHA256 file was not created: $shaPath"
+}
+
+$shaLine = (Get-Content -LiteralPath $shaPath -Raw).Trim()
+if ($shaLine -notmatch '^([a-fA-F0-9]{64})\s{2}(.+)$') {
+    throw 'Shared-hosting SHA256 file has an invalid format.'
+}
+$expectedHash = $Matches[1].ToLowerInvariant()
+$expectedFileName = $Matches[2].Trim()
+if ($expectedFileName -ne [System.IO.Path]::GetFileName($zipPath)) {
+    throw 'Shared-hosting SHA256 file references an unexpected archive name.'
+}
+$actualHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualHash -ne $expectedHash) {
+    throw 'Shared-hosting ZIP SHA256 does not match the generated checksum.'
+}
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-if (Test-Path -LiteralPath $zipPath) {
-    Remove-Item -LiteralPath $zipPath -Force
-}
-[System.IO.Compression.ZipFile]::CreateFromDirectory(
-    $packageDirectory,
-    $zipPath,
-    [System.IO.Compression.CompressionLevel]::Optimal,
-    $false
-)
+$archive = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+try {
+    $entries = @($archive.Entries)
+    if ($entries.Count -eq 0) {
+        throw 'Shared-hosting ZIP is empty.'
+    }
 
-$hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
-"$hash  $([System.IO.Path]::GetFileName($zipPath))" | Set-Content -LiteralPath $shaPath -Encoding ASCII
+    foreach ($entry in $entries) {
+        $entryName = $entry.FullName
+        if ($entryName -match '\\') {
+            throw "Shared-hosting ZIP contains a Windows path separator: $entryName"
+        }
+        if ($entryName.StartsWith('/') -or $entryName -match '(^|/)\.\.(/|$)') {
+            throw "Shared-hosting ZIP contains an unsafe path: $entryName"
+        }
+        if ($entryName -eq 'INSTALL-SHARED-HOSTING.txt') {
+            continue
+        }
+        if (-not ($entryName.StartsWith("$CoreDirectoryName/") -or $entryName.StartsWith("$PublicDirectoryName/"))) {
+            throw "Shared-hosting ZIP contains an unexpected top-level entry: $entryName"
+        }
+    }
+} finally {
+    $archive.Dispose()
+}
 
 Write-Host ''
 Write-Host "Shared-hosting archive: $zipPath" -ForegroundColor Green

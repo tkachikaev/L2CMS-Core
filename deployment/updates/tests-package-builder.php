@@ -37,7 +37,8 @@ if (! is_array($deletionHistory)
     || ($deletionHistory['0.32.3'] ?? null) !== ['core/deployment/windows/apply-0.32.2.ps1']
     || ($deletionHistory['0.32.4'] ?? null) !== ['core/deployment/windows/apply-0.32.3.ps1']
     || ($deletionHistory['0.32.5'] ?? null) !== ['core/deployment/windows/apply-0.32.4.ps1']
-    || ($deletionHistory['0.32.6'] ?? null) !== ['core/deployment/windows/apply-0.32.5.ps1']) {
+    || ($deletionHistory['0.32.6'] ?? null) !== ['core/deployment/windows/apply-0.32.5.ps1']
+    || ($deletionHistory['0.32.7'] ?? null) !== ['core/deployment/windows/apply-0.32.6.ps1']) {
     throw new RuntimeException('Web update deletion history does not include the obsolete apply scripts.');
 }
 

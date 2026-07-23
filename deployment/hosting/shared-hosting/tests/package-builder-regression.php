@@ -59,6 +59,33 @@ try {
     assertPackageBuilder(! packageOutputAllowed('/srv/kaevcms', '/srv/kaevcms/build-output'), 'Arbitrary output directories inside the source tree must be rejected.');
     assertPackageBuilder(packageOutputAllowed('/srv/kaevcms', '/srv/releases'), 'An output directory outside the source tree must be accepted.');
 
+    if (class_exists(ZipArchive::class)) {
+        $zipSource = $temp.'/zip-source';
+        $zipPath = $temp.'/portable.zip';
+        mkdir($zipSource.'/nested/path', 0775, true);
+        file_put_contents($zipSource.'/nested/path/file.txt', 'portable');
+        createPackageZip($zipSource, $zipPath);
+
+        $zip = new ZipArchive;
+        assertPackageBuilder($zip->open($zipPath) === true, 'The generated test ZIP must open.');
+        $entryNames = [];
+        for ($index = 0; $index < $zip->numFiles; $index++) {
+            $name = $zip->getNameIndex($index);
+            assertPackageBuilder(is_string($name), 'Every generated ZIP entry must have a readable name.');
+            assertPackageBuilder(! str_contains($name, '\\'), 'Generated ZIP entries must use portable forward slashes.');
+            $entryNames[] = $name;
+        }
+        $zip->close();
+
+        assertPackageBuilder(in_array('nested/path/file.txt', $entryNames, true), 'Nested files must keep their portable path inside ZIP.');
+    }
+
+    $windowsWrapper = file_get_contents(dirname(__DIR__, 4).'/deployment/windows/build-shared-hosting-package.ps1');
+    assertPackageBuilder(is_string($windowsWrapper), 'The Windows shared-hosting wrapper must be readable.');
+    assertPackageBuilder(! str_contains($windowsWrapper, '--no-zip'), 'The Windows wrapper must use the ZIP produced by the PHP builder.');
+    assertPackageBuilder(! str_contains($windowsWrapper, 'CreateFromDirectory'), 'The Windows wrapper must not repack paths with platform separators.');
+    assertPackageBuilder(str_contains($windowsWrapper, 'ZipFile]::OpenRead'), 'The Windows wrapper must validate the generated ZIP.');
+
     fwrite(STDOUT, "Shared-hosting package builder regression checks passed.\n");
 } finally {
     removePackagePath($temp);

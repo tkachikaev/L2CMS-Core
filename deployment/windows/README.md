@@ -15,4 +15,4 @@ All Windows PowerShell tooling is stored in this directory and runs directly fro
 
 For an update, extract the patch over the project and run the current apply script from this directory.
 
-`build-shared-hosting-package.ps1` создаёт безопасный hosting ZIP с закрытым ядром и отдельной публичной папкой для панелей без настройки Document Root.
+`build-shared-hosting-package.ps1` создаёт безопасный hosting ZIP с закрытым ядром и отдельной публичной папкой для панелей без настройки Document Root. Архив создаётся PHP-сборщиком с переносимыми путями `/`, а PowerShell проверяет SHA256 и структуру ZIP.

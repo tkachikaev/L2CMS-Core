@@ -104,8 +104,10 @@ class WebInstallerReleaseTest extends TestCase
         $this->assertStringContainsString('deployment/hosting/web-installer/tests/installer-regression.php', $quality);
         $this->assertStringContainsString('deployment/hosting/shared-hosting/tests/layout-regression.php', $quality);
         $this->assertStringContainsString('deployment/hosting/shared-hosting/tests/package-builder-regression.php', $quality);
-        $this->assertStringContainsString('System.IO.Compression.ZipFile', $packageBuilder);
-        $this->assertStringContainsString('--no-zip', $packageBuilder);
+        $this->assertStringContainsString('[System.IO.Compression.ZipFile]::OpenRead($zipPath)', $packageBuilder);
+        $this->assertStringContainsString('$entryName -match \'\\\\\'', $packageBuilder);
         $this->assertStringContainsString('Get-FileHash', $packageBuilder);
+        $this->assertStringNotContainsString('--no-zip', $packageBuilder);
+        $this->assertStringNotContainsString('CreateFromDirectory', $packageBuilder);
     }
 }
