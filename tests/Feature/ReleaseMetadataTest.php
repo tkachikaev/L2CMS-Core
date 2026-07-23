@@ -15,6 +15,8 @@ class ReleaseMetadataTest extends TestCase
             $version
         );
 
+        $previousVersion = $this->previousPatchVersion($version);
+
         $readme = $this->normalized($this->readReleaseFile('README.md'));
         $this->assertStringStartsWith("# KaevCMS {$version}\n", $readme);
 
@@ -40,7 +42,7 @@ class ReleaseMetadataTest extends TestCase
 
         $applyScript = (string) file_get_contents($applyScripts[0]);
         $this->assertStringContainsString("\$toVersion = '{$version}'", $applyScript);
-        $this->assertStringContainsString('$fromVersion = \'0.32.2\'', $applyScript);
+        $this->assertStringContainsString("\$fromVersion = '{$previousVersion}'", $applyScript);
         $this->assertStringContainsString('public\install\index.php', $applyScript);
         $this->assertStringContainsString('deployment\hosting\web-installer\installer.php', $applyScript);
         $this->assertStringContainsString('deployment\hosting\web-installer\tests\installer-regression.php', $applyScript);
@@ -81,12 +83,20 @@ class ReleaseMetadataTest extends TestCase
 
     public function test_update_script_verifies_source_preserves_env_and_stages_cleanup_before_tests(): void
     {
+        $version = trim($this->readReleaseFile('VERSION'));
+        $previousVersion = $this->previousPatchVersion($version);
         $updateScript = $this->readReleaseFile('deployment/windows/update.ps1');
 
-        $this->assertStringContainsString('$expectedFromVersion = \'0.32.2\'', $updateScript);
-        $this->assertStringContainsString('$expectedToVersion = \'0.32.3\'', $updateScript);
-        $this->assertStringContainsString('$legacyApplyScriptName = \'deployment\\windows\\apply-0.32.2.ps1\'', $updateScript);
-        $this->assertStringContainsString('$legacyApplySha256 = \'89e13587ead946f3780619fe036dcffe012b13370cc49eb0558abc15b19141c8\'', $updateScript);
+        $this->assertStringContainsString("\$expectedFromVersion = '{$previousVersion}'", $updateScript);
+        $this->assertStringContainsString("\$expectedToVersion = '{$version}'", $updateScript);
+        $this->assertStringContainsString(
+            "\$legacyApplyScriptName = 'deployment\\windows\\apply-{$previousVersion}.ps1'",
+            $updateScript,
+        );
+        $this->assertMatchesRegularExpression(
+            '/^\$legacyApplySha256 = \'[a-f0-9]{64}\'$/m',
+            $updateScript,
+        );
         $this->assertStringContainsString('Get-KaevCmsInstalledVersion', $updateScript);
         $this->assertStringContainsString('-ExpectedToVersion $expectedToVersion', $updateScript);
         $this->assertStringContainsString('legacyApplySha256', $updateScript);
@@ -514,6 +524,23 @@ class ReleaseMetadataTest extends TestCase
         }
 
         return $contents;
+    }
+
+    private function previousPatchVersion(string $version): string
+    {
+        $matched = preg_match('/^(\d+)\.(\d+)\.(\d+)/', $version, $matches);
+
+        $this->assertSame(1, $matched, 'Release version must contain major, minor and patch components.');
+
+        $patch = (int) ($matches[3] ?? 0);
+        $this->assertGreaterThan(0, $patch, 'A patch release must have a previous patch version.');
+
+        return sprintf(
+            '%d.%d.%d',
+            (int) ($matches[1] ?? 0),
+            (int) ($matches[2] ?? 0),
+            $patch - 1,
+        );
     }
 
     private function normalized(string $contents): string

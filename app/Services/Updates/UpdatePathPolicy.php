@@ -20,6 +20,13 @@ final class UpdatePathPolicy
         'public/storage',
     ];
 
+    public function isAbsoluteFilesystemPath(string $path): bool
+    {
+        return str_starts_with($path, '/')
+            || str_starts_with($path, '\\')
+            || preg_match('~\A[A-Za-z]:[\\\\/]~', $path) === 1;
+    }
+
     public function isSafeArchivePath(string $path): bool
     {
         if ($path === ''
@@ -36,8 +43,7 @@ final class UpdatePathPolicy
 
         $segments = explode('/', rtrim($path, '/'));
 
-        return $segments !== []
-            && ! in_array('.', $segments, true)
+        return ! in_array('.', $segments, true)
             && ! in_array('..', $segments, true)
             && ! in_array('', $segments, true);
     }

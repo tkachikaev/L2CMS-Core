@@ -71,7 +71,6 @@ final class SystemUpdateController extends Controller
         }
 
         $package = null;
-        $update = null;
 
         try {
             $uploaded->move($directory, $uuid.'.zip');
@@ -116,10 +115,6 @@ final class SystemUpdateController extends Controller
             if ($package instanceof InspectedUpdatePackage) {
                 $this->removeDirectory($package->stagingPath);
             }
-        }
-
-        if (! $update instanceof SystemUpdate) {
-            return back()->withErrors(['package' => __('The update package could not be staged.')]);
         }
 
         return redirect()

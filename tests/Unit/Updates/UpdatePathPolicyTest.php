@@ -20,6 +20,24 @@ class UpdatePathPolicyTest extends TestCase
         $this->assertFalse((new UpdatePathPolicy)->isSafeTarget($target));
     }
 
+    #[DataProvider('filesystemPaths')]
+    public function test_absolute_filesystem_paths_are_detected(string $path, bool $expected): void
+    {
+        $this->assertSame($expected, (new UpdatePathPolicy)->isAbsoluteFilesystemPath($path));
+    }
+
+    /** @return array<string, array{string, bool}> */
+    public static function filesystemPaths(): array
+    {
+        return [
+            'unix absolute' => ['/var/lib/kaevcms/database.sqlite', true],
+            'windows backslash absolute' => ['C:\\KaevCMS\database.sqlite', true],
+            'windows slash absolute' => ['D:/KaevCMS/database.sqlite', true],
+            'windows UNC absolute' => ['\\\\server\share\database.sqlite', true],
+            'relative' => ['database/database.sqlite', false],
+        ];
+    }
+
     /** @return array<string, array{string}> */
     public static function safeTargets(): array
     {

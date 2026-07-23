@@ -62,7 +62,7 @@ function runWebInstaller(): void
     startInstallerSession();
 
     $_SESSION[KAEVCMS_INSTALL_SESSION] ??= [];
-    $state =& $_SESSION[KAEVCMS_INSTALL_SESSION];
+    $state = &$_SESSION[KAEVCMS_INSTALL_SESSION];
     if (! isset($state['initialized'])) {
         session_regenerate_id(true);
         $state['initialized'] = true;

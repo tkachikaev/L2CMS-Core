@@ -7,5 +7,14 @@
     ],
     "0.32.3": [
         "core/deployment/windows/apply-0.32.2.ps1"
+    ],
+    "0.32.4": [
+        "core/deployment/windows/apply-0.32.3.ps1"
+    ],
+    "0.32.5": [
+        "core/deployment/windows/apply-0.32.4.ps1"
+    ],
+    "0.32.6": [
+        "core/deployment/windows/apply-0.32.5.ps1"
     ]
 }

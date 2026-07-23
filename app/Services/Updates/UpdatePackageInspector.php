@@ -92,7 +92,7 @@ final class UpdatePackageInspector
 
         for ($index = 0; $index < $zip->numFiles; $index++) {
             $stat = $zip->statIndex($index);
-            if (! is_array($stat) || ! is_string($stat['name'] ?? null)) {
+            if ($stat === false) {
                 throw new RuntimeException(__('The update archive contains an unreadable entry.'));
             }
 
@@ -111,7 +111,7 @@ final class UpdatePackageInspector
                 throw new RuntimeException(__('Symbolic links are not allowed in update packages: :path', ['path' => $name]));
             }
 
-            $uncompressedBytes += max(0, (int) ($stat['size'] ?? 0));
+            $uncompressedBytes += max(0, $stat['size']);
             if ($uncompressedBytes > $maximumBytes) {
                 throw new RuntimeException(__('The uncompressed update package exceeds the configured safety limit.'));
             }
@@ -238,7 +238,7 @@ final class UpdatePackageInspector
             $targetPaths[$targetKey] = true;
 
             $stat = $zip->statName($source);
-            if (! is_array($stat) || (int) ($stat['size'] ?? -1) !== $size) {
+            if ($stat === false || $stat['size'] !== $size) {
                 throw new RuntimeException(__('The update payload size does not match the manifest: :source', ['source' => $source]));
             }
 
@@ -322,8 +322,12 @@ final class UpdatePackageInspector
 
         for ($index = 0; $index < $zip->numFiles; $index++) {
             $stat = $zip->statIndex($index);
-            $name = is_array($stat) && is_string($stat['name'] ?? null) ? $stat['name'] : null;
-            if ($name === null || str_ends_with($name, '/')) {
+            if ($stat === false) {
+                throw new RuntimeException(__('The update archive contains an unreadable entry.'));
+            }
+
+            $name = $stat['name'];
+            if (str_ends_with($name, '/')) {
                 continue;
             }
 

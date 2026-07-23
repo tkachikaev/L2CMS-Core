@@ -200,7 +200,7 @@ final class SystemUpdateInstaller
                     }
                 }
 
-                if ($rollbackErrors === [] && is_string($currentVersion) && $currentVersion !== '') {
+                if ($rollbackErrors === []) {
                     try {
                         $this->installedVersion->mark($currentVersion);
                     } catch (Throwable $rollbackException) {

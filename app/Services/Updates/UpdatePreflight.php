@@ -11,6 +11,7 @@ final class UpdatePreflight
     public function __construct(
         private readonly UpdateInstallationLayout $layout,
         private readonly DatabaseManager $database,
+        private readonly UpdatePathPolicy $pathPolicy,
     ) {}
 
     /**
@@ -201,10 +202,9 @@ final class UpdatePreflight
                     return null;
                 }
 
-                $path = str_starts_with($configuredPath, '/')
-                    || preg_match('/\A[A-Za-z]:[\\\/]/', $configuredPath) === 1
-                        ? $configuredPath
-                        : base_path($configuredPath);
+                $path = $this->pathPolicy->isAbsoluteFilesystemPath($configuredPath)
+                    ? $configuredPath
+                    : base_path($configuredPath);
                 $size = is_file($path) ? filesize($path) : false;
 
                 return is_int($size) ? max(0, $size) : null;
@@ -213,7 +213,7 @@ final class UpdatePreflight
             if ($driver === 'mysql') {
                 $connection = $this->database->connection();
                 $databaseName = $connection->getDatabaseName();
-                if (! is_string($databaseName) || $databaseName === '') {
+                if ($databaseName === '') {
                     return null;
                 }
 

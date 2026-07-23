@@ -9,7 +9,10 @@ use Throwable;
 
 final class UpdateDatabaseBackup
 {
-    public function __construct(private readonly DatabaseManager $database) {}
+    public function __construct(
+        private readonly DatabaseManager $database,
+        private readonly UpdatePathPolicy $pathPolicy,
+    ) {}
 
     /** @return array{driver: string, path: string, sha256: string} */
     public function create(string $backupRoot, UpdateLog $log): array
@@ -329,12 +332,17 @@ final class UpdateDatabaseBackup
 
     private function pdo(): PDO
     {
-        $pdo = $this->database->connection()->getPdo();
+        $pdo = $this->connectionPdo();
         if (! $pdo instanceof PDO) {
             throw new RuntimeException(__('The CMS database connection is not ready.'));
         }
 
         return $pdo;
+    }
+
+    private function connectionPdo(): mixed
+    {
+        return $this->database->connection()->getPdo();
     }
 
     private function absoluteDatabasePath(string $path): string
@@ -343,7 +351,7 @@ final class UpdateDatabaseBackup
             return $path;
         }
 
-        if (str_starts_with($path, '/') || preg_match('/\A[A-Za-z]:[\\\\\/]/', $path) === 1) {
+        if ($this->pathPolicy->isAbsoluteFilesystemPath($path)) {
             return $path;
         }
 

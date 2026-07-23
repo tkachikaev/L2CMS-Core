@@ -44,29 +44,35 @@ final class SystemUpdateRecovery
             $filesRequired = $update->filesMayHaveChanged();
             $databaseRequired = $update->databaseMayHaveChanged();
 
-            if ($filesRequired && ! is_array($fileBackup)) {
-                throw new RuntimeException(__('Recovery cannot start because the required file backup is missing.'));
-            }
-            if ($databaseRequired && ! is_array($databaseBackup)) {
-                throw new RuntimeException(__('Recovery cannot start because the required database backup is missing.'));
+            $verifiedDatabaseBackup = null;
+            if ($databaseRequired) {
+                if ($databaseBackup === null) {
+                    throw new RuntimeException(__('Recovery cannot start because the required database backup is missing.'));
+                }
+
+                $this->databaseBackup->verify($databaseBackup);
+                $verifiedDatabaseBackup = $databaseBackup;
             }
 
-            if ($databaseRequired && is_array($databaseBackup)) {
-                $this->databaseBackup->verify($databaseBackup);
-            }
-            if ($filesRequired && is_array($fileBackup)) {
+            $verifiedFileBackup = null;
+            if ($filesRequired) {
+                if ($fileBackup === null) {
+                    throw new RuntimeException(__('Recovery cannot start because the required file backup is missing.'));
+                }
+
                 $this->filesystem->verifyBackup($fileBackup);
+                $verifiedFileBackup = $fileBackup;
             }
 
             $log->write('Manual recovery of an interrupted update started.', 'WARN');
             $log->write('Interrupted phase: '.($update->phase ?? 'legacy-unknown').'.', 'WARN');
 
-            if ($databaseRequired && is_array($databaseBackup)) {
-                $this->databaseBackup->restore($databaseBackup, $log);
+            if ($verifiedDatabaseBackup !== null) {
+                $this->databaseBackup->restore($verifiedDatabaseBackup, $log);
             }
 
-            if ($filesRequired && is_array($fileBackup)) {
-                $this->filesystem->rollback($fileBackup, $log);
+            if ($verifiedFileBackup !== null) {
+                $this->filesystem->rollback($verifiedFileBackup, $log);
             }
 
             $this->installedVersion->mark($update->from_version);
